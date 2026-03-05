@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SME.Sondagem.MS.Relatorios.Infra.EnvironmentVariables;
+using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 
 namespace SME.Sondagem.MS.Relatorios.IoC.Extensions;
 

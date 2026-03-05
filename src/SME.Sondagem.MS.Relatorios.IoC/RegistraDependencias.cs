@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 using SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 using SME.Sondagem.MS.Relatorios.Infra.EnvironmentVariables;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
@@ -34,11 +35,16 @@ public static class RegistraDependencias
         services.TryAddSingleton<IServicoMensageria, ServicoMensageria>();
         services.AddHttpClient();
         services.AdicionarHttpClients(configuration);
+
+        services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaPdf, RelatorioSondagemQuestionarioPorTurmaPdf>();
+        services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaExcel, RelatorioSondagemQuestionarioPorTurmaExcel>();
+
     }
 
     private static void RegistrarIntegracoes(IServiceCollection services)
     {
         services.AddScoped<IServicoSondagemApiClient, ServicoSondagemApiClient>();
+        services.AddScoped<IServicoSgpApiClient, ServicoSgpApiClient>();
     }
 
     private static void RegistrarCasosDeUso(IServiceCollection services)

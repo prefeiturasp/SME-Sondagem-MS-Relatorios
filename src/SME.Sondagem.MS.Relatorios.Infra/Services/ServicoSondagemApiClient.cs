@@ -1,7 +1,8 @@
-﻿using SME.Sondagem.MS.Relatorios.Infra.Dtos;
-using SME.Sondagem.MS.Relatorios.Infra.EnvironmentVariables;
+﻿using SME.Sondagem.MS.Relatorios.Infra.Constantes;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
+using SME.Sondagem.MS.Relatorios.Infra.Records;
 using System.Net;
 using System.Text.Json;
 
@@ -24,12 +25,12 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
         var resposta = await httpClient.GetAsync(urlFinal);
 
         if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
-            throw new Exception($"Erro ao consultar API de sondagem. Status: {resposta.StatusCode}");
+            new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, new(), new());
 
-        var json = await resposta.Content.ReadAsStringAsync();
-        if (!string.IsNullOrWhiteSpace(json))
-            return JsonSerializer.Deserialize<RetornoApiSondagemQuestionarioDto>(json);
+        var jsonString = await resposta.Content.ReadAsStringAsync();
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-        return null;
+        return JsonSerializer.Deserialize<RetornoApiSondagemQuestionarioDto>(jsonString, options)
+                 ?? new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, new(), new());
     }
 }
