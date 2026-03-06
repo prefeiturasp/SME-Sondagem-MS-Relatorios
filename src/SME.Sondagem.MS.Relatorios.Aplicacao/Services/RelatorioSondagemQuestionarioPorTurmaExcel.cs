@@ -4,7 +4,7 @@ using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
-using SME.Sondagem.MS.Relatorios.Infra.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;

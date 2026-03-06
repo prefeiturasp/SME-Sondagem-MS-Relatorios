@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SME.Sondagem.MS.Relatorios.Infra.Dominio.Enums;
+namespace SME.Sondagem.MS.Relatorios.Dominio.Enums;
 
 public enum Modalidade
 {

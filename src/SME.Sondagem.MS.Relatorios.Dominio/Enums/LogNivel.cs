@@ -1,4 +1,4 @@
-﻿namespace SME.Sondagem.MS.Relatorios.Infra.Dominio.Enums;
+﻿namespace SME.Sondagem.MS.Relatorios.Dominio.Enums;
 
 public enum LogNivel
 {

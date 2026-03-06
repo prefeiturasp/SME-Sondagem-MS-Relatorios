@@ -1,6 +1,6 @@
 ﻿using RabbitMQ.Client;
-using SME.Sondagem.MS.Relatorios.Infra.Dominio.Entidades;
-using SME.Sondagem.MS.Relatorios.Infra.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.Dominio.Entidades;
+using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.EnvironmentVariables;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Fila;

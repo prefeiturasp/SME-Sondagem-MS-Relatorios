@@ -1,4 +1,4 @@
-﻿using SME.Sondagem.MS.Relatorios.Infra.Dominio.Enums;
+﻿using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 
 namespace SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 

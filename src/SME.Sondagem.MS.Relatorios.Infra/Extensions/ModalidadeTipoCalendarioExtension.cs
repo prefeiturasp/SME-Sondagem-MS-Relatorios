@@ -1,4 +1,4 @@
-﻿using SME.Sondagem.MS.Relatorios.Infra.Dominio.Enums;
+﻿using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Exceptions;
 
 namespace SME.Sondagem.MS.Relatorios.Infra.Extensions;

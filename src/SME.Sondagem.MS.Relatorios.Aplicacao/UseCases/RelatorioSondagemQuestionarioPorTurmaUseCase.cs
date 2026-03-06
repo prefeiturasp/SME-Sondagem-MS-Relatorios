@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using SME.Sondagem.MS.Relatorios.Infra.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Fila;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;

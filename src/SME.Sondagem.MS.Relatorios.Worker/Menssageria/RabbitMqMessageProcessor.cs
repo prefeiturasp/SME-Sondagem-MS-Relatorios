@@ -2,8 +2,8 @@
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using SME.Sondagem.MS.Relatorios.Infra.Dominio.Entidades;
-using SME.Sondagem.MS.Relatorios.Infra.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.Dominio.Entidades;
+using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Exceptions;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Fila;
