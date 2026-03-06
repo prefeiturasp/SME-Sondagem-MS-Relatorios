@@ -539,8 +539,10 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         twoCellAnchor.Append(new Xdr.ClientData());
         wsDr.Append(twoCellAnchor);
 
-        drawingsPart.WorksheetDrawing = wsDr;
-        drawingsPart.WorksheetDrawing.Save();
+        if (drawingsPart.WorksheetDrawing == null)
+            drawingsPart.WorksheetDrawing = new Xdr.WorksheetDrawing(wsDr);
+        else
+            drawingsPart.WorksheetDrawing.Save();
 
         if (!worksheetPart.Worksheet.Elements<Drawing>().Any())
         {
