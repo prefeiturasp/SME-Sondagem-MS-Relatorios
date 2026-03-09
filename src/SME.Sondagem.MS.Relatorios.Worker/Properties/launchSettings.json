@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SME.Sondagem.MS.Relatorios.Worker": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
