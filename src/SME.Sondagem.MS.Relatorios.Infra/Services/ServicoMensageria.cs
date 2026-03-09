@@ -53,8 +53,8 @@ public class ServicoMensageria : IServicoMensageria
             };
 
             await channel.BasicPublishAsync(
-                ExchangeRabbit.Logs,
-                RotasRabbit.RotaLogs,
+                ExchangeRabbit.Sgp,
+                rota,
                 true,
                 props,
                 body

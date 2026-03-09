@@ -8,7 +8,6 @@ namespace SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 public class RelatorioSondagemQuestionarioPorTurmaPdf : IRelatorioSondagemQuestionarioPorTurmaPdf
 {
     private readonly IReportConverter reportConverter;
-    //private readonly IHtmlHelper htmlHelper;
 
     public RelatorioSondagemQuestionarioPorTurmaPdf(IReportConverter reportConverter)
     {
@@ -23,27 +22,11 @@ public class RelatorioSondagemQuestionarioPorTurmaPdf : IRelatorioSondagemQuesti
         if (!Directory.Exists(nomeDiretorio))
             Directory.CreateDirectory(nomeDiretorio);
 
-        var nomeArquivo = Path.Combine(nomeDiretorio, $"{codigoCorrelacao}.pdf");
+        var nomeArquivo = Path.Combine(nomeDiretorio, $"{codigoCorrelacao}");
 
         var relatorioHtml = RelatorioSondagemQuestionarioPorTurmaTemplate.GerarHtml(consultaSondagemPorTurmaDto);
 
-
         reportConverter.Converter(relatorioHtml, nomeArquivo);
-
-
-        //await File.WriteAllTextAsync(headerPath, headerHtml);
-        //await File.WriteAllTextAsync(footerPath, footerHtml);
-
-        //converter.Convert(doc);
-
-        //if (File.Exists(headerPath)) File.Delete(headerPath);
-        //if (File.Exists(footerPath)) File.Delete(footerPath);
-
-        //await servicoFila.PublicaFila(new PublicaFilaDto(
-        //       new MensagemRelatorioProntoDto(request.MensagemUsuario, string.Empty),
-        //       RotasRabbitSGP.RotaRelatoriosProntosSgp,
-        //       ExchangeRabbit.Sgp,
-        //       request.CodigoCorrelacao));
 
         return true;
     }

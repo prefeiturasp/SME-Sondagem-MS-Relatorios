@@ -13,42 +13,62 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
     private readonly IRelatorioSondagemQuestionarioPorTurmaPdf _relatorioSondagemQuestionarioPorTurmaPdf;
     private readonly IRelatorioSondagemQuestionarioPorTurmaExcel _relatorioSondagemQuestionarioPorTurmaExcel;
     private readonly IServicoSgpApiClient _servicoSgpApiClient;
+    private readonly IServicoMensageria servicoMensageria;
     private readonly ILogger<RelatorioSondagemQuestionarioPorTurmaUseCase> _logger;
 
-    public RelatorioSondagemQuestionarioPorTurmaUseCase(IServicoSondagemApiClient servicoSondagemApiClient, ILogger<RelatorioSondagemQuestionarioPorTurmaUseCase> logger, IServicoSgpApiClient servicoSgpApiClient, IRelatorioSondagemQuestionarioPorTurmaPdf relatorioSondagemQuestionarioPorTurmaPdf, IRelatorioSondagemQuestionarioPorTurmaExcel relatorioSondagemQuestionarioPorTurmaExcel)
+    public RelatorioSondagemQuestionarioPorTurmaUseCase(IServicoSondagemApiClient servicoSondagemApiClient, ILogger<RelatorioSondagemQuestionarioPorTurmaUseCase> logger, IServicoSgpApiClient servicoSgpApiClient, IRelatorioSondagemQuestionarioPorTurmaPdf relatorioSondagemQuestionarioPorTurmaPdf, IRelatorioSondagemQuestionarioPorTurmaExcel relatorioSondagemQuestionarioPorTurmaExcel, IServicoMensageria servicoMensageria)
     {
         _servicoSondagemApiClient = servicoSondagemApiClient;
         _logger = logger;
         _servicoSgpApiClient = servicoSgpApiClient;
         _relatorioSondagemQuestionarioPorTurmaPdf = relatorioSondagemQuestionarioPorTurmaPdf;
         _relatorioSondagemQuestionarioPorTurmaExcel = relatorioSondagemQuestionarioPorTurmaExcel;
+        this.servicoMensageria = servicoMensageria;
     }
 
-    public async Task<bool> Executar(MensagemRabbit param)
+    public async Task<bool> Executar(MensagemRabbit mensagemRabbit)
     {
-        var filtrosRelatorio = param.ObterObjetoMensagem<MensagemSondagemQuestionarioDto>();
-        if (filtrosRelatorio == null)
-            return true;
+        var filtrosRelatorio = mensagemRabbit.ObterObjetoMensagem<MensagemSondagemQuestionarioDto>();
 
-        var dadosRelatorio = await _servicoSondagemApiClient.ObterDadosQuestionarioAsync(filtrosRelatorio.FiltrosUsados);
-        if (dadosRelatorio == null)
-            return true;
-
-        var dto = dadosRelatorio.ParaDto();
-
-        switch (filtrosRelatorio.ExtensaoRelatorio)
+        try
         {
-            case (int)ExtensaoRelatorio.Pdf:
-                await _relatorioSondagemQuestionarioPorTurmaPdf.GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(dto, param.CodigoCorrelacao);
-                break;
-            case (int)ExtensaoRelatorio.Xlsx:
-                await _relatorioSondagemQuestionarioPorTurmaExcel.GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(dto);
-                break;
-            default:
-                break;
+            if (filtrosRelatorio == null)
+                return true;
+
+            var dadosRelatorio = await _servicoSondagemApiClient.ObterDadosQuestionarioAsync(filtrosRelatorio.FiltrosUsados);
+            if (dadosRelatorio == null)
+                return true;
+
+            var dto = dadosRelatorio.ParaDto();
+
+            switch (filtrosRelatorio.ExtensaoRelatorio)
+            {
+                case (int)ExtensaoRelatorio.Pdf:
+                    await _relatorioSondagemQuestionarioPorTurmaPdf.GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(dto, mensagemRabbit.CodigoCorrelacao);
+                    break;
+                case (int)ExtensaoRelatorio.Xlsx:
+                    await _relatorioSondagemQuestionarioPorTurmaExcel.GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(dto);
+                    break;
+                default:
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao publicar mensagem no RabbitMQ");
+            await servicoMensageria.Publicar(new MensagemRabbit("Erro ao gerar relatório", mensagemRabbit.CodigoCorrelacao), RotasRabbit.RotaRelatorioComErro, ExchangeRabbit.WorkerRelatorios);
+            return false;
         }
 
-        //await _servicoSgpApiClient.FinalizarSolicitacaoRelatorioAsync(23);
+        await NotificarUsuario(mensagemRabbit);
+
+        await _servicoSgpApiClient.FinalizarSolicitacaoRelatorioAsync(filtrosRelatorio.SolicitacaoRelatorioId);
         return await Task.FromResult(true);
+    }
+
+    private async Task NotificarUsuario(MensagemRabbit mensagemRabbit)
+    {
+        var mensagem = new MensagemRabbit("Relatório gerado com sucesso", mensagemRabbit.CodigoCorrelacao);
+        await servicoMensageria.Publicar(mensagem, RotasRabbit.RotaRelatoriosProntosSgp, ExchangeRabbit.WorkerRelatorios);
     }
 }
