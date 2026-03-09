@@ -4,6 +4,14 @@ public class ConsultaSondagemPorTurmaDto
 {
     public string TituloTabelaRespostas { get; set; }
     public string Semestre { get; set; }
+    public int AnoLetivo { get; set; }
+    public string Dre { get; set; } = string.Empty;
+    public string Turma { get; set; } = string.Empty;
+    public string UnidadeEducacional { get; set; } = string.Empty;
+    public string Modalidade { get; set; } = string.Empty;
+    public string Proficiencia { get; set; } = string.Empty;
+    public DateTime DataImpressao { get; set; } = DateTime.Now;
+    public string Usuario { get; set; } = string.Empty;
     public List<EstudanteDto> Estudantes { get; set; }
 }
 

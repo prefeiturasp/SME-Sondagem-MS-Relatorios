@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.HtmlPdf\SME.Sondagem.MS.Relatorios.HtmlPdf.csproj" />
     <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.Infra\SME.Sondagem.MS.Relatorios.Infra.csproj" />
   </ItemGroup>
 

@@ -39,7 +39,7 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         switch (filtrosRelatorio.ExtensaoRelatorio)
         {
             case (int)ExtensaoRelatorio.Pdf:
-                await _relatorioSondagemQuestionarioPorTurmaPdf.GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(dadosRelatorio);
+                await _relatorioSondagemQuestionarioPorTurmaPdf.GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(dto, param.CodigoCorrelacao);
                 break;
             case (int)ExtensaoRelatorio.Xlsx:
                 await _relatorioSondagemQuestionarioPorTurmaExcel.GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(dto);

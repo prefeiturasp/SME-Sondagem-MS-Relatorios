@@ -7,7 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Haukcode.WkHtmlToPdfDotNet" Version="1.5.95" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.3.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.Dominio\SME.Sondagem.MS.Relatorios.Dominio.csproj" />
+    <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.Infra\SME.Sondagem.MS.Relatorios.Infra.csproj" />
   </ItemGroup>
 
 </Project>
