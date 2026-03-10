@@ -1,19 +1,29 @@
-﻿using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+﻿using SME.Sondagem.MS.Relatorios.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Records;
 
 namespace SME.Sondagem.MS.Relatorios.Infra.Mappers;
 
 public static class ConsultaSondagemMapper
 {
-    public static ConsultaSondagemPorTurmaDto ParaDto(this RetornoApiSondagemQuestionarioDto source)
+    public static ConsultaSondagemPorTurmaDto ParaDto(this RetornoApiSondagemQuestionarioDto source, EscolaDto escolaDto, TurmaDto turmaDto, DadosUsuarioDto dadosUsuarioDto, Modalidade modalidade)
     {
-        if (source == null) return null;
+        if (source == null) return new ConsultaSondagemPorTurmaDto();
 
         return new ConsultaSondagemPorTurmaDto
         {
+            AnoLetivo = turmaDto.AnoLetivo,
+            Dre = escolaDto.NomeDRE,
+            SiglaDre = escolaDto.SiglaDRE,
+            Turma = $"{modalidade.ShortName()} - {turmaDto.NomeTurma}",
+            UnidadeEducacional = $"{escolaDto.SiglaTipoEscola} - {escolaDto.NomeEscola}",
+            Proficiencia = source.TituloTabelaRespostas,
+            Modalidade = modalidade.ShortName(),
             TituloTabelaRespostas = source.TituloTabelaRespostas,
             Semestre = source.Semestre,
-            Estudantes = source.Estudantes?.Select(e => e.ParaDto()).ToList()
+            Usuario = $"{dadosUsuarioDto.Nome}",
+            Estudantes = source?.Estudantes?.Select(e => e.ParaDto())?.ToList()
         };
     }
 

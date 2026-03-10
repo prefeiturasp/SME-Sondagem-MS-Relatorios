@@ -7,5 +7,5 @@ public class RotasRabbit
 
     public const string RelatorioSondagemPorTurma = "sr.sondagem.relatorios.solicitados.sondagem.por.turma";
     public const string RotaRelatoriosProntosSgp = "sgp.relatorios.prontos.notificar";
-    public const string RotaRelatorioComErro = "sgp.relatorios.erro.notificar";
+    //public const string RotaRelatorioComErro = "sgp.relatorios.erro.notificar";
 }

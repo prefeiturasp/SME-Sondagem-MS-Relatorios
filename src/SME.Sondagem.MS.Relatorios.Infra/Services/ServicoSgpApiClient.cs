@@ -1,4 +1,5 @@
 ﻿using SME.Sondagem.MS.Relatorios.Infra.Constantes;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 using System.Net;
 using System.Text;
@@ -15,13 +16,13 @@ public class ServicoSgpApiClient : IServicoSgpApiClient
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task FinalizarSolicitacaoRelatorioAsync(int solicitacaoRelatorioId)
+    public async Task FinalizarSolicitacaoRelatorioAsync(FinalizarSolicitacaoRelatorioDto finalizarSolicitacaoRelatorioDto)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSgpConstantes.SERVICO);
 
         string url = ServicoSgpConstantes.URL_FINALIZAR_SOLICITACAO_RELATORIO;
         
-        var body = JsonSerializer.Deserialize<int>(solicitacaoRelatorioId);
+        var body = JsonSerializer.Serialize(finalizarSolicitacaoRelatorioDto);
 
         var resposta = await httpClient.PatchAsync(url, new StringContent(body.ToString(), Encoding.UTF8, "application/json"));
 
