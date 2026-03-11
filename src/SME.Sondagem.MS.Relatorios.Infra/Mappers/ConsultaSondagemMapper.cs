@@ -14,10 +14,10 @@ public static class ConsultaSondagemMapper
         return new ConsultaSondagemPorTurmaDto
         {
             AnoLetivo = turmaDto.AnoLetivo,
-            Dre = escolaDto.NomeDRE,
-            SiglaDre = escolaDto.SiglaDRE,
+            Dre = escolaDto?.NomeDRE,
+            SiglaDre = escolaDto?.SiglaDRE,
             Turma = $"{modalidade.ShortName()} - {turmaDto.NomeTurma}",
-            UnidadeEducacional = $"{escolaDto.SiglaTipoEscola} - {escolaDto.NomeEscola}",
+            UnidadeEducacional = $"{escolaDto?.SiglaTipoEscola} - {escolaDto?.NomeEscola}",
             Proficiencia = source.TituloTabelaRespostas,
             Modalidade = modalidade.ShortName(),
             TituloTabelaRespostas = source.TituloTabelaRespostas,

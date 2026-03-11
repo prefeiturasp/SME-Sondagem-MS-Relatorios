@@ -4,7 +4,7 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Fila;
 
 public class MensagemRabbit
 {
-    public MensagemRabbit(object mensagem, Guid codigoCorrelacao)
+    public MensagemRabbit(object? mensagem, Guid codigoCorrelacao)
     {
         Mensagem = mensagem;
         CodigoCorrelacao = codigoCorrelacao;

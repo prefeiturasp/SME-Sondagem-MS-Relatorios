@@ -58,7 +58,6 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao publicar mensagem no RabbitMQ");
-            //await servicoMensageria.Publicar(new MensagemRabbit("Erro ao gerar relatório", mensagemRabbit.CodigoCorrelacao), RotasRabbit.RotaRelatorioComErro, ExchangeRabbit.WorkerRelatorios);
             return false;
         }
         
@@ -95,8 +94,10 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
 
     private async Task NotificarUsuario(ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao)
     {
-        var menssagemUsuario = $"relatório da Sondagem de escrita da turma {consultaSondagemPorTurmaDto.Turma} da {consultaSondagemPorTurmaDto.UnidadeEducacional} ({consultaSondagemPorTurmaDto.SiglaDre})";
-        var mensagem = new MensagemRabbit(menssagemUsuario, codigoCorrelacao);
-        await servicoMensageria.Publicar(mensagem, RotasRabbit.RotaRelatoriosProntosSgp, ExchangeRabbit.WorkerRelatorios);
+        var menssagemUsuario = $"Relatório da Sondagem de escrita da turma {consultaSondagemPorTurmaDto.Turma} da {consultaSondagemPorTurmaDto.UnidadeEducacional} ({consultaSondagemPorTurmaDto.SiglaDre})";
+        var mensagemRelatorioPronto = new MensagemRelatorioProntoDto(menssagemUsuario, "", "");
+
+        var mensagem = new MensagemRabbit(mensagemRelatorioPronto, codigoCorrelacao);
+        await servicoMensageria.Publicar(mensagem, RotasRabbit.RotaRelatoriosProntosSgp, ExchangeRabbit.Sgp);
     }
 }
