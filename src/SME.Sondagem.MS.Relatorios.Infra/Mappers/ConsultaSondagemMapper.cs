@@ -19,7 +19,7 @@ public static class ConsultaSondagemMapper
             Turma = $"{modalidade.ShortName()} - {turmaDto.NomeTurma}",
             UnidadeEducacional = $"{escolaDto?.SiglaTipoEscola} - {escolaDto?.NomeEscola}",
             Proficiencia = source.TituloTabelaRespostas,
-            Modalidade = modalidade.ShortName(),
+            Modalidade = modalidade,
             TituloTabelaRespostas = source.TituloTabelaRespostas,
             Semestre = source.Semestre,
             Usuario = $"{dadosUsuarioDto.Nome}",

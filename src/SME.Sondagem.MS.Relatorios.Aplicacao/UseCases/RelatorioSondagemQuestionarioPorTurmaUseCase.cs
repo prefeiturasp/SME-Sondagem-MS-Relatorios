@@ -46,7 +46,7 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
                     linkRelatorio = await _relatorioSondagemQuestionarioPorTurmaPdf.GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(dadosRelatorio, mensagemRabbit.CodigoCorrelacao);
                     break;
                 case (int)ExtensaoRelatorio.Xlsx:
-                    await _relatorioSondagemQuestionarioPorTurmaExcel.GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(dadosRelatorio);
+                    linkRelatorio = await _relatorioSondagemQuestionarioPorTurmaExcel.GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(dadosRelatorio);
                     break;
                 default:
                     break;

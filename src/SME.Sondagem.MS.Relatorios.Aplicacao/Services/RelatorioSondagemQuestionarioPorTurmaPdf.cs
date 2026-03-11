@@ -21,7 +21,7 @@ public class RelatorioSondagemQuestionarioPorTurmaPdf : IRelatorioSondagemQuesti
         var relatorioHtml = RelatorioSondagemQuestionarioPorTurmaTemplate.GerarHtml(consultaSondagemPorTurmaDto);
 
         byte[] pdfBytes = reportConverter.GerarPdfEmMemoria(relatorioHtml);
-        string nomeArquivo = $"Relatorio_{codigoCorrelacao}.pdf";
+        string nomeArquivo = $"Relatorio/{codigoCorrelacao}.pdf";
 
         await _servicoArmazenamentoMinio.UploadRelatorioAsync(pdfBytes, nomeArquivo);
 
