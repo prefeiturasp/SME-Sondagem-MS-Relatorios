@@ -3,8 +3,8 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
-using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
@@ -19,71 +19,70 @@ namespace SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 
 public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQuestionarioPorTurmaExcel
 {
-    public async Task<bool> GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto)
+    private readonly IServicoArmazenamentoMinio _servicoArmazenamentoMinio;
+
+    public RelatorioSondagemQuestionarioPorTurmaExcel(
+        IServicoArmazenamentoMinio servicoArmazenamentoMinio)
     {
-        var dto = consultaSondagemPorTurmaDto.MapToEscritaEfTurmaSondagemCabecalhoExcelDto(2026, "Turma", "Ue", "Dre", "Modalidade", "Relatorio Testte");
-        GerarExcelEF(dto, 2026, Guid.NewGuid(), Modalidade.EJA);
-        return true;
+        _servicoArmazenamentoMinio = servicoArmazenamentoMinio;
     }
 
-    static XLColor ConverterCor(string cor)
+    public async Task<string> GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(
+        ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto)
     {
-        if (string.IsNullOrEmpty(cor))
-            return XLColor.White;
+        var dto = consultaSondagemPorTurmaDto.MapToEscritaEfTurmaSondagemCabecalhoExcelDto(
+            consultaSondagemPorTurmaDto.AnoLetivo,
+            consultaSondagemPorTurmaDto.Turma,
+            consultaSondagemPorTurmaDto.UnidadeEducacional,
+            consultaSondagemPorTurmaDto?.Dre,
+            consultaSondagemPorTurmaDto?.Modalidade.ShortName(),
+            consultaSondagemPorTurmaDto?.Usuario);
 
-        var hex = cor.TrimStart('#');
-        var r = Convert.ToInt32(hex.Substring(0, 2), 16);
-        var g = Convert.ToInt32(hex.Substring(2, 2), 16);
-        var b = Convert.ToInt32(hex.Substring(4, 2), 16);
-
-        return XLColor.FromArgb(r, g, b);
+        return await GerarExcelEF(dto, consultaSondagemPorTurmaDto.AnoLetivo, consultaSondagemPorTurmaDto.Modalidade);
     }
 
-    private List<GraficoDto> ContarOcorrencias(
-        List<EscritaEfTurmaSondagemCorpoExcelDto> corpo,
-        Func<EscritaEfTurmaSondagemCorpoExcelDto, string> seletor)
-    {
-        return corpo
-            .Where(x => !string.IsNullOrEmpty(seletor(x)))
-            .GroupBy(seletor)
-            .Select(g => new GraficoDto
-            {
-                Descricao = g.Key,
-                Quantidade = g.Count(),
-                Cor = g.First().Cor
-            })
-            .ToList();
-    }
-
-    private void GerarExcelEF(EscritaEfTurmaSondagemCabecalhoExcelDto dto, int anoLetivo, Guid codigoCorrelacao, Modalidade modalidade)
+    private async Task<string> GerarExcelEF(EscritaEfTurmaSondagemCabecalhoExcelDto dto, int anoLetivo, Modalidade modalidade)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Sondagem");
 
-        var graficoCompleto = modalidade == Modalidade.Fundamental ? ContarOcorrencias(dto.CorpoRelatorio, x => x.SondagemInicial)
-            .Concat(ContarOcorrencias(dto.CorpoRelatorio, x => x.PrimeiroBimestre))
-            .Concat(ContarOcorrencias(dto.CorpoRelatorio, x => x.SegundoBimestre))
-            .Concat(ContarOcorrencias(dto.CorpoRelatorio, x => x.TerceiroBimestre))
-            .Concat(ContarOcorrencias(dto.CorpoRelatorio, x => x.QuartoBimestre))
-            .GroupBy(x => x.Descricao)
-            .Select(g => new GraficoDto
-            {
-                Descricao = g.Key,
-                Quantidade = g.Sum(x => x.Quantidade),
-                Cor = g.First().Cor
-            })
-            .ToList() : ContarOcorrencias(dto.CorpoRelatorio, x => x.SondagemInicial)
-            .Concat(ContarOcorrencias(dto.CorpoRelatorio, x => x.PrimeiroBimestre))
-            .Concat(ContarOcorrencias(dto.CorpoRelatorio, x => x.SegundoBimestre))
-            .GroupBy(x => x.Descricao)
-            .Select(g => new GraficoDto
-            {
-                Descricao = g.Key,
-                Quantidade = g.Sum(x => x.Quantidade),
-                Cor = g.First().Cor
-            })
-            .ToList();
+        ConfigurarColunas(sheet, modalidade);
 
+        var graficoCompleto = GerarDadosGrafico(dto, modalidade);
+
+        int linha = 1;
+
+        ConfigurarCabecalho(sheet);
+
+        sheet.AddPicture(ObterLogo())
+            .MoveTo(sheet.Cell(1, 1))
+            .WithSize(160, 60);
+
+        linha = EscreverInformacoesRelatorio(sheet, dto, anoLetivo);
+
+        linha = EscreverTitulo(sheet, dto, linha);
+
+        linha = EscreverCabecalhoTabela(sheet, dto, modalidade, linha);
+
+        linha = EscreverDados(sheet, dto, modalidade, linha);
+
+        int linhaGrafico = linha + 6;
+
+        using var stream = new MemoryStream();
+
+        workbook.SaveAs(stream);
+
+        stream.Position = 0;
+
+        InjetarGraficoOpenXml(stream, graficoCompleto, dto.Proeficiencia, linhaGrafico);
+
+        stream.Position = 0;
+
+        return await EnviarExcelParaMinio(stream);
+    }
+
+    private static void ConfigurarColunas(IXLWorksheet sheet, Modalidade modalidade)
+    {
         sheet.Column(1).Width = 6;
         sheet.Column(2).Width = 28;
         sheet.Column(3).Width = 12;
@@ -92,180 +91,139 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         sheet.Column(6).Width = 12;
         sheet.Column(7).Width = 10;
         sheet.Column(8).Width = 10;
+
         if (modalidade == Modalidade.Fundamental)
         {
             sheet.Column(9).Width = 10;
             sheet.Column(10).Width = 10;
         }
+    }
 
-        int linha = 1;
-
+    private static void ConfigurarCabecalho(IXLWorksheet sheet)
+    {
         sheet.Row(1).Height = 20;
         sheet.Row(2).Height = 20;
         sheet.Row(3).Height = 20;
+    }
 
-        var logo = sheet.AddPicture(ObterLogo())
-                         .MoveTo(sheet.Cell(1, 1))
-                         .WithSize(160, 60);
+    private static int EscreverInformacoesRelatorio(
+        IXLWorksheet sheet,
+        EscritaEfTurmaSondagemCabecalhoExcelDto dto,
+        int anoLetivo)
+    {
+        int linha = 4;
 
-        linha = 4;
-        EscreverCelula(sheet, linha, 1, $"Ano letivo: {anoLetivo}   DRE: {dto.Dre}   Semestre: {dto.Semestre}", bold: false);
+        EscreverCelula(sheet, linha, 1,
+            $"Ano letivo: {anoLetivo}   DRE: {dto.Dre}   Semestre: {dto.Semestre}");
         sheet.Range(linha, 1, linha, 7).Merge();
-        EscreverCelula(sheet, linha, 8, $"Turma: {dto.Turma}", bold: false);
+
+        EscreverCelula(sheet, linha, 8, $"Turma: {dto.Turma}");
         sheet.Range(linha, 8, linha, 10).Merge();
         AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
         linha++;
 
-        EscreverCelula(sheet, linha, 1, $"Unidade Educacional: {dto.Ue}", bold: false);
+        EscreverCelula(sheet, linha, 1, $"Unidade Educacional: {dto.Ue}");
         sheet.Range(linha, 1, linha, 10).Merge();
         AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
         linha++;
 
-        EscreverCelula(sheet, linha, 1, $"Modalidade: {dto.Modalidade}", bold: false);
+        EscreverCelula(sheet, linha, 1, $"Modalidade: {dto.Modalidade}");
         sheet.Range(linha, 1, linha, 3).Merge();
-        EscreverCelula(sheet, linha, 4, $"Proficiência: {dto.Proeficiencia}", bold: false);
+
+        EscreverCelula(sheet, linha, 4, $"Proficiência: {dto.Proeficiencia}");
         sheet.Range(linha, 4, linha, 6).Merge();
-        EscreverCelula(sheet, linha, 7, $"Data de impressão: {dto.DataImpressao}", bold: false);
+
+        EscreverCelula(sheet, linha, 7, $"Data de impressão: {dto.DataImpressao}");
         sheet.Range(linha, 7, linha, 10).Merge();
+
         AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
         linha++;
 
-        EscreverCelula(sheet, linha, 1, $"Usuário: {dto.NomeUsuarioSolicitacao}", bold: false);
+        EscreverCelula(sheet, linha, 1, $"Usuário: {dto.NomeUsuarioSolicitacao}");
         sheet.Range(linha, 1, linha, 10).Merge();
         AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
         linha++;
 
         linha++;
 
-        var tituloCell = sheet.Cell(linha, 1);
-        tituloCell.Value = "Relatório da Sondagem";
-        tituloCell.Style.Font.Bold = true;
-        tituloCell.Style.Font.FontSize = 14;
-        tituloCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        return linha;
+    }
+
+    private static int EscreverTitulo(
+        IXLWorksheet sheet,
+        EscritaEfTurmaSondagemCabecalhoExcelDto dto,
+        int linha)
+    {
+        var titulo = sheet.Cell(linha, 1);
+        titulo.Value = "Relatório da Sondagem";
+        titulo.Style.Font.Bold = true;
+        titulo.Style.Font.FontSize = 14;
+        titulo.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
         sheet.Range(linha, 1, linha, 10).Merge();
         linha++;
 
-        var subtituloCell = sheet.Cell(linha, 1);
-        subtituloCell.Value = dto.Proeficiencia;
-        subtituloCell.Style.Font.Bold = true;
-        subtituloCell.Style.Font.FontSize = 12;
-        subtituloCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        var subtitulo = sheet.Cell(linha, 1);
+        subtitulo.Value = dto.Proeficiencia;
+        subtitulo.Style.Font.Bold = true;
+        subtitulo.Style.Font.FontSize = 12;
+        subtitulo.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
         sheet.Range(linha, 1, linha, 10).Merge();
-        linha++;
+        linha += 2;
+
+        return linha;
+    }
+
+    private static int EscreverCabecalhoTabela(
+        IXLWorksheet sheet,
+        EscritaEfTurmaSondagemCabecalhoExcelDto dto,
+        Modalidade modalidade,
+        int linha)
+    {
+        var grupo = modalidade == Modalidade.EJA
+            ? sheet.Range(linha, 6, linha, 8)
+            : sheet.Range(linha, 6, linha, 10);
+
+        grupo.Merge();
+        grupo.Value = dto.Proeficiencia;
+        grupo.Style.Font.Bold = true;
+        grupo.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        grupo.Style.Fill.BackgroundColor = XLColor.LightGray;
+
+        AplicarBordaExterna(grupo);
 
         linha++;
 
-        if (modalidade == Modalidade.EJA)
-        {
-            var grupoEscrita = sheet.Range(linha, 6, linha, 8);
-            grupoEscrita.Merge();
-            grupoEscrita.Value = dto.Proeficiencia;
-            grupoEscrita.Style.Font.Bold = true;
-            grupoEscrita.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            grupoEscrita.Style.Fill.BackgroundColor = XLColor.LightGray;
-            AplicarBordaExterna(grupoEscrita);
-        }
-        else
-        {
-            var grupoEscrita = sheet.Range(linha, 6, linha, 10);
-            grupoEscrita.Merge();
-            grupoEscrita.Value = dto.Proeficiencia;
-            grupoEscrita.Style.Font.Bold = true;
-            grupoEscrita.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            grupoEscrita.Style.Fill.BackgroundColor = XLColor.LightGray;
-            AplicarBordaExterna(grupoEscrita);
-        }
-        linha++;
-
-        var headers = modalidade == Modalidade.EJA ? new[]
-        {
-                (1, "Nº"),
-                (2, "Nome"),
-                (3, "Raça"),
-                (4, "Gênero"),
-                (5, "LP como 2ª língua?"),
-                (6, "Sondagem inicial"),
-                (7, "1º bim"),
-                (8, "2º bim"),
-            } : new[]
-        {
-                (1, "Nº"),
-                (2, "Nome"),
-                (3, "Raça"),
-                (4, "Gênero"),
-                (5, "LP como 2ª língua?"),
-                (6, "Sondagem inicial"),
-                (7, "1º bim"),
-                (8, "2º bim"),
-                (9, "3º bim"),
-                (10, "4º bim"),
-            };
+        var headers = ObterHeaders(modalidade);
 
         foreach (var (col, texto) in headers)
-        {
-            var cell = sheet.Cell(linha, col);
-            cell.Value = texto;
-            cell.Style.Font.Bold = true;
-            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            cell.Style.Alignment.WrapText = true;
-            cell.Style.Fill.BackgroundColor = XLColor.LightGray;
-            cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-        }
+            EstilizarHeader(sheet.Cell(linha, col), texto);
 
         sheet.Row(linha).Height = 40;
-        linha++;
-        var streamsParaDescartar = new List<MemoryStream>();
+
+        return linha + 1;
+    }
+
+    private static int EscreverDados(
+        IXLWorksheet sheet,
+        EscritaEfTurmaSondagemCabecalhoExcelDto dto,
+        Modalidade modalidade,
+        int linha)
+    {
         foreach (var item in dto.CorpoRelatorio)
         {
             sheet.Row(linha).Height = 45;
+
             var corFundo = ConverterCor(item.Cor);
 
             var cNum = sheet.Cell(linha, 1);
             cNum.Value = item.Numero;
             EstilarCelulaDados(cNum);
-            bool temIcone = item.Aee || item.Pap || item.PossuiDeficiencia;
-            sheet.Row(linha).Height = temIcone ? 55 : 35;
+
             var cNome = sheet.Cell(linha, 2);
-
             cNome.Value = item.Nome;
-            cNome.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
-            cNome.Style.Alignment.Vertical = XLAlignmentVerticalValues.Top;
-            cNome.Style.Alignment.WrapText = true;
-            cNome.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             EstilarCelulaDados(cNome);
-            double alturaLinha = sheet.Row(linha).Height;
-            int iconeX = 2;
-            int iconeY = (int)(alturaLinha * 0.96);
-
-            if (item.Aee)
-            {
-                var ms = ConverterSvgBase64ParaPngStream(SmeConstants.Logo_AEE, 20, 20);
-                streamsParaDescartar.Add(ms);
-                sheet.AddPicture(ms)
-                     .MoveTo(sheet.Cell(linha, 2), new System.Drawing.Point(iconeX, iconeY))
-                     .WithSize(20, 20);
-                iconeX += 24;
-            }
-
-            if (item.Pap)
-            {
-                var ms = ConverterSvgBase64ParaPngStream(SmeConstants.Logo_PAP, 20, 20);
-                streamsParaDescartar.Add(ms);
-                sheet.AddPicture(ms)
-                     .MoveTo(sheet.Cell(linha, 2), new System.Drawing.Point(iconeX, iconeY))
-                     .WithSize(20, 20);
-                iconeX += 24;
-            }
-
-            if (item.PossuiDeficiencia)
-            {
-                var ms = ConverterSvgBase64ParaPngStream(SmeConstants.Logo_Acessibilidade, 20, 20);
-                streamsParaDescartar.Add(ms);
-                sheet.AddPicture(ms)
-                     .MoveTo(sheet.Cell(linha, 2), new System.Drawing.Point(iconeX, iconeY))
-                     .WithSize(20, 20);
-            }
 
             var cRaca = sheet.Cell(linha, 3);
             cRaca.Value = item.Raca;
@@ -284,37 +242,193 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
 
             if (modalidade == Modalidade.EJA)
             {
-                preenchererCelulaSondagem(sheet.Cell(linha, 6), item.SondagemInicial, corFundo);
-                preenchererCelulaSondagem(sheet.Cell(linha, 7), item.PrimeiroBimestre, corFundo);
-                preenchererCelulaSondagem(sheet.Cell(linha, 8), item.SegundoBimestre, corFundo);
+                PreencherCelulaSondagem(sheet.Cell(linha, 6), item.SondagemInicial, corFundo);
+                PreencherCelulaSondagem(sheet.Cell(linha, 7), item.PrimeiroBimestre, corFundo);
+                PreencherCelulaSondagem(sheet.Cell(linha, 8), item.SegundoBimestre, corFundo);
             }
-
-            if (modalidade == Modalidade.Fundamental)
+            else
             {
-                preenchererCelulaSondagem(sheet.Cell(linha, 6), item.SondagemInicial, corFundo);
-                preenchererCelulaSondagem(sheet.Cell(linha, 7), item.PrimeiroBimestre, corFundo);
-                preenchererCelulaSondagem(sheet.Cell(linha, 8), item.SegundoBimestre, corFundo);
-                preenchererCelulaSondagem(sheet.Cell(linha, 9), item.TerceiroBimestre, corFundo);
-                preenchererCelulaSondagem(sheet.Cell(linha, 10), item.QuartoBimestre, corFundo);
+                PreencherCelulaSondagem(sheet.Cell(linha, 6), item.SondagemInicial, corFundo);
+                PreencherCelulaSondagem(sheet.Cell(linha, 7), item.PrimeiroBimestre, corFundo);
+                PreencherCelulaSondagem(sheet.Cell(linha, 8), item.SegundoBimestre, corFundo);
+                PreencherCelulaSondagem(sheet.Cell(linha, 9), item.TerceiroBimestre, corFundo);
+                PreencherCelulaSondagem(sheet.Cell(linha, 10), item.QuartoBimestre, corFundo);
             }
 
             linha++;
         }
 
-        int linhaGrafico = linha + 6;
-
-        var caminhoBase = AppDomain.CurrentDomain.BaseDirectory;
-        var caminhoParaSalvar = Path.Combine(caminhoBase, $"relatorios", codigoCorrelacao.ToString());
-        workbook.SaveAs($"{caminhoParaSalvar}.xlsx");
-
-        InjetarGraficoOpenXml($"{caminhoParaSalvar}.xlsx", graficoCompleto, dto.Proeficiencia, linhaGrafico);
-        foreach (var s in streamsParaDescartar)
-            s.Dispose();
+        return linha;
     }
 
-    private void InjetarGraficoOpenXml(string caminhoArquivo, List<GraficoDto> dados, string tituloProficiencia, int linhaGrafico)
+    private static (int Coluna, string Texto)[] ObterHeaders(Modalidade modalidade)
     {
-        using var document = SpreadsheetDocument.Open(caminhoArquivo, true);
+        if (modalidade == Modalidade.EJA)
+        {
+            return new[]
+            {
+                (1,"Nº"),
+                (2,"Nome"),
+                (3,"Raça"),
+                (4,"Gênero"),
+                (5,"LP como 2ª língua?"),
+                (6,"Sondagem inicial"),
+                (7,"1º bim"),
+                (8,"2º bim"),
+            };
+        }
+
+        return new[]
+        {
+            (1,"Nº"),
+            (2,"Nome"),
+            (3,"Raça"),
+            (4,"Gênero"),
+            (5,"LP como 2ª língua?"),
+            (6,"Sondagem inicial"),
+            (7,"1º bim"),
+            (8,"2º bim"),
+            (9,"3º bim"),
+            (10,"4º bim"),
+        };
+    }
+
+    private List<GraficoDto> GerarDadosGrafico(
+        EscritaEfTurmaSondagemCabecalhoExcelDto dto,
+        Modalidade modalidade)
+    {
+        var seletores = new List<Func<EscritaEfTurmaSondagemCorpoExcelDto, string>>
+        {
+            x => x.SondagemInicial,
+            x => x.PrimeiroBimestre,
+            x => x.SegundoBimestre
+        };
+
+        if (modalidade == Modalidade.Fundamental)
+        {
+            seletores.Add(x => x.TerceiroBimestre);
+            seletores.Add(x => x.QuartoBimestre);
+        }
+
+        return seletores
+            .SelectMany(s => ContarOcorrencias(dto.CorpoRelatorio, s))
+            .GroupBy(x => x.Descricao)
+            .Select(g => new GraficoDto
+            {
+                Descricao = g.Key,
+                Quantidade = g.Sum(x => x.Quantidade),
+                Cor = g.First().Cor
+            })
+            .ToList();
+    }
+
+    private List<GraficoDto> ContarOcorrencias(
+        List<EscritaEfTurmaSondagemCorpoExcelDto> corpo,
+        Func<EscritaEfTurmaSondagemCorpoExcelDto, string> seletor)
+    {
+        return corpo
+            .Where(x => !string.IsNullOrEmpty(seletor(x)))
+            .GroupBy(seletor)
+            .Select(g => new GraficoDto
+            {
+                Descricao = g.Key,
+                Quantidade = g.Count(),
+                Cor = g.First().Cor
+            })
+            .ToList();
+    }
+
+    private static XLColor ConverterCor(string cor)
+    {
+        if (string.IsNullOrWhiteSpace(cor))
+            return XLColor.White;
+
+        var hex = cor.TrimStart('#');
+
+        var r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        var g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        var b = Convert.ToInt32(hex.Substring(4, 2), 16);
+
+        return XLColor.FromArgb(r, g, b);
+    }
+
+    static void PreencherCelulaSondagem(IXLCell cell, string valor, XLColor corFundo)
+    {
+        bool vazio = string.IsNullOrWhiteSpace(valor)
+                     || valor == "Sem preencher"
+                     || valor == "Vazio";
+
+        cell.Value = valor;
+
+        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        cell.Style.Alignment.WrapText = true;
+        cell.Style.Font.Bold = true;
+        cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+
+        cell.Style.Fill.BackgroundColor = vazio ? XLColor.White : corFundo;
+        cell.Style.Font.FontColor = vazio ? XLColor.Gray : XLColor.White;
+    }
+
+    static void EstilizarHeader(IXLCell cell, string texto)
+    {
+        cell.Value = texto;
+        cell.Style.Font.Bold = true;
+        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        cell.Style.Alignment.WrapText = true;
+        cell.Style.Fill.BackgroundColor = XLColor.LightGray;
+        cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+    }
+
+    static void EscreverCelula(IXLWorksheet ws, int row, int col, string valor, bool bold = false)
+    {
+        var cell = ws.Cell(row, col);
+        cell.Value = valor;
+        cell.Style.Font.Bold = bold;
+        cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        cell.Style.Alignment.WrapText = true;
+    }
+
+    static void AplicarBordaExterna(IXLRange range)
+    {
+        range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+    }
+
+    static void EstilarCelulaDados(IXLCell cell)
+    {
+        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+        cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        cell.Style.Alignment.WrapText = true;
+        cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+    }
+
+    private static Stream ObterLogo()
+    {
+        string base64Logo = SmeConstants.LogoSmeMono.Substring(SmeConstants.LogoSmeMono.IndexOf(',') + 1);
+        return new MemoryStream(Convert.FromBase64String(base64Logo));
+    }
+
+    private async Task<string> EnviarExcelParaMinio(Stream stream)
+    {
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+
+        var excelBytes = ms.ToArray();
+
+        string nomeArquivo = $"Relatorio/{Guid.NewGuid()}.xlsx";
+
+        await _servicoArmazenamentoMinio.UploadRelatorioAsync(
+            excelBytes,
+            nomeArquivo,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        return await _servicoArmazenamentoMinio.GerarLinkDownloadAsync(nomeArquivo);
+    }
+
+    private void InjetarGraficoOpenXml(Stream stream, List<GraficoDto> dados, string tituloProficiencia, int linhaGrafico)
+    {
+        using var document = SpreadsheetDocument.Open(stream, true);
         var workbookPart = document.WorkbookPart;
 
         var sheetInfo = workbookPart.Workbook.Sheets.Elements<Sheet>().First();
@@ -551,85 +665,5 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         }
 
         worksheetPart.Worksheet.Save();
-    }
-
-    private static MemoryStream ConverterSvgBase64ParaPngStream(string base64, int largura = 24, int altura = 14)
-    {
-        var base64Limpo = base64.Contains(",") ? base64.Split(',')[1] : base64;
-        var svgBytes = Convert.FromBase64String(base64Limpo);
-
-        using var svgStream = new MemoryStream(svgBytes);
-        var svgDoc = Svg.SvgDocument.Open<Svg.SvgDocument>(svgStream);
-
-        svgDoc.Width = new Svg.SvgUnit(Svg.SvgUnitType.Pixel, largura);
-        svgDoc.Height = new Svg.SvgUnit(Svg.SvgUnitType.Pixel, altura);
-
-        using var bitmap = svgDoc.Draw(largura, altura);
-        var outputStream = new MemoryStream();
-        bitmap.Save(outputStream, System.Drawing.Imaging.ImageFormat.Png);
-        outputStream.Position = 0;
-        return outputStream;
-    }
-
-    private async Task<string> ObterTurma(string codigoTurma)
-    {
-        if (codigoTurma == "-99" || string.IsNullOrEmpty(codigoTurma))
-            return "Todos";
-
-        var turma = "Turma"; //await mediator.Send(new ObterTurmaQuery(codigoTurma));
-        return turma; //turma.NomeRelatorio;
-    }
-
-    private async Task<DreUeNomeDto> ObterNomeUeDre(string ueCodigo)
-    {
-        return new DreUeNomeDto(); //await mediator.Send(new ObterDreUeNomePorUeCodigoQuery(ueCodigo));
-    }
-
-    static void EscreverCelula(IXLWorksheet ws, int row, int col, string valor, bool bold = false)
-    {
-        var cell = ws.Cell(row, col);
-        cell.Value = valor;
-        cell.Style.Font.Bold = bold;
-        cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-        cell.Style.Alignment.WrapText = true;
-    }
-
-    static void AplicarBordaExterna(IXLRange range)
-    {
-        range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-    }
-
-    static void EstilarCelulaDados(IXLCell cell)
-    {
-        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
-        cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-        cell.Style.Alignment.WrapText = true;
-        cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-    }
-
-    static void preenchererCelulaSondagem(IXLCell cell, string valor, XLColor corFundo)
-    {
-        cell.Value = valor;
-        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-        cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-        cell.Style.Alignment.WrapText = true;
-        cell.Style.Font.Bold = true;
-        cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-
-        if (valor == "Sem preencher" || valor == "Vazio" || valor == "")
-            cell.Style.Fill.BackgroundColor = XLColor.White;
-        else
-            cell.Style.Fill.BackgroundColor = corFundo;
-
-        if (valor == "Sem preencher" || valor == "Vazio" || valor == "")
-            cell.Style.Font.FontColor = XLColor.Gray;
-        else
-            cell.Style.Font.FontColor = XLColor.White;
-    }
-
-    private static Stream ObterLogo()
-    {
-        string base64Logo = SmeConstants.LogoSmeMono.Substring(SmeConstants.LogoSmeMono.IndexOf(',') + 1);
-        return new MemoryStream(Convert.FromBase64String(base64Logo));
     }
 }

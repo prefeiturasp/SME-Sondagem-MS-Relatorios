@@ -10,6 +10,7 @@ internal static class RegistrarHttpClients
     {
         services.ConfigurarHttpClientSgp(configuration);
         services.ConfigurarHttpClientSondagem(configuration);
+        services.ConfigurarHttpClientEol(configuration);
     }
 
 
@@ -29,6 +30,19 @@ internal static class RegistrarHttpClients
             client.BaseAddress = new Uri(url);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Add("x-sgp-api-key", apiKey);
+        });
+    }
+
+    private static void ConfigurarHttpClientEol(this IServiceCollection services, IConfiguration configuration)
+    {
+        var url = configuration.ValidarConfiguracao("UrlApiEOL");
+        var apiKey = configuration.GetValue<string>("ApiKeyEOLApi");
+
+        services.AddHttpClient(name: ServicoEolConstantes.SERVICO, c =>
+        {
+            c.BaseAddress = new Uri(configuration.GetSection("UrlApiEOL").Value);
+            c.DefaultRequestHeaders.Add("Accept", "application/json");
+            c.DefaultRequestHeaders.Add("x-api-eol-key", configuration.GetSection("ApiKeyEolApi").Value);
         });
     }
 

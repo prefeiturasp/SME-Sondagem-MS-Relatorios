@@ -35,8 +35,8 @@ public class RabbitMqSetupService : IRabbitMqSetupService
     {
         await channel.BasicQosAsync(0, _rabbitOptions.LimiteDeMensagensPorExecucao, false);
 
-        await channel.ExchangeDeclareAsync(ExchangeRabbit.WorkerSondagemRelatorio, ExchangeType.Direct, true);
-        await channel.ExchangeDeclareAsync(ExchangeRabbit.WorkerSondagemRelatorioDeadLetter, ExchangeType.Direct, true);
+        await channel.ExchangeDeclareAsync(ExchangeRabbit.Sgp, ExchangeType.Direct, true);
+        await channel.ExchangeDeclareAsync(ExchangeRabbit.SgpDeadLetter, ExchangeType.Direct, true);
 
         await DeclararFilasAsync(channel, comandos);
     }
@@ -57,11 +57,13 @@ public class RabbitMqSetupService : IRabbitMqSetupService
 
             var args = ObterArgumentoDaFila(fila, comandos);
             await channel.QueueDeclareAsync(fila, true, false, false, args);
-            await channel.QueueBindAsync(fila, ExchangeRabbit.WorkerSondagemRelatorio, fila, null);
+            await channel.QueueBindAsync(fila, ExchangeRabbit.Sgp, fila, null);
 
             var argsDlq = ObterArgumentoDaFilaDeadLetter(fila, comandos);
+
             await channel.QueueDeclareAsync(filaDeadLetter, true, false, false, argsDlq);
-            await channel.QueueBindAsync(filaDeadLetter, ExchangeRabbit.WorkerSondagemRelatorioDeadLetter, fila, null);
+
+            await channel.QueueBindAsync(filaDeadLetter, ExchangeRabbit.SgpDeadLetter, fila, null);
 
             var argsFinal = new Dictionary<string, object> { { "x-queue-mode", "lazy" } };
 
@@ -72,14 +74,14 @@ public class RabbitMqSetupService : IRabbitMqSetupService
                 autoDelete: false,
                 arguments: argsFinal);
 
-            await channel.QueueBindAsync(filaDeadLetterFinal, ExchangeRabbit.WorkerSondagemRelatorioDeadLetter, filaDeadLetterFinal, null);
+            await channel.QueueBindAsync(filaDeadLetterFinal, ExchangeRabbit.SgpDeadLetter, filaDeadLetterFinal, null);
         }
     }
 
     private static Dictionary<string, object> ObterArgumentoDaFila(string fila, Dictionary<string, ComandoRabbit> comandos)
     {
         var args = new Dictionary<string, object>
-            { { "x-dead-letter-exchange", ExchangeRabbit.WorkerSondagemRelatorioDeadLetter } };
+            { { "x-dead-letter-exchange", ExchangeRabbit.SgpDeadLetter } };
 
         if (comandos.ContainsKey(fila) && comandos[fila].ModeLazy)
             args.Add("x-queue-mode", "lazy");
@@ -90,9 +92,9 @@ public class RabbitMqSetupService : IRabbitMqSetupService
     private static Dictionary<string, object> ObterArgumentoDaFilaDeadLetter(string fila, Dictionary<string, ComandoRabbit> comandos)
     {
         var argsDlq = new Dictionary<string, object>();
-        var ttl = comandos.ContainsKey(fila) ? comandos[fila].Ttl : ExchangeRabbit.WorkerSondagemRelatorioDeadLetterTtl;
+        var ttl = comandos.ContainsKey(fila) ? comandos[fila].Ttl : ExchangeRabbit.SgpDeadLetterTTL_3;
 
-        argsDlq.Add("x-dead-letter-exchange", ExchangeRabbit.WorkerSondagemRelatorio);
+        argsDlq.Add("x-dead-letter-exchange", ExchangeRabbit.Sgp);
         argsDlq.Add("x-message-ttl", ttl);
         argsDlq.Add("x-queue-mode", "lazy");
 

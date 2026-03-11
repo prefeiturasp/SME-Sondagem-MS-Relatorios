@@ -1,6 +1,8 @@
-﻿namespace SME.Sondagem.MS.Relatorios.Infra.Interfaces;
+﻿using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+
+namespace SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 public interface IServicoSgpApiClient
 {
-    Task FinalizarSolicitacaoRelatorioAsync(int solicitacaoRelatorioId);
+    Task FinalizarSolicitacaoRelatorioAsync(FinalizarSolicitacaoRelatorioDto finalizarSolicitacaoRelatorioDto);
 }

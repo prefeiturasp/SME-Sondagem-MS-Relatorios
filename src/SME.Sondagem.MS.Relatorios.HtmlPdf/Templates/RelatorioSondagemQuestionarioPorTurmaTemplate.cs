@@ -167,7 +167,7 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
                                             .main-table tbody td.col-nome,
                                             .main-table tbody td.col-raca,
                                             .main-table tbody td.col-genero {
-                                                text-align: left;
+                                                text-align: center;
                                                 padding: 8px;
                                             }
 

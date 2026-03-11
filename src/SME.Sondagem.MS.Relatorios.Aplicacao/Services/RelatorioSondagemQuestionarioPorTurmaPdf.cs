@@ -8,26 +8,23 @@ namespace SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 public class RelatorioSondagemQuestionarioPorTurmaPdf : IRelatorioSondagemQuestionarioPorTurmaPdf
 {
     private readonly IReportConverter reportConverter;
+    private readonly IServicoArmazenamentoMinio _servicoArmazenamentoMinio;
 
-    public RelatorioSondagemQuestionarioPorTurmaPdf(IReportConverter reportConverter)
+    public RelatorioSondagemQuestionarioPorTurmaPdf(IReportConverter reportConverter, IServicoArmazenamentoMinio servicoArmazenamentoMinio)
     {
         this.reportConverter = reportConverter;
+        _servicoArmazenamentoMinio = servicoArmazenamentoMinio;
     }
 
-    public async Task<bool> GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao)
+    public async Task<string> GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao)
     {
-        var directory = AppDomain.CurrentDomain.BaseDirectory;
-        var nomeDiretorio = Path.Combine(directory, "relatorios");
-
-        if (!Directory.Exists(nomeDiretorio))
-            Directory.CreateDirectory(nomeDiretorio);
-
-        var nomeArquivo = Path.Combine(nomeDiretorio, $"{codigoCorrelacao}");
-
         var relatorioHtml = RelatorioSondagemQuestionarioPorTurmaTemplate.GerarHtml(consultaSondagemPorTurmaDto);
 
-        reportConverter.Converter(relatorioHtml, nomeArquivo);
+        byte[] pdfBytes = reportConverter.GerarPdfEmMemoria(relatorioHtml);
+        string nomeArquivo = $"Relatorio/{codigoCorrelacao}.pdf";
 
-        return true;
+        await _servicoArmazenamentoMinio.UploadRelatorioAsync(pdfBytes, nomeArquivo);
+
+        return await _servicoArmazenamentoMinio.GerarLinkDownloadAsync(nomeArquivo);
     }
 }

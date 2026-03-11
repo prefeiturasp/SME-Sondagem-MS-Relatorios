@@ -4,5 +4,5 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 public interface IRelatorioSondagemQuestionarioPorTurmaPdf
 {
-    Task<bool> GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao);
+    Task<string> GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao);
 }

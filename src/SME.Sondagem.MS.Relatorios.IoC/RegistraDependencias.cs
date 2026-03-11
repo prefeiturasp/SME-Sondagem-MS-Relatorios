@@ -45,6 +45,7 @@ public static class RegistraDependencias
 
         services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
         services.TryAddScoped<IReportConverter, ReportConverter>();
+        services.TryAddScoped<IServicoArmazenamentoMinio, ServicoArmazenamentoMinio>();
 
     }
 
@@ -52,6 +53,7 @@ public static class RegistraDependencias
     {
         services.AddScoped<IServicoSondagemApiClient, ServicoSondagemApiClient>();
         services.AddScoped<IServicoSgpApiClient, ServicoSgpApiClient>();
+        services.AddScoped<IServicoEolApiClient, ServicoEolApiClient>();
     }
 
     private static void RegistrarCasosDeUso(IServiceCollection services)

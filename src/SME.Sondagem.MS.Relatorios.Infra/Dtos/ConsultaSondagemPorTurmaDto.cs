@@ -1,18 +1,21 @@
-﻿namespace SME.Sondagem.MS.Relatorios.Infra.Dtos;
+﻿using SME.Sondagem.MS.Relatorios.Dominio.Enums;
+
+namespace SME.Sondagem.MS.Relatorios.Infra.Dtos;
 
 public class ConsultaSondagemPorTurmaDto
 {
-    public string TituloTabelaRespostas { get; set; }
-    public string Semestre { get; set; }
+    public string TituloTabelaRespostas { get; set; } = string.Empty;
+    public string Semestre { get; set; } = string.Empty;
     public int AnoLetivo { get; set; }
-    public string Dre { get; set; } = string.Empty;
+    public string? Dre { get; set; } = string.Empty;
+    public string? SiglaDre { get; set; } = string.Empty;
     public string Turma { get; set; } = string.Empty;
     public string UnidadeEducacional { get; set; } = string.Empty;
-    public string Modalidade { get; set; } = string.Empty;
+    public Modalidade Modalidade { get; set; }
     public string Proficiencia { get; set; } = string.Empty;
     public DateTime DataImpressao { get; set; } = DateTime.Now;
     public string Usuario { get; set; } = string.Empty;
-    public List<EstudanteDto> Estudantes { get; set; }
+    public List<EstudanteDto> Estudantes { get; set; } = [];
 }
 
 public class EstudanteDto
@@ -26,7 +29,7 @@ public class EstudanteDto
     public bool Pap { get; set; }
     public bool Aee { get; set; }
     public bool PossuiDeficiencia { get; set; }
-    public List<ColunaDto> Coluna { get; set; }
+    public List<ColunaDto> Coluna { get; set; } = [];
 }
 
 public class ColunaDto
@@ -35,7 +38,7 @@ public class ColunaDto
     public string DescricaoColuna { get; set; }
     public bool PeriodoBimestreAtivo { get; set; }
     public int? QuestaoSubrespostaId { get; set; }
-    public List<OpcaoRespostaDto> OpcaoResposta { get; set; }
+    public List<OpcaoRespostaDto> OpcaoResposta { get; set; } = [];
     public RespostaDto Resposta { get; set; }
 }
 

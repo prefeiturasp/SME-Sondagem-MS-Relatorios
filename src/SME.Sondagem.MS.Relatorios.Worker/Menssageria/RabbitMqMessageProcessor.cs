@@ -86,7 +86,7 @@ public class RabbitMqMessageProcessor : IRabbitMqMessageProcessor
                 var filaFinal = $"{ea.RoutingKey}.deadletter.final";
 
                 await _servicoMensageria.Publicar(mensagemRabbit, filaFinal,
-                    ExchangeRabbit.WorkerSondagemRelatorioDeadLetter,
+                    ExchangeRabbit.SgpDeadLetter,
                     "PublicarDeadLetter");
             }
             else

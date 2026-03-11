@@ -68,7 +68,7 @@ public class ServicoLog : IServicoLog
             };
 
             await channel.BasicPublishAsync(
-                ExchangeRabbit.Logs,
+                ExchangeRabbit.Sgp,
                 RotasRabbit.RotaLogs,
                 true,
                 props,
