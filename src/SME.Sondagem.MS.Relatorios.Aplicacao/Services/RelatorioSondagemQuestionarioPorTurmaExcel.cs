@@ -28,7 +28,7 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
     }
 
     public async Task<string> GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(
-        ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto)
+        ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao)
     {
         var dto = consultaSondagemPorTurmaDto.MapToEscritaEfTurmaSondagemCabecalhoExcelDto(
             consultaSondagemPorTurmaDto.AnoLetivo,
@@ -38,10 +38,10 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
             consultaSondagemPorTurmaDto?.Modalidade.ShortName(),
             consultaSondagemPorTurmaDto?.Usuario);
 
-        return await GerarExcelEF(dto, consultaSondagemPorTurmaDto.AnoLetivo, consultaSondagemPorTurmaDto.Modalidade);
+        return await GerarExcelEF(dto, consultaSondagemPorTurmaDto.AnoLetivo, consultaSondagemPorTurmaDto.Modalidade, codigoCorrelacao);
     }
 
-    private async Task<string> GerarExcelEF(EscritaEfTurmaSondagemCabecalhoExcelDto dto, int anoLetivo, Modalidade modalidade)
+    private async Task<string> GerarExcelEF(EscritaEfTurmaSondagemCabecalhoExcelDto dto, int anoLetivo, Modalidade modalidade, Guid codigoCorrelacao)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Sondagem");
@@ -78,7 +78,7 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
 
         stream.Position = 0;
 
-        return await EnviarExcelParaMinio(stream);
+        return await EnviarExcelParaMinio(stream, codigoCorrelacao);
     }
 
     private static void ConfigurarColunas(IXLWorksheet sheet, Modalidade modalidade)
@@ -409,14 +409,14 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         return new MemoryStream(Convert.FromBase64String(base64Logo));
     }
 
-    private async Task<string> EnviarExcelParaMinio(Stream stream)
+    private async Task<string> EnviarExcelParaMinio(Stream stream, Guid codigoCorrelacao)
     {
         using var ms = new MemoryStream();
         await stream.CopyToAsync(ms);
 
         var excelBytes = ms.ToArray();
 
-        string nomeArquivo = $"Relatorio/{Guid.NewGuid()}.xlsx";
+        string nomeArquivo = $"Relatorio/{codigoCorrelacao}.xlsx";
 
         await _servicoArmazenamentoMinio.UploadRelatorioAsync(
             excelBytes,
