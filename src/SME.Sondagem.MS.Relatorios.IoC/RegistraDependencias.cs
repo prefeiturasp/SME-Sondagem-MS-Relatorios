@@ -22,6 +22,11 @@ public static class RegistraDependencias
         ConfigurarRabbitmqLog(services, configuration);
 
         RegistrarRepositorios(services);
+
+        var context = new CustomAssemblyLoadContext();
+        var nomeBliblioteca = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? "libwkhtmltox.dll" : "libwkhtmltox.so";
+        context.LoadUnmanagedLibrary(Path.Combine(Directory.GetCurrentDirectory(), nomeBliblioteca));
+
         RegistrarServicos(services, configuration);
         RegistrarCasosDeUso(services);
         RegistrarIntegracoes(services);

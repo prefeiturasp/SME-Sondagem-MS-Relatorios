@@ -16,4 +16,16 @@
     <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.Infra\SME.Sondagem.MS.Relatorios.Infra.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<None Update="libwkhtmltox.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="libwkhtmltox.dylib">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="libwkhtmltox.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
 </Project>
