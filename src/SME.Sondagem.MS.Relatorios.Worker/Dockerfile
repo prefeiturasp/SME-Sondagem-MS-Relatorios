@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfontconfig1 \
     libfreetype6 \
     libpng16-16 \
-    libjpeg62-turbo \
+    libjpeg-turbo8 \
     zlib1g \
     libicu-dev \
     xfonts-75dpi \
@@ -18,7 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ENV LD_LIBRARY_PATH="/app:/usr/lib"
-
 USER $APP_UID
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
@@ -27,6 +26,8 @@ WORKDIR /src
 
 COPY ["src/SME.Sondagem.MS.Relatorios.Worker/SME.Sondagem.MS.Relatorios.Worker.csproj", "src/SME.Sondagem.MS.Relatorios.Worker/"]
 COPY ["src/SME.Sondagem.MS.Relatorios.HtmlPdf/SME.Sondagem.MS.Relatorios.HtmlPdf.csproj", "src/SME.Sondagem.MS.Relatorios.HtmlPdf/"]
+COPY ["src/SME.Sondagem.MS.Relatorios.Infra/SME.Sondagem.MS.Relatorios.Infra.csproj", "src/SME.Sondagem.MS.Relatorios.Infra/"]
+COPY ["src/SME.Sondagem.MS.Relatorios.IoC/SME.Sondagem.MS.Relatorios.IoC.csproj", "src/SME.Sondagem.MS.Relatorios.IoC/"]
 
 RUN dotnet restore "src/SME.Sondagem.MS.Relatorios.Worker/SME.Sondagem.MS.Relatorios.Worker.csproj"
 
@@ -43,7 +44,7 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 
 USER root
-RUN chmod +x /app/libwkhtmltox.so
+RUN if [ -f /app/libwkhtmltox.so ]; then chmod +x /app/libwkhtmltox.so; fi
 USER $APP_UID
 
 ENTRYPOINT ["dotnet", "SME.Sondagem.MS.Relatorios.Worker.dll"]
