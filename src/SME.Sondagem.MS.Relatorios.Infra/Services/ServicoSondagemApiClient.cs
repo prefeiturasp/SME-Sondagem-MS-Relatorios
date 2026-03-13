@@ -25,12 +25,29 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
         var resposta = await httpClient.GetAsync(urlFinal);
 
         if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
-            new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, new(), new());
+            new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, new(), new(), 0);
 
         var jsonString = await resposta.Content.ReadAsStringAsync();
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
         return JsonSerializer.Deserialize<RetornoApiSondagemQuestionarioDto>(jsonString, options)
-                 ?? new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, new(), new());
+                 ?? new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, new(), new(), 0);
+    }
+
+    public async Task<List<ParametroSondagemDto>?> ObterParametrosSondagemPorQuestionarioId(long questionoarioId, CancellationToken cancellationToken = default)
+    {
+        var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
+
+        string urlFinal = string.Format(ServicoSondagemConstantes.URL_PARAMETROS_SONDAGEM, questionoarioId);
+        var resposta = await httpClient.GetAsync(urlFinal);
+
+        if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
+            new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, new(), new(), 0);
+
+        var jsonString = await resposta.Content.ReadAsStringAsync();
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        return JsonSerializer.Deserialize<List<ParametroSondagemDto>>(jsonString, options)
+                 ?? [];
     }
 }

@@ -7,7 +7,8 @@ public record RetornoApiSondagemQuestionarioDto
     [property: JsonPropertyName("tituloTabelaRespostas")] string TituloTabelaRespostas,
     [property: JsonPropertyName("semestre")] string Semestre,
     [property: JsonPropertyName("estudantes")] List<Estudante> Estudantes,
-    [property: JsonPropertyName("legenda")] List<Legenda> Legendas
+    [property: JsonPropertyName("legenda")] List<Legenda> Legendas,
+    [property: JsonPropertyName("questionarioId")] int QuestionarioId
 );
 
 public record Estudante(

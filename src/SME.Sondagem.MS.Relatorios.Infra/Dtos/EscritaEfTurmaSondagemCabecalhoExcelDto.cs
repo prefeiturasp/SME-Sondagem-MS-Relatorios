@@ -16,4 +16,5 @@ public class EscritaEfTurmaSondagemCabecalhoExcelDto
     public string? DataImpressao { get; set; }
     public string? NomeUsuarioSolicitacao { get; set; }
     public List<EscritaEfTurmaSondagemCorpoExcelDto> CorpoRelatorio { get; set; }
+    public bool ExibeColunaLinguaPortuguesaSegundaLingua { get; set; }
 }
