@@ -7,7 +7,12 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Mappers;
 
 public static class ConsultaSondagemMapper
 {
-    public static ConsultaSondagemPorTurmaDto ParaDto(this RetornoApiSondagemQuestionarioDto source, EscolaDto escolaDto, TurmaDto turmaDto, DadosUsuarioDto dadosUsuarioDto, Modalidade modalidade)
+    public static ConsultaSondagemPorTurmaDto ParaDto(this RetornoApiSondagemQuestionarioDto source, 
+                                                      EscolaDto? escolaDto, 
+                                                      TurmaDto turmaDto, 
+                                                      DadosUsuarioDto dadosUsuarioDto,
+                                                      Modalidade modalidade,
+                                                      bool exibeColunaLinguaPortuguesaSegundaLingua)
     {
         if (source == null) return new ConsultaSondagemPorTurmaDto();
 
@@ -16,14 +21,15 @@ public static class ConsultaSondagemMapper
             AnoLetivo = turmaDto.AnoLetivo,
             Dre = escolaDto?.NomeDRE,
             SiglaDre = escolaDto?.SiglaDRE,
-            Turma = $"{modalidade.ShortName()} - {turmaDto.NomeTurma}",
-            UnidadeEducacional = $"{escolaDto?.SiglaTipoEscola} - {escolaDto?.NomeEscola}",
+            Turma = $"{modalidade.ShortName()} - {turmaDto.NomeTurma} - {turmaDto.Ano}° ANO",
+            UnidadeEducacional = $"{escolaDto?.CodigoEscola} - {escolaDto?.SiglaTipoEscola} - {escolaDto?.NomeEscola}",
             Proficiencia = source.TituloTabelaRespostas,
             Modalidade = modalidade,
             TituloTabelaRespostas = source.TituloTabelaRespostas,
             Semestre = source.Semestre,
             Usuario = $"{dadosUsuarioDto.Nome}",
-            Estudantes = source?.Estudantes?.Select(e => e.ParaDto())?.ToList()
+            Estudantes = source?.Estudantes?.Select(e => e.ParaDto())?.ToList(),
+            ExibeColunaLinguaPortuguesaSegundaLingua = exibeColunaLinguaPortuguesaSegundaLingua
         };
     }
 

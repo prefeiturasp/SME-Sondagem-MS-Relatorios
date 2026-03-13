@@ -23,11 +23,12 @@ public static class ConsultaSondagemPorTurmaMappingExtensions
             Dre = dre,
             Modalidade = modalidade,
             Proeficiencia = source.TituloTabelaRespostas,
-            DataImpressao = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
+            DataImpressao = DateTime.Now.ToString("dd/MM/yyyy"),
             NomeUsuarioSolicitacao = nomeUsuarioSolicitacao,
             CorpoRelatorio = source.Estudantes != null ? source.Estudantes?
                 .Select((estudante, index) => estudante.MapToEscritaEfTurmaSondagemCorpoExcelDto(index + 1))
-                .ToList() : new List<EscritaEfTurmaSondagemCorpoExcelDto>()
+                .ToList() : new List<EscritaEfTurmaSondagemCorpoExcelDto>(),
+            ExibeColunaLinguaPortuguesaSegundaLingua = source.ExibeColunaLinguaPortuguesaSegundaLingua
         };
 
         return dto;

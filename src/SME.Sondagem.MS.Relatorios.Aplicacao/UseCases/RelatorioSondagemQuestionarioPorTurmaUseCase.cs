@@ -57,7 +57,7 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao publicar mensagem no RabbitMQ");
+            _logger.LogError(ex, "ERRO AO GERAR O RELATORIO");
             return false;
         }
         
@@ -78,6 +78,7 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         var dreUe = tarefaDreUe.Result;
         var turma = tarefaTurma.Result;
         var usuario = tarefaUsuario.Result;
+        var parametroSondagem = await _servicoSondagemApiClient.ObterParametrosSondagemPorQuestionarioId(dadosRelatorio.QuestionarioId);
 
         usuario.CodigoRf = mensagemSondagemQuestionarioDto.UsuarioQueSolicitou;
 
@@ -88,8 +89,10 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
             return new ConsultaSondagemPorTurmaDto();
 
         var escola = dreUe.FirstOrDefault();
+        var parametroPossuiLinguaPortuguesaSegundaLingua =  parametroSondagem?.Where(x => x.Tipo == "PossuiLinguaPortuguesaSegundaLingua")?.FirstOrDefault()?.Valor;
+        var exibeColunaLinguaPortuguesaSegundaLingua = parametroPossuiLinguaPortuguesaSegundaLingua == "true";
 
-        return dadosRelatorio.ParaDto(escola, turma, usuario, (Modalidade)mensagemSondagemQuestionarioDto.FiltrosUsados.Modalidade);
+        return dadosRelatorio.ParaDto(escola, turma, usuario, (Modalidade)mensagemSondagemQuestionarioDto.FiltrosUsados.Modalidade, exibeColunaLinguaPortuguesaSegundaLingua);
     }
 
     private async Task NotificarUsuario(ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao)

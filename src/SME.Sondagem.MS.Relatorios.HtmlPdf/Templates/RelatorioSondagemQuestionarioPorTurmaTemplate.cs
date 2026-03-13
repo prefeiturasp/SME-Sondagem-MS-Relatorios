@@ -315,23 +315,25 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
                                         <img src=""{SmeConstants.Logo_PrefSP_Horizontal}"" alt=""Prefeitura de São Paulo"" />
                                       </div>
                                       <table class=""meta-table"">
-                                        <tr>
-                                          <td><strong>Ano letivo:</strong> {dto.AnoLetivo}</td>
-                                          <td><strong>DRE:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Dre)}</td>
-                                          <td><strong>Semestre:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Semestre)}</td>
-                                          <td><strong>Turma:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Turma)}</td>
-                                        </tr>
-                                        <tr>
-                                          <td colspan=""4""><strong>Unidade Educacional:</strong> {System.Web.HttpUtility.HtmlEncode(dto.UnidadeEducacional)}</td>
-                                        </tr>
-                                        <tr>
-                                          <td colspan=""2""><strong>Modalidade:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Modalidade)}</td>
-                                          <td><strong>Proficiência:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
-                                          <td><strong>Data de impressão:</strong> {dto.DataImpressao:dd/MM/yyyy}</td>
-                                        </tr>
-                                        <tr>
-                                          <td colspan=""4""><strong>Usuário:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Usuario)}</td>
-                                        </tr>
+                                            <tr>
+                                              <td><strong>Ano letivo:</strong> {dto.AnoLetivo}</td>
+                                              <td><strong>Modalidade:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Modalidade)}</td>
+                                              <td><strong>DRE:</strong> {System.Web.HttpUtility.HtmlEncode(dto.SiglaDre)}</td>
+                                          
+                                            </tr>
+                                            <tr>
+                                              <td colspan=""2""><strong>Unidade Educacional:</strong> {System.Web.HttpUtility.HtmlEncode(dto.UnidadeEducacional)}</td>
+                                              <td><strong>Turma:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Turma)}</td>
+                                            </tr>
+                                            <tr>
+                                          
+                                              <td colspan=""2""><strong>Proficiência:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
+                                              <td><strong>Semestre:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Semestre)}</td>
+                                            </tr>
+                                            <tr>
+                                              <td colspan=""2""><strong>Usuário:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Usuario)}</td>
+                                              <td><strong>Data de impressão:</strong> {dto.DataImpressao:dd/MM/yyyy}</td>
+                                            </tr>
                                       </table>
                   ");
 
@@ -358,7 +360,8 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         sb.AppendLine("    <colgroup>");
         sb.AppendLine("        <col style=\"width: 4.97%;\" />");
         sb.AppendLine("        <col style=\"width: 23.09%;\" />");
-        sb.AppendLine("        <col style=\"width: 10.12%;\" />");
+        if (model.ExibeColunaLinguaPortuguesaSegundaLingua)
+            sb.AppendLine("        <col style=\"width: 10.12%;\" />");
         sb.AppendLine("        <col style=\"width: 10.12%;\" />");
         sb.AppendLine("        <col style=\"width: 10.12%;\" />");
         for (int i = 0; i < nColunas; i++)
@@ -373,7 +376,10 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-nome\">Nome</th>");
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-raca\">Raça</th>");
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-genero\">Gênero</th>");
-        sb.AppendLine("            <th rowspan=\"2\" class=\"col-lp\">LP como 2° língua?</th>");
+
+        if (model.ExibeColunaLinguaPortuguesaSegundaLingua)
+            sb.AppendLine("            <th rowspan=\"2\" class=\"col-lp\">LP como 2° língua?</th>");
+
         sb.AppendLine($"            <th colspan=\"{nColunas}\">{model.TituloTabelaRespostas}</th>");
         sb.AppendLine("        </tr>");
         sb.AppendLine("        <tr>");
@@ -407,10 +413,14 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
                 sb.AppendLine($"            <td class=\"col-raca\">{estudante.Raca}</td>");
                 sb.AppendLine($"            <td class=\"col-genero\">{estudante.Genero}</td>");
 
-                string checkLp = estudante.LinguaPortuguesaSegundaLingua
-                    ? "<span class=\"checkbox-lp checked\">&#10003;</span>"
-                    : "<span class=\"checkbox-lp\"></span>";
-                sb.AppendLine($"            <td class=\"col-lp\">{checkLp}</td>");
+                if (model.ExibeColunaLinguaPortuguesaSegundaLingua)
+                {
+                    string checkLp = estudante.LinguaPortuguesaSegundaLingua
+                                  ? "<span class=\"checkbox-lp checked\">&#10003;</span>"
+                                  : "<span class=\"checkbox-lp\"></span>";
+                    sb.AppendLine($"            <td class=\"col-lp\">{checkLp}</td>");
+                }
+
 
                 foreach (var colCabecalho in colunas)
                 {

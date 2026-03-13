@@ -16,6 +16,7 @@ public class ConsultaSondagemPorTurmaDto
     public DateTime DataImpressao { get; set; } = DateTime.Now;
     public string Usuario { get; set; } = string.Empty;
     public List<EstudanteDto> Estudantes { get; set; } = [];
+    public bool ExibeColunaLinguaPortuguesaSegundaLingua { get; set; }
 }
 
 public class EstudanteDto

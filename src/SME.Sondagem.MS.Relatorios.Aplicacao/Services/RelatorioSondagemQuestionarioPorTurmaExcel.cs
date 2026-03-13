@@ -34,19 +34,19 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
             consultaSondagemPorTurmaDto.AnoLetivo,
             consultaSondagemPorTurmaDto.Turma,
             consultaSondagemPorTurmaDto.UnidadeEducacional,
-            consultaSondagemPorTurmaDto?.Dre,
+            consultaSondagemPorTurmaDto?.SiglaDre,
             consultaSondagemPorTurmaDto?.Modalidade.ShortName(),
             consultaSondagemPorTurmaDto?.Usuario);
 
-        return await GerarExcelEF(dto, consultaSondagemPorTurmaDto.AnoLetivo, consultaSondagemPorTurmaDto.Modalidade, codigoCorrelacao);
+        return await GerarExcelEF(dto, consultaSondagemPorTurmaDto.Modalidade, codigoCorrelacao, consultaSondagemPorTurmaDto);
     }
 
-    private async Task<string> GerarExcelEF(EscritaEfTurmaSondagemCabecalhoExcelDto dto, int anoLetivo, Modalidade modalidade, Guid codigoCorrelacao)
+    private async Task<string> GerarExcelEF(EscritaEfTurmaSondagemCabecalhoExcelDto dto, Modalidade modalidade, Guid codigoCorrelacao, ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Sondagem");
 
-        ConfigurarColunas(sheet, modalidade);
+        ConfigurarColunasExcel(sheet, consultaSondagemPorTurmaDto);
 
         var graficoCompleto = GerarDadosGrafico(dto, modalidade);
 
@@ -58,13 +58,13 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
             .MoveTo(sheet.Cell(1, 1))
             .WithSize(160, 60);
 
-        linha = EscreverInformacoesRelatorio(sheet, dto, anoLetivo);
+        linha = EscreverInformacoesCabecalhoRelatorio(sheet, dto);
 
         linha = EscreverTitulo(sheet, dto, linha);
 
-        linha = EscreverCabecalhoTabela(sheet, dto, modalidade, linha);
+        linha = EscreverCabecalhoTabela(sheet, dto, modalidade, linha, consultaSondagemPorTurmaDto);
 
-        linha = EscreverDados(sheet, dto, modalidade, linha);
+        linha = EscreverDadosExcel(sheet, dto, modalidade, linha, consultaSondagemPorTurmaDto);
 
         int linhaGrafico = linha + 6;
 
@@ -81,78 +81,34 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         return await EnviarExcelParaMinio(stream, codigoCorrelacao);
     }
 
-    private static void ConfigurarColunas(IXLWorksheet sheet, Modalidade modalidade)
+    private static void ConfigurarColunasExcel(IXLWorksheet sheet, ConsultaSondagemPorTurmaDto dados)
     {
-        sheet.Column(1).Width = 6;
-        sheet.Column(2).Width = 28;
-        sheet.Column(3).Width = 12;
-        sheet.Column(4).Width = 12;
-        sheet.Column(5).Width = 10;
-        sheet.Column(6).Width = 12;
-        sheet.Column(7).Width = 10;
-        sheet.Column(8).Width = 10;
+        sheet.Column(1).Width = 10; // Nº Chamada
+        sheet.Column(2).Width = 40; // Nome
+        sheet.Column(3).Width = 12; // Raça
+        sheet.Column(4).Width = 20; // Gênero
 
-        if (modalidade == Modalidade.Fundamental)
+        int indiceColunaAtual = 5;
+
+        if (dados.ExibeColunaLinguaPortuguesaSegundaLingua)
         {
-            sheet.Column(9).Width = 10;
-            sheet.Column(10).Width = 10;
+            sheet.Column(indiceColunaAtual).Width = 20;
+            indiceColunaAtual++;
+        }
+
+        var primeiroEstudante = dados.Estudantes.FirstOrDefault();
+
+        if (primeiroEstudante != null && primeiroEstudante.Coluna != null)
+        {
+            foreach (var coluna in primeiroEstudante.Coluna)
+            {
+                sheet.Column(indiceColunaAtual).Width = 30;
+                indiceColunaAtual++;
+            }
         }
     }
 
-    private static void ConfigurarCabecalho(IXLWorksheet sheet)
-    {
-        sheet.Row(1).Height = 20;
-        sheet.Row(2).Height = 20;
-        sheet.Row(3).Height = 20;
-    }
-
-    private static int EscreverInformacoesRelatorio(
-        IXLWorksheet sheet,
-        EscritaEfTurmaSondagemCabecalhoExcelDto dto,
-        int anoLetivo)
-    {
-        int linha = 4;
-
-        EscreverCelula(sheet, linha, 1,
-            $"Ano letivo: {anoLetivo}   DRE: {dto.Dre}   Semestre: {dto.Semestre}");
-        sheet.Range(linha, 1, linha, 7).Merge();
-
-        EscreverCelula(sheet, linha, 8, $"Turma: {dto.Turma}");
-        sheet.Range(linha, 8, linha, 10).Merge();
-        AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
-        linha++;
-
-        EscreverCelula(sheet, linha, 1, $"Unidade Educacional: {dto.Ue}");
-        sheet.Range(linha, 1, linha, 10).Merge();
-        AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
-        linha++;
-
-        EscreverCelula(sheet, linha, 1, $"Modalidade: {dto.Modalidade}");
-        sheet.Range(linha, 1, linha, 3).Merge();
-
-        EscreverCelula(sheet, linha, 4, $"Proficiência: {dto.Proeficiencia}");
-        sheet.Range(linha, 4, linha, 6).Merge();
-
-        EscreverCelula(sheet, linha, 7, $"Data de impressão: {dto.DataImpressao}");
-        sheet.Range(linha, 7, linha, 10).Merge();
-
-        AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
-        linha++;
-
-        EscreverCelula(sheet, linha, 1, $"Usuário: {dto.NomeUsuarioSolicitacao}");
-        sheet.Range(linha, 1, linha, 10).Merge();
-        AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
-        linha++;
-
-        linha++;
-
-        return linha;
-    }
-
-    private static int EscreverTitulo(
-        IXLWorksheet sheet,
-        EscritaEfTurmaSondagemCabecalhoExcelDto dto,
-        int linha)
+    private static int EscreverTitulo(IXLWorksheet sheet, EscritaEfTurmaSondagemCabecalhoExcelDto dto, int linha)
     {
         var titulo = sheet.Cell(linha, 1);
         titulo.Value = "Relatório da Sondagem";
@@ -175,84 +131,80 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         return linha;
     }
 
-    private static int EscreverCabecalhoTabela(
-        IXLWorksheet sheet,
-        EscritaEfTurmaSondagemCabecalhoExcelDto dto,
-        Modalidade modalidade,
-        int linha)
+    private static int EscreverCabecalhoTabela(IXLWorksheet sheet, EscritaEfTurmaSondagemCabecalhoExcelDto dto, Modalidade modalidade, int linha, ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto)
     {
-        var grupo = modalidade == Modalidade.EJA
-            ? sheet.Range(linha, 6, linha, 8)
-            : sheet.Range(linha, 6, linha, 10);
+        var headers = ObterHeaders(consultaSondagemPorTurmaDto);
 
-        grupo.Merge();
-        grupo.Value = dto.Proeficiencia;
-        grupo.Style.Font.Bold = true;
-        grupo.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-        grupo.Style.Fill.BackgroundColor = XLColor.LightGray;
+        int colunaInicialSondagem = consultaSondagemPorTurmaDto.ExibeColunaLinguaPortuguesaSegundaLingua ? 4 : 5;
+        int colunaFinalSondagem = headers.Max(h => h.Coluna);
 
-        AplicarBordaExterna(grupo);
+        if (colunaFinalSondagem >= colunaInicialSondagem)
+        {
+            var grupo = sheet.Range(linha, colunaInicialSondagem, linha, colunaFinalSondagem);
+            grupo.Merge();
+            grupo.Value = dto.Proeficiencia;
+            grupo.Style.Font.Bold = true;
+            grupo.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            grupo.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            grupo.Style.Fill.BackgroundColor = XLColor.LightGray;
+
+            AplicarBordaExterna(grupo);
+        }
 
         linha++;
 
-        var headers = ObterHeaders(modalidade);
-
         foreach (var (col, texto) in headers)
+        {
             EstilizarHeader(sheet.Cell(linha, col), texto);
+        }
 
         sheet.Row(linha).Height = 40;
 
         return linha + 1;
     }
 
-    private static int EscreverDados(
-        IXLWorksheet sheet,
-        EscritaEfTurmaSondagemCabecalhoExcelDto dto,
-        Modalidade modalidade,
-        int linha)
+    private static int EscreverDadosExcel(IXLWorksheet sheet, EscritaEfTurmaSondagemCabecalhoExcelDto dto, Modalidade modalidade, int linha, ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto)
     {
         foreach (var item in dto.CorpoRelatorio)
         {
             sheet.Row(linha).Height = 45;
 
-            var corFundo = ConverterCor(item.Cor);
+            // 1. Campos Fixos
+            EstilarEPreencher(sheet.Cell(linha, 1), item.Numero);
+            EstilarEPreencher(sheet.Cell(linha, 2), item.Nome);
+            EstilarEPreencher(sheet.Cell(linha, 3), item.Raca);
+            EstilarEPreencher(sheet.Cell(linha, 4), item.Genero);
 
-            var cNum = sheet.Cell(linha, 1);
-            cNum.Value = item.Numero;
-            EstilarCelulaDados(cNum);
+            int colunaAtual = 5;
 
-            var cNome = sheet.Cell(linha, 2);
-            cNome.Value = item.Nome;
-            EstilarCelulaDados(cNome);
-
-            var cRaca = sheet.Cell(linha, 3);
-            cRaca.Value = item.Raca;
-            EstilarCelulaDados(cRaca);
-
-            var cGenero = sheet.Cell(linha, 4);
-            cGenero.Value = item.Genero;
-            EstilarCelulaDados(cGenero);
-
-            var cLp = sheet.Cell(linha, 5);
-            cLp.Value = item.LpComoLinguaPrincipal == "Sim" ? "☑" : "☐";
-            cLp.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            cLp.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            cLp.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            cLp.Style.Font.FontSize = 14;
-
-            if (modalidade == Modalidade.EJA)
+            if (consultaSondagemPorTurmaDto.ExibeColunaLinguaPortuguesaSegundaLingua)
             {
-                PreencherCelulaSondagem(sheet.Cell(linha, 6), item.SondagemInicial, corFundo);
-                PreencherCelulaSondagem(sheet.Cell(linha, 7), item.PrimeiroBimestre, corFundo);
-                PreencherCelulaSondagem(sheet.Cell(linha, 8), item.SegundoBimestre, corFundo);
+                var cLp = sheet.Cell(linha, colunaAtual);
+                cLp.Value = item.LpComoLinguaPrincipal == "Sim" ? "☑" : "☐";
+                cLp.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                cLp.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                cLp.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                cLp.Style.Font.FontSize = 14;
+                colunaAtual++;
             }
-            else
+
+            var estudanteSondagem = consultaSondagemPorTurmaDto.Estudantes
+                .FirstOrDefault(e => e.NomeRelatorio == item.Nome);
+
+            if (estudanteSondagem != null)
             {
-                PreencherCelulaSondagem(sheet.Cell(linha, 6), item.SondagemInicial, corFundo);
-                PreencherCelulaSondagem(sheet.Cell(linha, 7), item.PrimeiroBimestre, corFundo);
-                PreencherCelulaSondagem(sheet.Cell(linha, 8), item.SegundoBimestre, corFundo);
-                PreencherCelulaSondagem(sheet.Cell(linha, 9), item.TerceiroBimestre, corFundo);
-                PreencherCelulaSondagem(sheet.Cell(linha, 10), item.QuartoBimestre, corFundo);
+                foreach (var colunaSondagem in estudanteSondagem.Coluna)
+                {
+                    var resposta = colunaSondagem.OpcaoResposta
+                        .FirstOrDefault(o => o.Id == colunaSondagem.Resposta?.OpcaoRespostaId);
+
+                    var corHex = !string.IsNullOrEmpty(resposta?.CorFundo) ? resposta.CorFundo : item.Cor;
+                    var corFundo = ConverterCor(corHex);
+
+                    PreencherCelulaSondagem(sheet.Cell(linha, colunaAtual), resposta?.DescricaoOpcaoResposta ?? "Vazio", corFundo);
+
+                    colunaAtual++;
+                }
             }
 
             linha++;
@@ -261,36 +213,40 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         return linha;
     }
 
-    private static (int Coluna, string Texto)[] ObterHeaders(Modalidade modalidade)
+    private static void EstilarEPreencher(IXLCell celula, object valor)
     {
-        if (modalidade == Modalidade.EJA)
+        celula.Value = valor?.ToString();
+        EstilarCelulaDados(celula);
+    }
+
+    private static (int Coluna, string Texto)[] ObterHeaders(ConsultaSondagemPorTurmaDto dados)
+    {
+        var headers = new List<(int Coluna, string Texto)>();
+
+        headers.Add((1, "Nº"));
+        headers.Add((2, "Nome"));
+        headers.Add((3, "Raça"));
+        headers.Add((4, "Gênero"));
+
+        int indiceAtual = 5;
+
+        if (dados.ExibeColunaLinguaPortuguesaSegundaLingua)
         {
-            return new[]
-            {
-                (1,"Nº"),
-                (2,"Nome"),
-                (3,"Raça"),
-                (4,"Gênero"),
-                (5,"LP como 2ª língua?"),
-                (6,"Sondagem inicial"),
-                (7,"1º bim"),
-                (8,"2º bim"),
-            };
+            headers.Add((indiceAtual, "LP como 2ª língua?"));
+            indiceAtual++;
         }
 
-        return new[]
+        var primeiroEstudante = dados.Estudantes.FirstOrDefault();
+        if (primeiroEstudante != null)
         {
-            (1,"Nº"),
-            (2,"Nome"),
-            (3,"Raça"),
-            (4,"Gênero"),
-            (5,"LP como 2ª língua?"),
-            (6,"Sondagem inicial"),
-            (7,"1º bim"),
-            (8,"2º bim"),
-            (9,"3º bim"),
-            (10,"4º bim"),
-        };
+            foreach (var coluna in primeiroEstudante.Coluna)
+            {
+                headers.Add((indiceAtual, coluna.DescricaoColuna));
+                indiceAtual++;
+            }
+        }
+
+        return headers.ToArray();
     }
 
     private List<GraficoDto> GerarDadosGrafico(
@@ -665,5 +621,59 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         }
 
         worksheetPart.Worksheet.Save();
+    }
+
+    private static void ConfigurarCabecalho(IXLWorksheet sheet)
+    {
+        sheet.Row(1).Height = 20;
+        sheet.Row(2).Height = 20;
+        sheet.Row(3).Height = 20;
+    }
+
+    private static int EscreverInformacoesCabecalhoRelatorio(IXLWorksheet sheet, EscritaEfTurmaSondagemCabecalhoExcelDto dto)
+    {
+        int linha = 4;
+
+        EscreverCelula(sheet, linha, 1, $"Ano letivo: {dto.AnoLetivo}");
+        sheet.Range(linha, 1, linha, 3).Merge();
+
+        EscreverCelula(sheet, linha, 4, $"Modalidade: {dto.Modalidade}");
+        sheet.Range(linha, 4, linha, 6).Merge();
+
+        EscreverCelula(sheet, linha, 7, $"Dre: {dto.Dre}");
+        sheet.Range(linha, 7, linha, 10).Merge();
+
+        AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
+        linha++;
+
+        EscreverCelula(sheet, linha, 1, $"Unidade Educacional: {dto.Ue}");
+        sheet.Range(linha, 1, linha, 6).Merge();
+
+        EscreverCelula(sheet, linha, 7, $"Turma: {dto.Turma}");
+        sheet.Range(linha, 7, linha, 10).Merge();
+
+        AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
+        linha++;
+
+        EscreverCelula(sheet, linha, 1, $"Proficiência: {dto.Proeficiencia}");
+        sheet.Range(linha, 1, linha, 5).Merge();
+
+        EscreverCelula(sheet, linha, 6, $"Bimestre: {dto.Semestre}");
+        sheet.Range(linha, 6, linha, 10).Merge();
+
+        AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
+        linha++;
+
+        EscreverCelula(sheet, linha, 1, $"Usuário: {dto.NomeUsuarioSolicitacao}");
+        sheet.Range(linha, 1, linha, 5).Merge();
+
+        EscreverCelula(sheet, linha, 6, $"Data de impressão: {dto.DataImpressao}");
+        sheet.Range(linha, 6, linha, 10).Merge();
+
+        AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
+        linha++;
+        linha++;
+
+        return linha;
     }
 }
