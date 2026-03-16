@@ -92,7 +92,10 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         var parametroPossuiLinguaPortuguesaSegundaLingua =  parametroSondagem?.Where(x => x.Tipo == "PossuiLinguaPortuguesaSegundaLingua")?.FirstOrDefault()?.Valor;
         var exibeColunaLinguaPortuguesaSegundaLingua = parametroPossuiLinguaPortuguesaSegundaLingua == "true";
 
-        return dadosRelatorio.ParaDto(escola, turma, usuario, (Modalidade)mensagemSondagemQuestionarioDto.FiltrosUsados.Modalidade, exibeColunaLinguaPortuguesaSegundaLingua);
+        return dadosRelatorio.ParaDto(escola, turma, usuario, 
+                                        (Modalidade)mensagemSondagemQuestionarioDto.FiltrosUsados.Modalidade, 
+                                        exibeColunaLinguaPortuguesaSegundaLingua, mensagemSondagemQuestionarioDto.FiltrosUsados.BimestreId,
+                                        mensagemSondagemQuestionarioDto.FiltrosUsados.SemestreId);
     }
 
     private async Task NotificarUsuario(ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao)

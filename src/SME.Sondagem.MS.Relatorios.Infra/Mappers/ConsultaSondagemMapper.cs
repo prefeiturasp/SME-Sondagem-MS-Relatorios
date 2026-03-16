@@ -12,7 +12,9 @@ public static class ConsultaSondagemMapper
                                                       TurmaDto turmaDto, 
                                                       DadosUsuarioDto dadosUsuarioDto,
                                                       Modalidade modalidade,
-                                                      bool exibeColunaLinguaPortuguesaSegundaLingua)
+                                                      bool exibeColunaLinguaPortuguesaSegundaLingua,
+                                                      int? bimestreId,
+                                                      int? semestreId)
     {
         if (source == null) return new ConsultaSondagemPorTurmaDto();
 
@@ -26,8 +28,9 @@ public static class ConsultaSondagemMapper
             Proficiencia = source.TituloTabelaRespostas,
             Modalidade = modalidade,
             TituloTabelaRespostas = source.TituloTabelaRespostas,
-            Semestre = source.Semestre,
-            Usuario = $"{dadosUsuarioDto.Nome}",
+            Semestre = semestreId.ToString(),
+            Bimestre = bimestreId?.ToString(),
+            Usuario = $"{dadosUsuarioDto.Nome} ({dadosUsuarioDto.CodigoRf})",
             Estudantes = source?.Estudantes?.Select(e => e.ParaDto())?.ToList(),
             ExibeColunaLinguaPortuguesaSegundaLingua = exibeColunaLinguaPortuguesaSegundaLingua
         };

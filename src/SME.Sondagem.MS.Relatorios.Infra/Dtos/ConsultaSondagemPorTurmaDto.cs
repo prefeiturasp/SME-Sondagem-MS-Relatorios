@@ -6,6 +6,7 @@ public class ConsultaSondagemPorTurmaDto
 {
     public string TituloTabelaRespostas { get; set; } = string.Empty;
     public string Semestre { get; set; } = string.Empty;
+    public string Bimestre { get; set; } = string.Empty;
     public int AnoLetivo { get; set; }
     public string? Dre { get; set; } = string.Empty;
     public string? SiglaDre { get; set; } = string.Empty;
