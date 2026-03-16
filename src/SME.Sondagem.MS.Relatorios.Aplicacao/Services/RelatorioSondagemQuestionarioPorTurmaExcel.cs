@@ -633,6 +633,7 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
     private static int EscreverInformacoesCabecalhoRelatorio(IXLWorksheet sheet, EscritaEfTurmaSondagemCabecalhoExcelDto dto)
     {
         int linha = 4;
+        var semestreBimestre = ObterFiltroSemestreOuBimestre(dto.BimestreId, dto.SemestreId, dto.Modalidade);
 
         EscreverCelula(sheet, linha, 1, $"Ano letivo: {dto.AnoLetivo}");
         sheet.Range(linha, 1, linha, 3).Merge();
@@ -658,7 +659,7 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         EscreverCelula(sheet, linha, 1, $"Proficiência: {dto.Proeficiencia}");
         sheet.Range(linha, 1, linha, 5).Merge();
 
-        EscreverCelula(sheet, linha, 6, $"Bimestre: {dto.Semestre}");
+        EscreverCelula(sheet, linha, 6, $"{semestreBimestre.NomeFiltro}: {semestreBimestre.ValorFiltro}");
         sheet.Range(linha, 6, linha, 10).Merge();
 
         AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
@@ -675,5 +676,32 @@ public class RelatorioSondagemQuestionarioPorTurmaExcel : IRelatorioSondagemQues
         linha++;
 
         return linha;
+    }
+
+    private static (string NomeFiltro, string ValorFiltro) ObterFiltroSemestreOuBimestre(string bimestre, string semestre, string modalidade)
+    {
+        var nomeFiltro = "";
+        var valorFiltro = "Todos";
+
+        if (modalidade == "3")
+        {
+            nomeFiltro = "Semestre";
+
+            if (!string.IsNullOrEmpty(semestre) && semestre != "0" && Enum.TryParse(semestre, out Semestre semestreEnum))
+            {
+                valorFiltro = semestreEnum.ToString();
+            }
+        }
+        else
+        {
+            nomeFiltro = "Bimestre";
+
+            if (!string.IsNullOrEmpty(bimestre) && bimestre != "0" && Enum.TryParse(bimestre, out Bimestre bimestreEnum))
+            {
+                valorFiltro = bimestreEnum.ToString();
+            }
+        }
+
+        return (nomeFiltro, valorFiltro);
     }
 }

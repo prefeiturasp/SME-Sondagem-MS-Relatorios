@@ -17,7 +17,8 @@ public static class ConsultaSondagemPorTurmaMappingExtensions
         var dto = new EscritaEfTurmaSondagemCabecalhoExcelDto
         {
             AnoLetivo = anoLetivo,
-            Semestre = source.Semestre,
+            SemestreId = source.Semestre,
+            BimestreId = source.Bimestre,
             Turma = turma,
             Ue = ue,
             Dre = dre,
