@@ -7,7 +7,8 @@ public class EscritaEfTurmaSondagemCabecalhoExcelDto
         CorpoRelatorio = new List<EscritaEfTurmaSondagemCorpoExcelDto>();
     }
     public int AnoLetivo { get; set; }
-    public string? Semestre { get; set; }
+    public string? SemestreId { get; set; }
+    public string? BimestreId { get; set; }
     public string? Turma { get; set; }
     public string? Ue { get; set; }
     public string? Dre { get; set; }

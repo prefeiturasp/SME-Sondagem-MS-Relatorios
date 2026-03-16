@@ -1,4 +1,5 @@
-﻿using SME.Sondagem.MS.Relatorios.Infra.Constantes;
+﻿using SME.Sondagem.MS.Relatorios.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using System.Globalization;
 using System.Text;
@@ -309,6 +310,7 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
     private static string GerarCabecalho(ConsultaSondagemPorTurmaDto dto)
     {
         var sb = new StringBuilder();
+        var semestreBimestre = ObterFiltroSemestreOuBimestre(dto.Bimestre, dto.Semestre, dto.Modalidade);
 
         sb.Append($@"
                         <div class=""header-logo"">
@@ -328,7 +330,7 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
                                             <tr>
                                           
                                               <td colspan=""2""><strong>Proficiência:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
-                                              <td><strong>Semestre:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Semestre)}</td>
+                                              <td><strong>{semestreBimestre.NomeFiltro}:</strong> {System.Web.HttpUtility.HtmlEncode(semestreBimestre.ValorFiltro)}</td>
                                             </tr>
                                             <tr>
                                               <td colspan=""2""><strong>Usuário:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Usuario)}</td>
@@ -338,6 +340,35 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
                   ");
 
         return sb.ToString();
+    }
+
+
+
+    private static (string NomeFiltro, string ValorFiltro) ObterFiltroSemestreOuBimestre(string bimestre, string semestre, Dominio.Enums.Modalidade modalidade)
+    {
+        var nomeFiltro = "";
+        var valorFiltro = "Todos";
+
+        if (modalidade == Modalidade.EJA)
+        {
+            nomeFiltro = "Semestre";
+
+            if (!string.IsNullOrEmpty(semestre) && semestre != "0" && Enum.TryParse(semestre, out Semestre semestreEnum))
+            {
+                valorFiltro = semestreEnum.ToString();
+            }
+        }
+        else
+        {
+            nomeFiltro = "Bimestre";
+
+            if (!string.IsNullOrEmpty(bimestre) && bimestre != "0" && Enum.TryParse(bimestre, out Bimestre bimestreEnum))
+            {
+                valorFiltro = bimestreEnum.ToString();
+            }
+        }
+
+        return (nomeFiltro, valorFiltro);
     }
 
     public static string GerarTemplate(ConsultaSondagemPorTurmaDto model)
