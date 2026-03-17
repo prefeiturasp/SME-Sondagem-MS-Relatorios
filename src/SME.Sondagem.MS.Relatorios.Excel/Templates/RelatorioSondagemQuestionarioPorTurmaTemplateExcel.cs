@@ -7,6 +7,7 @@ using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Excel.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
+using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 using Index = DocumentFormat.OpenXml.Drawing.Charts.Index;
 using NumberingFormat = DocumentFormat.OpenXml.Drawing.Charts.NumberingFormat;
 using OrientationValues = DocumentFormat.OpenXml.Drawing.Charts.OrientationValues;
@@ -18,7 +19,11 @@ namespace SME.Sondagem.MS.Relatorios.Excel.Templates;
 
 public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemplateBase, IRelatorioSondagemQuestionarioPorTurmaTemplateExcel
 {
-    public Stream GerarExcelEF(RelatorioSondagemPorTurmaDto relatorioSondagemPorTurmaDto)
+    public RelatorioSondagemQuestionarioPorTurmaTemplateExcel(IServicoArmazenamentoMinio servicoArmazenamentoMinio) : base(servicoArmazenamentoMinio)
+    {
+    }
+
+    public async Task<string> GerarExcelEF(RelatorioSondagemPorTurmaDto relatorioSondagemPorTurmaDto)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Sondagem");
@@ -49,12 +54,12 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
 
         stream.Position = 0;
 
-        //var graficoCompleto = GerarDadosGrafico(relatorioSondagemPorTurmaDto, relatorioSondagemPorTurmaDto.Modalidade);
-        //InjetarGraficoOpenXml(stream, graficoCompleto, relatorioSondagemPorTurmaDto.Proficiencia, linhaGrafico);
+        var graficoCompleto = GerarDadosGrafico(relatorioSondagemPorTurmaDto);
+        InjetarGraficoOpenXml(stream, graficoCompleto, relatorioSondagemPorTurmaDto.Proficiencia, linhaGrafico);
 
         stream.Position = 0;
 
-        return stream;
+        return await EnviarExcelParaMinio(stream, relatorioSondagemPorTurmaDto.CodigoCorrelacao);
     }
 
     private static void ConfigurarColunasExcel(IXLWorksheet sheet, RelatorioSondagemPorTurmaDto dados)
@@ -151,7 +156,8 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
                     var resposta = colunaSondagem.OpcaoResposta
                         .FirstOrDefault(o => o.Id == colunaSondagem.Resposta?.OpcaoRespostaId);
 
-                    var corFundo = ConverterCor(resposta.CorFundo);
+                    var corHex = !string.IsNullOrEmpty(resposta?.CorFundo) ? resposta.CorFundo : "#333333";
+                    var corFundo = ConverterCor(corHex);
 
                     PreencherCelulaSondagem(sheet.Cell(linha, colunaAtual), resposta?.DescricaoOpcaoResposta ?? "Vazio", corFundo);
 
@@ -193,49 +199,6 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         }
 
         return headers.ToArray();
-    }
-
-    //private static List<GraficoDto> GerarDadosGrafico(RelatorioSondagemPorTurmaDto dto, Modalidade modalidade)
-    //{
-    //    var seletores = new List<Func<RelatorioSondagemPorTurmaDto, string>>
-    //    {
-    //        x => x.SondagemInicial,
-    //        x => x.PrimeiroBimestre,
-    //        x => x.SegundoBimestre
-    //    };
-
-    //    if (modalidade == Modalidade.Fundamental)
-    //    {
-    //        seletores.Add(x => x.TerceiroBimestre);
-    //        seletores.Add(x => x.QuartoBimestre);
-    //    }
-
-    //    return seletores
-    //        .SelectMany(s => ContarOcorrencias(dto.CorpoRelatorio, s))
-    //        .GroupBy(x => x.Descricao)
-    //        .Select(g => new GraficoDto
-    //        {
-    //            Descricao = g.Key,
-    //            Quantidade = g.Sum(x => x.Quantidade),
-    //            Cor = g.First().Cor
-    //        })
-    //        .ToList();
-    //}
-
-    private static List<GraficoDto> ContarOcorrencias(
-        List<RelatorioSondagemPorTurmaDto> corpo,
-        Func<RelatorioSondagemPorTurmaDto, string> seletor)
-    {
-        return corpo
-            .Where(x => !string.IsNullOrEmpty(seletor(x)))
-            .GroupBy(seletor)
-            .Select(g => new GraficoDto
-            {
-                Descricao = g.Key,
-                Quantidade = g.Count(),
-                //Cor = g.First().Cor
-            })
-            .ToList();
     }
 
     private static void InjetarGraficoOpenXml(Stream stream, List<GraficoDto> dados, string tituloProficiencia, int linhaGrafico)
@@ -491,7 +454,7 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         EscreverCelula(sheet, linha, 4, $"Modalidade: {relatorioSondagemPorTurmaDto.Modalidade}");
         sheet.Range(linha, 4, linha, 6).Merge();
 
-        EscreverCelula(sheet, linha, 7, $"Dre: {relatorioSondagemPorTurmaDto.Dre}");
+        EscreverCelula(sheet, linha, 7, $"Dre: {relatorioSondagemPorTurmaDto.SiglaDre}");
         sheet.Range(linha, 7, linha, 10).Merge();
 
         AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));

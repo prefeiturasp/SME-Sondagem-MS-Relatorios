@@ -1,10 +1,19 @@
 ﻿using ClosedXML.Excel;
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Excel.Templates;
 
 public abstract class RelatorioTemplateBase
 {
+    private readonly IServicoArmazenamentoMinio _servicoArmazenamentoMinio;
+
+    protected RelatorioTemplateBase(IServicoArmazenamentoMinio servicoArmazenamentoMinio)
+    {
+        _servicoArmazenamentoMinio = servicoArmazenamentoMinio;
+    }
+
     protected static int EscreverTitulo(IXLWorksheet sheet, string tituloRelatorio, string? subTituloRelatorio, int linha)
     {
         var titulo = sheet.Cell(linha, 1);
@@ -113,4 +122,48 @@ public abstract class RelatorioTemplateBase
         sheet.Row(3).Height = 20;
     }
 
+    protected static List<GraficoDto> GerarDadosGrafico(RelatorioSondagemPorTurmaDto dto)
+    {
+        var colunasProcessadas = dto.Estudantes
+            .SelectMany(e => e.Coluna)
+            .Select(c => {
+                var opcao = c.OpcaoResposta?.FirstOrDefault(o => o.Id == c.Resposta?.OpcaoRespostaId);
+
+                return new
+                {
+                    Descricao = opcao?.DescricaoOpcaoResposta ?? "Sem Preenchimento",
+                    Cor = opcao?.CorFundo ?? "#F2F2F2",
+                    Ordem = opcao?.Ordem ?? 999
+                };
+            });
+
+        return colunasProcessadas
+            .GroupBy(x => new { x.Descricao, x.Cor, x.Ordem })
+            .Select(g => new GraficoDto
+            {
+                Descricao = g.Key.Descricao,
+                Quantidade = g.Count(),
+                Cor = g.Key.Cor
+            })
+            .OrderBy(x => x.Descricao == "Sem Preenchimento")
+            .ThenBy(x => x.Descricao)
+            .ToList();
+    }
+
+    protected async Task<string> EnviarExcelParaMinio(MemoryStream stream, Guid codigoCorrelacao)
+    {
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+
+        var excelBytes = ms.ToArray();
+
+        string nomeArquivo = $"Relatorio/{codigoCorrelacao}.xlsx";
+
+        await _servicoArmazenamentoMinio.UploadRelatorioAsync(
+            excelBytes,
+            nomeArquivo,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        return await _servicoArmazenamentoMinio.GerarLinkDownloadAsync(nomeArquivo);
+    }
 }

@@ -4,5 +4,5 @@ namespace SME.Sondagem.MS.Relatorios.Excel.Interfaces;
 
 public interface IRelatorioSondagemQuestionarioPorTurmaTemplateExcel
 {
-    Stream GerarExcelEF(RelatorioSondagemPorTurmaDto relatorioSondagemPorTurmaDto);
+    Task<string> GerarExcelEF(RelatorioSondagemPorTurmaDto relatorioSondagemPorTurmaDto);
 }
