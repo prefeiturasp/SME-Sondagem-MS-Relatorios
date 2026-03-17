@@ -1,11 +1,12 @@
 ﻿using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
 
 namespace SME.Sondagem.MS.Relatorios.Infra.Extensions;
 
 public static class ConsultaSondagemPorTurmaMappingExtensions
 {
     public static EscritaEfTurmaSondagemCabecalhoExcelDto MapToEscritaEfTurmaSondagemCabecalhoExcelDto(
-        this ConsultaSondagemPorTurmaDto source,
+        this RelatorioSondagemPorTurmaDto source,
         int anoLetivo,
         string turma,
         string ue,
@@ -68,7 +69,8 @@ public static class ConsultaSondagemPorTurmaMappingExtensions
 
         return dto;
     }
-    private static string ObterDescricaoOpcaoResposta(ColunaDto coluna)
+
+    private static string ObterDescricaoOpcaoResposta(ColunaQuestionarioDto coluna)
     {
         if (coluna?.Resposta?.OpcaoRespostaId == null || coluna.Resposta.OpcaoRespostaId == 0)
             return "Vazio";

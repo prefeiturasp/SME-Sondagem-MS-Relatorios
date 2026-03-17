@@ -5,6 +5,6 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 public interface IServicoSondagemApiClient
 {
-    Task<RetornoApiSondagemQuestionarioDto> ObterDadosQuestionarioAsync(FiltroRelatorioSondagemQuestionarioPorTurmaDto filtroRelatorio);
+    Task<RetornoApiSondagemQuestionarioDto> ObterDadosQuestionarioAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
     Task<List<ParametroSondagemDto>?> ObterParametrosSondagemPorQuestionarioId(long questionoarioId, CancellationToken cancellationToken = default);
 }

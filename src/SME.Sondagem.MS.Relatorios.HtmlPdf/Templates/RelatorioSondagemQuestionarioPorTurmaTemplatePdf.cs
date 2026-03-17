@@ -1,14 +1,16 @@
-﻿using SME.Sondagem.MS.Relatorios.Dominio.Enums;
+﻿using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
+using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using System.Globalization;
 using System.Text;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
-public static class RelatorioSondagemQuestionarioPorTurmaTemplate
+public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondagemQuestionarioPorTurmaTemplatePdf
 {
-    public static string GerarHtml(ConsultaSondagemPorTurmaDto dto)
+    public string GerarHtml(RelatorioSondagemPorTurmaDto dto)
     {
         var html = new StringBuilder();
 
@@ -240,7 +242,7 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         return html.ToString();
     }
 
-    private static GraficoSondagemDto ConsolidarGrafico(ConsultaSondagemPorTurmaDto dto)
+    private static GraficoSondagemDto ConsolidarGrafico(RelatorioSondagemPorTurmaDto dto)
     {
         var colunas = dto.Estudantes?
         .FirstOrDefault()?.Coluna?.ToList();
@@ -307,10 +309,10 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         return grafico;
     }
 
-    private static string GerarCabecalho(ConsultaSondagemPorTurmaDto dto)
+    private static string GerarCabecalho(RelatorioSondagemPorTurmaDto dto)
     {
         var sb = new StringBuilder();
-        var semestreBimestre = ObterFiltroSemestreOuBimestre(dto.Bimestre, dto.Semestre, dto.Modalidade);
+        var semestreBimestre = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(dto.Bimestre, dto.Semestre, dto.Modalidade);
 
         sb.Append($@"
                         <div class=""header-logo"">
@@ -342,40 +344,11 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         return sb.ToString();
     }
 
-
-
-    private static (string NomeFiltro, string ValorFiltro) ObterFiltroSemestreOuBimestre(string bimestre, string semestre, Dominio.Enums.Modalidade modalidade)
-    {
-        var nomeFiltro = "";
-        var valorFiltro = "Todos";
-
-        if (modalidade == Modalidade.EJA)
-        {
-            nomeFiltro = "Semestre";
-
-            if (!string.IsNullOrEmpty(semestre) && semestre != "0" && Enum.TryParse(semestre, out Semestre semestreEnum))
-            {
-                valorFiltro = semestreEnum.ToString();
-            }
-        }
-        else
-        {
-            nomeFiltro = "Bimestre";
-
-            if (!string.IsNullOrEmpty(bimestre) && bimestre != "0" && Enum.TryParse(bimestre, out Bimestre bimestreEnum))
-            {
-                valorFiltro = bimestreEnum.ToString();
-            }
-        }
-
-        return (nomeFiltro, valorFiltro);
-    }
-
-    public static string GerarTemplate(ConsultaSondagemPorTurmaDto model)
+    public static string GerarTemplate(RelatorioSondagemPorTurmaDto model)
     {
 
         var colunas = model.Estudantes?.FirstOrDefault()?.Coluna?.ToList()
-                      ?? new List<ColunaDto>();
+                      ?? new List<ColunaQuestionarioDto>();
 
         int nColunas = colunas.Count > 0 ? colunas.Count : 1;
         string larguraResp = (41.58 / nColunas).ToString("F2", CultureInfo.InvariantCulture) + "%";
@@ -467,7 +440,7 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         return sb.ToString();
     }
 
-    private static string GerarTdResposta(EstudanteDto estudante, ColunaDto colRef)
+    private static string GerarTdResposta(EstudanteDto estudante, ColunaQuestionarioDto colRef)
     {
         var colEstudante = estudante.Coluna?.FirstOrDefault(c =>
             c.IdCiclo == colRef.IdCiclo && c.QuestaoSubrespostaId == colRef.QuestaoSubrespostaId);

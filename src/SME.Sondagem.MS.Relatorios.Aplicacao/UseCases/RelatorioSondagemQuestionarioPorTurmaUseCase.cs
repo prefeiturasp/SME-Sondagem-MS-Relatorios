@@ -30,7 +30,7 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
 
     public async Task<bool> Executar(MensagemRabbit mensagemRabbit)
     {
-        var filtrosRelatorio = mensagemRabbit.ObterObjetoMensagem<MensagemSondagemQuestionarioDto>();
+        var filtrosRelatorio = mensagemRabbit.ObterObjetoMensagem<MensagemSondagemPorTurmaDto>();
         
         if (filtrosRelatorio == null)
             return false;
@@ -38,22 +38,21 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         var linkRelatorio = string.Empty;
         try
         {
-            var dadosRelatorio = await ObterDadosRelatorio(filtrosRelatorio);
+            var dadosRelatorio = await ObterDadosRelatorio(filtrosRelatorio, mensagemRabbit.CodigoCorrelacao);
 
-            switch (filtrosRelatorio.ExtensaoRelatorio)
+            switch (filtrosRelatorio.FiltrosUsados.ExtensaoRelatorio)
             {
                 case (int)ExtensaoRelatorio.Pdf:
-                    linkRelatorio = await _relatorioSondagemQuestionarioPorTurmaPdf.GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(dadosRelatorio, mensagemRabbit.CodigoCorrelacao);
+                    linkRelatorio = await _relatorioSondagemQuestionarioPorTurmaPdf.GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(dadosRelatorio);
                     break;
                 case (int)ExtensaoRelatorio.Xlsx:
-                    linkRelatorio = await _relatorioSondagemQuestionarioPorTurmaExcel.GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(dadosRelatorio, mensagemRabbit.CodigoCorrelacao);
+                    linkRelatorio = await _relatorioSondagemQuestionarioPorTurmaExcel.GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(dadosRelatorio);
                     break;
                 default:
                     break;
             }
 
-            await _servicoSgpApiClient.FinalizarSolicitacaoRelatorioAsync(new FinalizarSolicitacaoRelatorioDto(filtrosRelatorio.SolicitacaoRelatorioId, linkRelatorio, mensagemRabbit.CodigoCorrelacao));
-            await NotificarUsuario(dadosRelatorio, mensagemRabbit.CodigoCorrelacao);
+            await FinalizarRelatorio(dadosRelatorio, filtrosRelatorio.SolicitacaoRelatorioId, linkRelatorio, mensagemRabbit.CodigoCorrelacao);
         }
         catch (Exception ex)
         {
@@ -64,7 +63,7 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         return true;
     }
 
-    private async Task<ConsultaSondagemPorTurmaDto> ObterDadosRelatorio(MensagemSondagemQuestionarioDto mensagemSondagemQuestionarioDto)
+    private async Task<RelatorioSondagemPorTurmaDto> ObterDadosRelatorio(MensagemSondagemPorTurmaDto mensagemSondagemQuestionarioDto, Guid codigoCorrelacao)
     {
         var tarefaDadosRelatorio = _servicoSondagemApiClient.ObterDadosQuestionarioAsync(mensagemSondagemQuestionarioDto.FiltrosUsados);
 
@@ -83,22 +82,30 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         usuario.CodigoRf = mensagemSondagemQuestionarioDto.UsuarioQueSolicitou;
 
         if (mensagemSondagemQuestionarioDto == null)
-            return new ConsultaSondagemPorTurmaDto();
+            return new RelatorioSondagemPorTurmaDto();
 
         if (dadosRelatorio == null)
-            return new ConsultaSondagemPorTurmaDto();
+            return new RelatorioSondagemPorTurmaDto();
 
         var escola = dreUe.FirstOrDefault();
         var parametroPossuiLinguaPortuguesaSegundaLingua =  parametroSondagem?.Where(x => x.Tipo == "PossuiLinguaPortuguesaSegundaLingua")?.FirstOrDefault()?.Valor;
         var exibeColunaLinguaPortuguesaSegundaLingua = parametroPossuiLinguaPortuguesaSegundaLingua == "true";
 
-        return dadosRelatorio.ParaDto(escola, turma, usuario, 
+        var relatorioSondagemPorTurmaDto = dadosRelatorio.ParaDto(escola, turma, usuario, 
                                         (Modalidade)mensagemSondagemQuestionarioDto.FiltrosUsados.Modalidade, 
-                                        exibeColunaLinguaPortuguesaSegundaLingua, mensagemSondagemQuestionarioDto.FiltrosUsados.BimestreId,
-                                        mensagemSondagemQuestionarioDto.FiltrosUsados.SemestreId);
+                                        exibeColunaLinguaPortuguesaSegundaLingua);
+
+        relatorioSondagemPorTurmaDto.CodigoCorrelacao = codigoCorrelacao;
+        return relatorioSondagemPorTurmaDto;
     }
 
-    private async Task NotificarUsuario(ConsultaSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao)
+    private async Task FinalizarRelatorio(RelatorioSondagemPorTurmaDto relatorioSondagemPorTurmaDto, int solicitacaoRelatorioId, string linkRelatorio, Guid codigoCorrelacao)
+    {
+        await _servicoSgpApiClient.FinalizarSolicitacaoRelatorioAsync(new FinalizarSolicitacaoRelatorioDto(solicitacaoRelatorioId, linkRelatorio, codigoCorrelacao));
+        await NotificarUsuario(relatorioSondagemPorTurmaDto, codigoCorrelacao);
+    }
+
+    private async Task NotificarUsuario(RelatorioSondagemPorTurmaDto consultaSondagemPorTurmaDto, Guid codigoCorrelacao)
     {
         var menssagemUsuario = $"Relatório da Sondagem de escrita da turma {consultaSondagemPorTurmaDto.Turma} da {consultaSondagemPorTurmaDto.UnidadeEducacional} ({consultaSondagemPorTurmaDto.SiglaDre})";
         var mensagemRelatorioPronto = new MensagemRelatorioProntoDto(menssagemUsuario, "", "");

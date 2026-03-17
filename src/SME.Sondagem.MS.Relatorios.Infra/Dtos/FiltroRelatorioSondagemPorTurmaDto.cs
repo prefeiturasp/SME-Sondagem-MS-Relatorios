@@ -1,6 +1,6 @@
 ﻿namespace SME.Sondagem.MS.Relatorios.Infra.Dtos;
 
-public class FiltroRelatorioSondagemQuestionarioPorTurmaDto
+public class FiltroRelatorioSondagemPorTurmaDto
 {
     public int TurmaId { get; set; }
     public int ProficienciaId { get; set; }
