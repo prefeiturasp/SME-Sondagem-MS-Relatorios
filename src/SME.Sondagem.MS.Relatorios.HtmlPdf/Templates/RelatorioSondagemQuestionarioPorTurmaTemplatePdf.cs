@@ -286,7 +286,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
         if (coluna?.Resposta?.OpcaoRespostaId == null || coluna.OpcaoResposta == null)
             return new OpcaoRespostaDto();
 
-        return coluna?.OpcaoResposta?.FirstOrDefault(o => o.Id == coluna?.Resposta?.OpcaoRespostaId);
+        return coluna?.OpcaoResposta?.FirstOrDefault(o => o.Id == coluna?.Resposta?.OpcaoRespostaId) ?? new OpcaoRespostaDto();
     }
 
     private static void AcumularTotalPorOpcao(Dictionary<int, GraficoBarraDto> totais, OpcaoRespostaDto opcao)

@@ -50,7 +50,7 @@ public static class RelatorioSondagemPorTurmaMapper
             Pap = source.Pap,
             Aee = source.Aee,
             PossuiDeficiencia = source.PossuiDeficiencia,
-            Coluna = source?.Colunas?.Select(c => c.ParaDto())?.ToList()
+            Coluna = source?.Colunas?.Select(c => c.ParaDto())?.ToList() ?? []
         };
     }
 

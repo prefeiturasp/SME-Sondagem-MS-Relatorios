@@ -8,17 +8,17 @@ using SME.Sondagem.MS.Relatorios.Excel.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
+using System.Diagnostics.CodeAnalysis;
 using Index = DocumentFormat.OpenXml.Drawing.Charts.Index;
 using NumberingFormat = DocumentFormat.OpenXml.Drawing.Charts.NumberingFormat;
 using OrientationValues = DocumentFormat.OpenXml.Drawing.Charts.OrientationValues;
 using Title = DocumentFormat.OpenXml.Drawing.Charts.Title;
 using Values = DocumentFormat.OpenXml.Drawing.Charts.Values;
 using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
-using System.Linq;
-using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
 
 namespace SME.Sondagem.MS.Relatorios.Excel.Templates;
 
+[ExcludeFromCodeCoverage]
 public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemplateBase, IRelatorioSondagemQuestionarioPorTurmaTemplateExcel
 {
     public RelatorioSondagemQuestionarioPorTurmaTemplateExcel(IServicoArmazenamentoMinio servicoArmazenamentoMinio) : base(servicoArmazenamentoMinio)
@@ -358,13 +358,22 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         var values = new Values();
         var numRef = new NumberReference();
         var numCache = new NumberingCache();
+
         numCache.Append(new FormatCode("General"));
         numCache.Append(new PointCount { Val = (uint)dados.Count });
+
         for (int i = 0; i < dados.Count; i++)
-            numCache.Append(new NumericPoint { Index = (uint)i, NumericValue = new NumericValue(dados[i].Quantidade.ToString()) });
-        numRef.Append(numCache);
-        values.Append(numRef);
-        serie.Append(values);
+        {
+            numCache.Append(new NumericPoint
+            {
+                Index = (uint)i,
+                NumericValue = new NumericValue(dados[i].Quantidade.ToString())
+            });
+        }
+
+        numRef.AppendChild(numCache);
+        values.AppendChild(numRef);
+        serie.AppendChild(values);
     }
 
     private static void AdicionarEixos(PlotArea plotArea)
