@@ -10,6 +10,8 @@ namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
 public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondagemQuestionarioPorTurmaTemplatePdf
 {
+    private static string FechaDiv = "</div>";
+
     public string GerarHtml(RelatorioSondagemPorTurmaDto dto)
     {
         var html = new StringBuilder();
@@ -401,7 +403,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
         sb.AppendLine("<div class=\"report-title\">");
         sb.AppendLine("    <h1>Relatório da Sondagem</h1>");
         sb.AppendLine($"    <h2>{titulo}</h2>");
-        sb.AppendLine("</div>");
+        sb.AppendLine(FechaDiv);
     }
 
     private static void GerarColgroup(StringBuilder sb, bool exibeLP, int nColunas, string larguraResp)
@@ -493,7 +495,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
             if (estudante.Aee) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_AEE}\" class=\"badge-icon\" alt=\"AEE\" />");
             if (estudante.Pap) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_PAP}\" class=\"badge-icon\" alt=\"PAP\" />");
             if (estudante.PossuiDeficiencia) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_Acessibilidade}\" class=\"badge-icon\" alt=\"Deficiência\" />");
-            sb.AppendLine("</div>");
+            sb.AppendLine(FechaDiv);
         }
 
         sb.AppendLine("</td>");
@@ -521,7 +523,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
             return "            <td class=\"col-resp\"><span class=\"resposta-vazio\">Vazio</span></td>";
 
         string style = $"style=\"background-color: {opcao.CorFundo ?? "transparent"}; color: {opcao.CorTexto ?? "#333"};\"";
-        string texto = opcao?.DescricaoOpcaoResposta ?? opcao?.Legenda;
+        string texto = opcao?.DescricaoOpcaoResposta ?? "";
 
         return $"            <td class=\"col-resp\" {style}>{texto}</td>";
     }
@@ -590,7 +592,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
             sb.AppendLine("                            </td>");
             sb.AppendLine("                        </tr>");
             sb.AppendLine("                    </table>");
-            sb.AppendLine("</div>");
+            sb.AppendLine(FechaDiv);
         }
         sb.AppendLine("            </td>");
         sb.AppendLine($"            <td style=\"width:{areaWidth}px; padding:0; border:none; vertical-align:top;\">");
@@ -637,7 +639,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
         sb.AppendLine("            </td>");
         sb.AppendLine("        </tr>");
         sb.AppendLine("    </table>");
-        sb.AppendLine("</div>");
+        sb.AppendLine(FechaDiv);
 
         return sb.ToString();
     }

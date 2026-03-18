@@ -380,35 +380,37 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         serie.AppendChild(values);
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("RoslynSquid", "S3220")]
     private static void AdicionarEixos(PlotArea plotArea)
     {
         var catAxis = new CategoryAxis();
-        catAxis.AppendChild(new AxisId { Val = 48650112U });
-        catAxis.AppendChild(new Scaling(new Orientation { Val = OrientationValues.MinMax }));
-        catAxis.AppendChild(new Delete { Val = false });
-        catAxis.AppendChild(new AxisPosition { Val = AxisPositionValues.Bottom });
-        catAxis.AppendChild(new NumberingFormat { FormatCode = "General", SourceLinked = true });
-        catAxis.AppendChild(new MajorTickMark { Val = TickMarkValues.None });
-        catAxis.AppendChild(new MinorTickMark { Val = TickMarkValues.None });
+
+        catAxis.Append(new List<OpenXmlElement> { new AxisId { Val = 48650112U } });
+        catAxis.Append(new List<OpenXmlElement> { new Scaling(new Orientation { Val = OrientationValues.MinMax }) });
+        catAxis.Append(new List<OpenXmlElement> { new Delete { Val = false } });
+        catAxis.Append(new List<OpenXmlElement> { new AxisPosition { Val = AxisPositionValues.Bottom } });
+        catAxis.Append(new List<OpenXmlElement> { new NumberingFormat { FormatCode = "General", SourceLinked = true } });
+        catAxis.Append(new List<OpenXmlElement> { new MajorTickMark { Val = TickMarkValues.None } });
+        catAxis.Append(new List<OpenXmlElement> { new MinorTickMark { Val = TickMarkValues.None } });
 
         ConfigurarTituloEixo(catAxis, "Opções de respostas");
 
-        catAxis.AppendChild(new CrossingAxis { Val = 48672768U });
-        plotArea.AppendChild(catAxis);
+        catAxis.Append(new List<OpenXmlElement> { new CrossingAxis { Val = 48672768U } });
+        plotArea.Append(new List<OpenXmlElement> { catAxis });
 
         var valAxis = new ValueAxis();
-        valAxis.AppendChild(new AxisId { Val = 48672768U });
-        valAxis.AppendChild(new Scaling(new Orientation { Val = OrientationValues.MinMax }));
-        valAxis.AppendChild(new Delete { Val = false });
-        valAxis.AppendChild(new AxisPosition { Val = AxisPositionValues.Left });
-        valAxis.AppendChild(new NumberingFormat { FormatCode = "General", SourceLinked = true });
-        valAxis.AppendChild(new MajorTickMark { Val = TickMarkValues.None });
-        valAxis.AppendChild(new MinorTickMark { Val = TickMarkValues.None });
+        valAxis.Append(new List<OpenXmlElement> { new AxisId { Val = 48672768U } });
+        valAxis.Append(new List<OpenXmlElement> { new Scaling(new Orientation { Val = OrientationValues.MinMax }) });
+        valAxis.Append(new List<OpenXmlElement> { new Delete { Val = false } });
+        valAxis.Append(new List<OpenXmlElement> { new AxisPosition { Val = AxisPositionValues.Left } });
+        valAxis.Append(new List<OpenXmlElement> { new NumberingFormat { FormatCode = "General", SourceLinked = true } });
+        valAxis.Append(new List<OpenXmlElement> { new MajorTickMark { Val = TickMarkValues.None } });
+        valAxis.Append(new List<OpenXmlElement> { new MinorTickMark { Val = TickMarkValues.None } });
 
         ConfigurarTituloEixo(valAxis, "Quantidade de estudantes");
 
-        valAxis.AppendChild(new CrossingAxis { Val = 48650112U });
-        plotArea.Append(valAxis);
+        valAxis.Append(new List<OpenXmlElement> { new CrossingAxis { Val = 48650112U } });
+        plotArea.Append(new List<OpenXmlElement> { valAxis });
     }
 
     private static void ConfigurarTituloEixo(OpenXmlCompositeElement axis, string titulo)
@@ -430,6 +432,7 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         axis.AppendChild(axisTitle);
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("RoslynSquid", "S3220")]
     private static void AncorarGrafico(DrawingsPart drawingsPart, ChartPart chartPart, WorksheetPart worksheetPart, int linhaGrafico)
     {
         var wsDr = drawingsPart.WorksheetDrawing ?? new Xdr.WorksheetDrawing();
