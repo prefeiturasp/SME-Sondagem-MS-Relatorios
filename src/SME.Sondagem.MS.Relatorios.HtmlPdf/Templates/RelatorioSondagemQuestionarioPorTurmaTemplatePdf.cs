@@ -423,7 +423,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
     private static void GerarCabecalhoTabela(StringBuilder sb, bool exibeLP, int nColunas, string titulo, List<ColunaQuestionarioDto> colunas)
     {
         sb.AppendLine("    <thead>");
-        sb.AppendLine("        <tr>");
+        sb.AppendLine("<tr>");
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-num\">N°</th>");
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-nome\">Nome</th>");
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-raca\">Raça</th>");
@@ -433,7 +433,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
             sb.AppendLine("            <th rowspan=\"2\" class=\"col-lp\">LP como 2° língua?</th>");
 
         sb.AppendLine($"            <th colspan=\"{nColunas}\">{titulo}</th>");
-        sb.AppendLine("        </tr>");
+        sb.AppendLine("</tr>");
         sb.AppendLine("        <tr>");
         foreach (var col in colunas)
         {
@@ -493,10 +493,10 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
             if (estudante.Aee) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_AEE}\" class=\"badge-icon\" alt=\"AEE\" />");
             if (estudante.Pap) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_PAP}\" class=\"badge-icon\" alt=\"PAP\" />");
             if (estudante.PossuiDeficiencia) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_Acessibilidade}\" class=\"badge-icon\" alt=\"Deficiência\" />");
-            sb.AppendLine("                </div>");
+            sb.AppendLine("</div>");
         }
 
-        sb.AppendLine("            </td>");
+        sb.AppendLine("</td>");
     }
 
     private static void GerarCelulaLP(StringBuilder sb, bool linguaPortuguesaSegundaLingua)
@@ -521,7 +521,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
             return "            <td class=\"col-resp\"><span class=\"resposta-vazio\">Vazio</span></td>";
 
         string style = $"style=\"background-color: {opcao.CorFundo ?? "transparent"}; color: {opcao.CorTexto ?? "#333"};\"";
-        string texto = opcao.DescricaoOpcaoResposta ?? opcao.Legenda;
+        string texto = opcao?.DescricaoOpcaoResposta ?? opcao?.Legenda;
 
         return $"            <td class=\"col-resp\" {style}>{texto}</td>";
     }
@@ -590,7 +590,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
             sb.AppendLine("                            </td>");
             sb.AppendLine("                        </tr>");
             sb.AppendLine("                    </table>");
-            sb.AppendLine("                </div>");
+            sb.AppendLine("</div>");
         }
         sb.AppendLine("            </td>");
         sb.AppendLine($"            <td style=\"width:{areaWidth}px; padding:0; border:none; vertical-align:top;\">");

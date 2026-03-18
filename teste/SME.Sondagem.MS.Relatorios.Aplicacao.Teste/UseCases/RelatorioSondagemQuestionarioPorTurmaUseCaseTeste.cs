@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -12,6 +7,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Fila;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Records;
+using System.Text.Json;
 using Xunit;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.Teste.UseCases;
@@ -25,7 +21,12 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCaseTeste
     private readonly Mock<IServicoEolApiClient> _servicoEolApiClientMock;
     private readonly Mock<IServicoMensageria> _servicoMensageriaMock;
     private readonly Mock<ILogger<RelatorioSondagemQuestionarioPorTurmaUseCase>> _loggerMock;
-    
+
+    private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     private readonly RelatorioSondagemQuestionarioPorTurmaUseCase _useCase;
 
     public RelatorioSondagemQuestionarioPorTurmaUseCaseTeste()
@@ -69,7 +70,7 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCaseTeste
         {
             FiltrosUsados = new FiltroRelatorioSondagemPorTurmaDto { ExtensaoRelatorio = (int)ExtensaoRelatorio.Pdf }
         };
-        var mensagemJson = JsonSerializer.Serialize(mensagemSondagem, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var mensagemJson = JsonSerializer.Serialize(mensagemSondagem, SerializerOptions);
         var mensagemRabbit = new MensagemRabbit(mensagemJson, Guid.NewGuid());
 
         _servicoSondagemApiClientMock.Setup(x => x.ObterDadosQuestionarioAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()))
@@ -158,7 +159,7 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCaseTeste
             .ReturnsAsync(true);
     }
 
-    private MensagemSondagemPorTurmaDto SetupValidMensagemSondagem(int extensaoRelatorio)
+    private static MensagemSondagemPorTurmaDto SetupValidMensagemSondagem(int extensaoRelatorio)
     {
         return new MensagemSondagemPorTurmaDto
         {
@@ -173,9 +174,9 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCaseTeste
         };
     }
 
-    private MensagemRabbit SetupMensagemRabbit(MensagemSondagemPorTurmaDto mensagemSondagem)
+    private static MensagemRabbit SetupMensagemRabbit(MensagemSondagemPorTurmaDto mensagemSondagem)
     {
-        var mensagemJson = JsonSerializer.Serialize(mensagemSondagem, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var mensagemJson = JsonSerializer.Serialize(mensagemSondagem, SerializerOptions);
         return new MensagemRabbit(mensagemJson, Guid.NewGuid());
     }
 }

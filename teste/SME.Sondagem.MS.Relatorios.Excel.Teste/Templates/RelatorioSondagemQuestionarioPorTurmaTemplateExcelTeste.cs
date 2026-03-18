@@ -73,7 +73,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplateExcelTeste
         result.Should().Be(linkDownload);
     }
 
-    private RelatorioSondagemPorTurmaDto ObterRelatorioSondagemPorTurmaDto(Guid codigoCorrelacao)
+    private static RelatorioSondagemPorTurmaDto ObterRelatorioSondagemPorTurmaDto(Guid codigoCorrelacao)
     {
         return new RelatorioSondagemPorTurmaDto
         {
