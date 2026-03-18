@@ -228,19 +228,22 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         AdicionarNamespaces(chartSpace);
 
         var chart = new Chart();
-        chart.Append(chart, new AutoTitleDeleted { Val = false });
+
+        chart.AppendChild(new AutoTitleDeleted { Val = false });
 
         AdicionarTituloGrafico(chart, tituloProficiencia);
 
         var plotArea = new PlotArea();
         var barChart = CriarBarChart(dados, tituloProficiencia);
-        plotArea.Append(barChart, barChart);
+
+        plotArea.AppendChild(barChart);
 
         AdicionarEixos(plotArea);
 
-        chart.Append(chart,plotArea);
-        chart.Append(chart, new PlotVisibleOnly { Val = true });
-        chartSpace.Append(chart, chart);
+        chart.AppendChild(plotArea);
+        chart.AppendChild(new PlotVisibleOnly { Val = true });
+
+        chartSpace.AppendChild(chart);
 
         chartPart.ChartSpace = chartSpace;
         chartPart.ChartSpace.Save();
@@ -258,40 +261,40 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         var chartTitle = new Title();
         var chartText = new ChartText();
         var richText = new RichText();
-        richText.Append(chart, new DocumentFormat.OpenXml.Drawing.BodyProperties());
-        richText.Append(chart, new DocumentFormat.OpenXml.Drawing.ListStyle());
+        richText.AppendChild(new DocumentFormat.OpenXml.Drawing.BodyProperties());
+        richText.AppendChild( new DocumentFormat.OpenXml.Drawing.ListStyle());
 
-        richText.Append(chart, CriarParagrafoTitulo("Gráfico da Sondagem", 1400, true));
-        richText.Append(chart, CriarParagrafoTitulo(tituloProficiencia, 1100, true));
+        richText.AppendChild( CriarParagrafoTitulo("Gráfico da Sondagem", 1400, true));
+        richText.AppendChild( CriarParagrafoTitulo(tituloProficiencia, 1100, true));
 
-        chartText.Append(chart, richText);
-        chartTitle.Append(chart, chartText);
-        chartTitle.Append(chart, new Overlay { Val = false });
-        chart.Append(chart, chartTitle);
+        chartText.AppendChild( richText);
+        chartTitle.AppendChild( chartText);
+        chartTitle.AppendChild( new Overlay { Val = false });
+        chart.AppendChild(chartTitle);
     }
 
     private static DocumentFormat.OpenXml.Drawing.Paragraph CriarParagrafoTitulo(string texto, int fontSize, bool isBold)
     {
         var paragraph = new DocumentFormat.OpenXml.Drawing.Paragraph();
         var run = new DocumentFormat.OpenXml.Drawing.Run();
-        run.Append(run, new DocumentFormat.OpenXml.Drawing.RunProperties { Bold = isBold, FontSize = fontSize });
-        run.Append(run, new DocumentFormat.OpenXml.Drawing.Text(texto));
-        paragraph.Append(run, run);
+        run.AppendChild( new DocumentFormat.OpenXml.Drawing.RunProperties { Bold = isBold, FontSize = fontSize });
+        run.AppendChild(new DocumentFormat.OpenXml.Drawing.Text(texto));
+        paragraph.AppendChild(run);
         return paragraph;
     }
 
     private static BarChart CriarBarChart(List<GraficoDto> dados, string tituloProficiencia)
     {
         var barChart = new BarChart();
-        barChart.Append(barChart, new BarDirection { Val = BarDirectionValues.Column });
-        barChart.Append(barChart, new BarGrouping { Val = BarGroupingValues.Clustered });
-        barChart.Append(barChart, new VaryColors { Val = false });
+        barChart.AppendChild(new BarDirection { Val = BarDirectionValues.Column });
+        barChart.AppendChild(new BarGrouping { Val = BarGroupingValues.Clustered });
+        barChart.AppendChild(new VaryColors { Val = false });
 
         var serie = CriarSerieBarra(dados, tituloProficiencia);
-        barChart.Append(serie, serie);
+        barChart.AppendChild(serie);
 
-        barChart.Append(barChart, new AxisId { Val = 48650112U });
-        barChart.Append(barChart, new AxisId { Val = 48672768U });
+        barChart.AppendChild(new AxisId { Val = 48650112U });
+        barChart.AppendChild(new AxisId { Val = 48672768U });
 
         return barChart;
     }
@@ -299,25 +302,25 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
     private static BarChartSeries CriarSerieBarra(List<GraficoDto> dados, string tituloProficiencia)
     {
         var serie = new BarChartSeries();
-        serie.Append(serie, new Index { Val = 0 });
-        serie.Append(serie, new Order { Val = 0 });
+        serie.AppendChild(new Index { Val = 0 });
+        serie.AppendChild(new Order { Val = 0 });
 
         var serTitle = new SeriesText();
-        serTitle.Append(serTitle, new NumericValue(tituloProficiencia));
-        serie.Append(serTitle, serTitle);
+        serTitle.AppendChild(new NumericValue(tituloProficiencia));
+        serie.AppendChild(serTitle);
 
         AdicionarPontosDados(serie, dados);
         AdicionarDadosCategorias(serie, dados);
         AdicionarDadosValores(serie, dados);
 
         var dLbls = new DataLabels();
-        dLbls.Append(dLbls, new ShowLegendKey { Val = false });
-        dLbls.Append(dLbls, new ShowValue { Val = true });
-        dLbls.Append(dLbls, new ShowCategoryName { Val = false });
-        dLbls.Append(dLbls, new ShowSeriesName { Val = false });
-        dLbls.Append(dLbls, new ShowPercent { Val = false });
-        dLbls.Append(dLbls, new ShowBubbleSize { Val = false });
-        serie.Append(dLbls, dLbls);
+        dLbls.AppendChild(new ShowLegendKey { Val = false });
+        dLbls.AppendChild(new ShowValue { Val = true });
+        dLbls.AppendChild(new ShowCategoryName { Val = false });
+        dLbls.AppendChild(new ShowSeriesName { Val = false });
+        dLbls.AppendChild(new ShowPercent { Val = false });
+        dLbls.AppendChild(new ShowBubbleSize { Val = false });
+        serie.AppendChild(dLbls);
 
         return serie;
     }
@@ -330,14 +333,14 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
             if (hex.Length != 6) hex = "CCCCCC";
 
             var dp = new DataPoint();
-            dp.Append(dp, new Index { Val = (uint)i });
-            dp.Append(dp, new InvertIfNegative { Val = false });
+            dp.AppendChild(new Index { Val = (uint)i });
+            dp.AppendChild(new InvertIfNegative { Val = false });
             var spPr = new ChartShapeProperties();
             var solidFill = new DocumentFormat.OpenXml.Drawing.SolidFill();
-            solidFill.Append(solidFill, new DocumentFormat.OpenXml.Drawing.RgbColorModelHex { Val = hex });
-            spPr.Append(solidFill, solidFill);
-            dp.Append(solidFill, spPr);
-            serie.Append(solidFill, dp);
+            solidFill.AppendChild(new DocumentFormat.OpenXml.Drawing.RgbColorModelHex { Val = hex });
+            spPr.AppendChild(solidFill);
+            dp.AppendChild(spPr);
+            serie.AppendChild(dp);
         }
     }
 
@@ -346,12 +349,12 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         var catValues = new CategoryAxisData();
         var strRef = new StringReference();
         var strCache = new StringCache();
-        strCache.Append(strCache, new PointCount { Val = (uint)dados.Count });
+        strCache.AppendChild(new PointCount { Val = (uint)dados.Count });
         for (int i = 0; i < dados.Count; i++)
-            strCache.Append(strCache, new StringPoint { Index = (uint)i, NumericValue = new NumericValue(dados[i].Descricao) });
-        strRef.Append(strCache,strCache);
-        catValues.Append(strCache, strRef);
-        serie.Append(strCache, catValues);
+            strCache.AppendChild(new StringPoint { Index = (uint)i, NumericValue = new NumericValue(dados[i].Descricao) });
+        strRef.AppendChild(strCache);
+        catValues.AppendChild(strRef);
+        serie.AppendChild(catValues);
     }
 
     private static void AdicionarDadosValores(BarChartSeries serie, List<GraficoDto> dados)
@@ -360,12 +363,12 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         var numRef = new NumberReference();
         var numCache = new NumberingCache();
 
-        numCache.Append(numCache, new FormatCode("General"));
-        numCache.Append(numCache, new PointCount { Val = (uint)dados.Count });
+        numCache.AppendChild(new FormatCode("General"));
+        numCache.AppendChild(new PointCount { Val = (uint)dados.Count });
 
         for (int i = 0; i < dados.Count; i++)
         {
-            numCache.Append(numCache, new NumericPoint
+            numCache.AppendChild(new NumericPoint
             {
                 Index = (uint)i,
                 NumericValue = new NumericValue(dados[i].Quantidade.ToString())
@@ -380,32 +383,32 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
     private static void AdicionarEixos(PlotArea plotArea)
     {
         var catAxis = new CategoryAxis();
-        catAxis.Append(catAxis, new AxisId { Val = 48650112U });
-        catAxis.Append(catAxis, new Scaling(new Orientation { Val = OrientationValues.MinMax }));
-        catAxis.Append(catAxis, new Delete { Val = false });
-        catAxis.Append(catAxis, new AxisPosition { Val = AxisPositionValues.Bottom });
-        catAxis.Append(catAxis, new NumberingFormat { FormatCode = "General", SourceLinked = true });
-        catAxis.Append(catAxis, new MajorTickMark { Val = TickMarkValues.None });
-        catAxis.Append(catAxis, new MinorTickMark { Val = TickMarkValues.None });
+        catAxis.AppendChild(new AxisId { Val = 48650112U });
+        catAxis.AppendChild(new Scaling(new Orientation { Val = OrientationValues.MinMax }));
+        catAxis.AppendChild(new Delete { Val = false });
+        catAxis.AppendChild(new AxisPosition { Val = AxisPositionValues.Bottom });
+        catAxis.AppendChild(new NumberingFormat { FormatCode = "General", SourceLinked = true });
+        catAxis.AppendChild(new MajorTickMark { Val = TickMarkValues.None });
+        catAxis.AppendChild(new MinorTickMark { Val = TickMarkValues.None });
 
         ConfigurarTituloEixo(catAxis, "Opções de respostas");
 
-        catAxis.Append(catAxis, new CrossingAxis { Val = 48672768U });
-        plotArea.Append(catAxis, catAxis);
+        catAxis.AppendChild(new CrossingAxis { Val = 48672768U });
+        plotArea.AppendChild(catAxis);
 
         var valAxis = new ValueAxis();
-        valAxis.Append(valAxis, new AxisId { Val = 48672768U });
-        valAxis.Append(valAxis, new Scaling(new Orientation { Val = OrientationValues.MinMax }));
-        valAxis.Append(valAxis, new Delete { Val = false });
-        valAxis.Append(valAxis, new AxisPosition { Val = AxisPositionValues.Left });
-        valAxis.Append(valAxis, new NumberingFormat { FormatCode = "General", SourceLinked = true });
-        valAxis.Append(valAxis, new MajorTickMark { Val = TickMarkValues.None });
-        valAxis.Append(valAxis, new MinorTickMark { Val = TickMarkValues.None });
+        valAxis.AppendChild(new AxisId { Val = 48672768U });
+        valAxis.AppendChild(new Scaling(new Orientation { Val = OrientationValues.MinMax }));
+        valAxis.AppendChild(new Delete { Val = false });
+        valAxis.AppendChild(new AxisPosition { Val = AxisPositionValues.Left });
+        valAxis.AppendChild(new NumberingFormat { FormatCode = "General", SourceLinked = true });
+        valAxis.AppendChild(new MajorTickMark { Val = TickMarkValues.None });
+        valAxis.AppendChild(new MinorTickMark { Val = TickMarkValues.None });
 
         ConfigurarTituloEixo(valAxis, "Quantidade de estudantes");
 
-        valAxis.Append(valAxis, new CrossingAxis { Val = 48650112U });
-        plotArea.Append(valAxis, valAxis);
+        valAxis.AppendChild(new CrossingAxis { Val = 48650112U });
+        plotArea.Append(valAxis);
     }
 
     private static void ConfigurarTituloEixo(OpenXmlCompositeElement axis, string titulo)
@@ -413,18 +416,18 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         var axisTitle = new Title();
         var axisChartText = new ChartText();
         var axisRichText = new RichText();
-        axisRichText.Append(axisRichText, new DocumentFormat.OpenXml.Drawing.BodyProperties());
-        axisRichText.Append(axisRichText, new DocumentFormat.OpenXml.Drawing.ListStyle());
+        axisRichText.AppendChild(new DocumentFormat.OpenXml.Drawing.BodyProperties());
+        axisRichText.AppendChild(new DocumentFormat.OpenXml.Drawing.ListStyle());
         var axisPara = new DocumentFormat.OpenXml.Drawing.Paragraph();
         var axisRun = new DocumentFormat.OpenXml.Drawing.Run();
-        axisRun.Append(axisRun, new DocumentFormat.OpenXml.Drawing.RunProperties { Bold = true, FontSize = 1000 });
-        axisRun.Append(axisRun, new DocumentFormat.OpenXml.Drawing.Text(titulo));
-        axisPara.Append(axisRun, axisRun);
-        axisRichText.Append(axisRun, axisPara);
-        axisChartText.Append(axisRun, axisRichText);
-        axisTitle.Append(axisRun, axisChartText);
-        axisTitle.Append(axisTitle, new Overlay { Val = false });
-        axis.Append(axisTitle, axisTitle);
+        axisRun.AppendChild(new DocumentFormat.OpenXml.Drawing.RunProperties { Bold = true, FontSize = 1000 });
+        axisRun.AppendChild(new DocumentFormat.OpenXml.Drawing.Text(titulo));
+        axisPara.AppendChild(axisRun);
+        axisRichText.AppendChild(axisPara);
+        axisChartText.AppendChild(axisRichText);
+        axisTitle.AppendChild(axisChartText);
+        axisTitle.AppendChild(new Overlay { Val = false });
+        axis.AppendChild(axisTitle);
     }
 
     private static void AncorarGrafico(DrawingsPart drawingsPart, ChartPart chartPart, WorksheetPart worksheetPart, int linhaGrafico)
@@ -435,7 +438,7 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         var chartRelId = drawingsPart.GetIdOfPart(chartPart);
         var twoCellAnchor = CriarAnchor(chartRelId, linhaGrafico, drawingsPart.Parts.Count());
 
-        wsDr.Append(twoCellAnchor, twoCellAnchor);
+        wsDr.AppendChild(twoCellAnchor);
 
         if (drawingsPart.WorksheetDrawing == null)
             drawingsPart.WorksheetDrawing = new Xdr.WorksheetDrawing(wsDr);
@@ -459,13 +462,13 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
     private static Xdr.TwoCellAnchor CriarAnchor(string chartRelId, int linhaGrafico, int partsCount)
     {
         var twoCellAnchor = new Xdr.TwoCellAnchor();
-        twoCellAnchor.Append(twoCellAnchor, new Xdr.FromMarker(
+        twoCellAnchor.AppendChild(new Xdr.FromMarker(
             new Xdr.ColumnId("0"),
             new Xdr.ColumnOffset("0"),
             new Xdr.RowId((linhaGrafico - 1).ToString()),
             new Xdr.RowOffset("0")
         ));
-        twoCellAnchor.Append(twoCellAnchor, new Xdr.ToMarker(
+        twoCellAnchor.AppendChild( new Xdr.ToMarker(
             new Xdr.ColumnId("9"),
             new Xdr.ColumnOffset("0"),
             new Xdr.RowId((linhaGrafico + 19).ToString()),
@@ -473,23 +476,23 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         ));
 
         var graphicFrame = new Xdr.GraphicFrame { Macro = "" };
-        graphicFrame.Append(graphicFrame, new Xdr.NonVisualGraphicFrameProperties(
+        graphicFrame.AppendChild(new Xdr.NonVisualGraphicFrameProperties(
             new Xdr.NonVisualDrawingProperties { Id = (uint)(partsCount + 10), Name = "GraficoSondagem" },
             new Xdr.NonVisualGraphicFrameDrawingProperties()
         ));
-        graphicFrame.Append(graphicFrame, new Xdr.Transform(
+        graphicFrame.AppendChild(   new Xdr.Transform(
             new DocumentFormat.OpenXml.Drawing.Offset { X = 0L, Y = 0L },
             new DocumentFormat.OpenXml.Drawing.Extents { Cx = 0L, Cy = 0L }
         ));
 
         var graphic = new DocumentFormat.OpenXml.Drawing.Graphic();
         var graphicData = new DocumentFormat.OpenXml.Drawing.GraphicData { Uri = ExcelConstantes.OPENXML_FORMATS_CHART };
-        graphicData.Append(graphicData, new ChartReference { Id = chartRelId });
-        graphic.Append(graphicData, graphicData);
-        graphicFrame.Append(graphic, graphic);
+        graphicData.AppendChild(   new ChartReference { Id = chartRelId });
+        graphic.AppendChild(graphicData);
+        graphicFrame.AppendChild(graphic);
 
-        twoCellAnchor.Append(twoCellAnchor, graphicFrame);
-        twoCellAnchor.Append(twoCellAnchor, new Xdr.ClientData());
+        twoCellAnchor.AppendChild(graphicFrame);
+        twoCellAnchor.AppendChild(new Xdr.ClientData());
         return twoCellAnchor;
     }
 
@@ -498,7 +501,7 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         if (!worksheetPart.Worksheet.Elements<Drawing>().Any())
         {
             var drawingRelId = worksheetPart.GetIdOfPart(drawingsPart);
-            worksheetPart.Worksheet.Append(new Drawing { Id = drawingRelId });
+            worksheetPart.Worksheet.AppendChild(new Drawing { Id = drawingRelId });
         }
     }
 
