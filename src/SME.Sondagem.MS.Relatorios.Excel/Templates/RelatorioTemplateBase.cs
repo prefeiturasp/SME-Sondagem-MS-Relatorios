@@ -37,7 +37,7 @@ public abstract class RelatorioTemplateBase
         return linha;
     }
 
-    protected static void EstilarEPreencher(IXLCell celula, object valor)
+    protected static void EstilarEPreencher(IXLCell celula, object? valor)
     {
         celula.Value = valor?.ToString();
         EstilarCelulaDados(celula);
@@ -165,5 +165,14 @@ public abstract class RelatorioTemplateBase
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
         return await _servicoArmazenamentoMinio.GerarLinkDownloadAsync(nomeArquivo);
+    }
+
+    protected static void EscreverCelulaLP(IXLCell celula, bool isSegundaLingua)
+    {
+        celula.Value = isSegundaLingua ? "☑" : "☐";
+        celula.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        celula.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        celula.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        celula.Style.Font.FontSize = 14;
     }
 }

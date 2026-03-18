@@ -4,5 +4,5 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 public interface IRelatorioSondagemQuestionarioPorTurmaExcel
 {
-    Task<string> GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(RelatorioSondagemPorTurmaDto consultaSondagemPorTurmaDto);
+    Task<string> GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(RelatorioSondagemPorTurmaDto relatorioSondagemPorTurmaDto);
 }

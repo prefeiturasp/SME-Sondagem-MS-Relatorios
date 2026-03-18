@@ -1,4 +1,4 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Packaging;
@@ -14,6 +14,8 @@ using OrientationValues = DocumentFormat.OpenXml.Drawing.Charts.OrientationValue
 using Title = DocumentFormat.OpenXml.Drawing.Charts.Title;
 using Values = DocumentFormat.OpenXml.Drawing.Charts.Values;
 using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
+using System.Linq;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
 
 namespace SME.Sondagem.MS.Relatorios.Excel.Templates;
 
@@ -123,6 +125,8 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
 
     private static int EscreverDadosExcel(IXLWorksheet sheet, int linha, RelatorioSondagemPorTurmaDto relatorioSondagemPorTurmaDto)
     {
+        if (relatorioSondagemPorTurmaDto.Estudantes == null) return linha;
+
         foreach (var aluno in relatorioSondagemPorTurmaDto.Estudantes)
         {
             sheet.Row(linha).Height = 45;
@@ -137,30 +141,19 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
 
             if (relatorioSondagemPorTurmaDto.ExibeColunaLinguaPortuguesaSegundaLingua)
             {
-                var cLp = sheet.Cell(linha, colunaAtual);
-                cLp.Value = aluno.LinguaPortuguesaSegundaLingua ? "☑" : "☐";
-                cLp.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                cLp.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-                cLp.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-                cLp.Style.Font.FontSize = 14;
+                EscreverCelulaLP(sheet.Cell(linha, colunaAtual), aluno.LinguaPortuguesaSegundaLingua);
                 colunaAtual++;
             }
 
-            var estudanteSondagem = relatorioSondagemPorTurmaDto.Estudantes
-                .FirstOrDefault(e => e.NomeRelatorio == aluno.NomeRelatorio);
-
-            if (estudanteSondagem != null)
+            if (aluno.Coluna != null)
             {
-                foreach (var colunaSondagem in estudanteSondagem.Coluna)
+                foreach (var colunaSondagem in aluno.Coluna)
                 {
-                    var resposta = colunaSondagem.OpcaoResposta
-                        .FirstOrDefault(o => o.Id == colunaSondagem.Resposta?.OpcaoRespostaId);
-
+                    var resposta = colunaSondagem.OpcaoResposta?.FirstOrDefault(o => o.Id == colunaSondagem.Resposta?.OpcaoRespostaId);
                     var corHex = !string.IsNullOrEmpty(resposta?.CorFundo) ? resposta.CorFundo : "#333333";
                     var corFundo = ConverterCor(corHex);
 
                     PreencherCelulaSondagem(sheet.Cell(linha, colunaAtual), resposta?.DescricaoOpcaoResposta ?? "Vazio", corFundo);
-
                     colunaAtual++;
                 }
             }
@@ -204,193 +197,257 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
     private static void InjetarGraficoOpenXml(Stream stream, List<GraficoDto> dados, string tituloProficiencia, int linhaGrafico)
     {
         using var document = SpreadsheetDocument.Open(stream, true);
-        var workbookPart = document.WorkbookPart;
+        var workbookPart = document.WorkbookPart ?? throw new InvalidOperationException("WorkbookPart nulo.");
+        var worksheetPart = ObterWorksheetPart(workbookPart);
 
-        var sheetInfo = workbookPart.Workbook.Sheets.Elements<Sheet>().First();
-        var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheetInfo.Id);
-
-        DrawingsPart drawingsPart;
-        if (worksheetPart.DrawingsPart != null)
-            drawingsPart = worksheetPart.DrawingsPart;
-        else
-            drawingsPart = worksheetPart.AddNewPart<DrawingsPart>();
-
+        var drawingsPart = PrepararDrawingsPart(worksheetPart);
         var chartPart = drawingsPart.AddNewPart<ChartPart>();
 
+        ConfigurarChartPart(chartPart, dados, tituloProficiencia);
+
+        AncorarGrafico(drawingsPart, chartPart, worksheetPart, linhaGrafico);
+    }
+
+    private static WorksheetPart ObterWorksheetPart(WorkbookPart workbookPart)
+    {
+        var workbook = workbookPart.Workbook ?? throw new InvalidOperationException("Workbook nulo.");
+        var sheets = workbook.Sheets ?? throw new InvalidOperationException("Sheets nulo.");
+        var sheetInfo = sheets.Elements<Sheet>().First();
+        return (WorksheetPart)workbookPart.GetPartById(sheetInfo.Id?.Value ?? string.Empty);
+    }
+
+    private static DrawingsPart PrepararDrawingsPart(WorksheetPart worksheetPart)
+    {
+        return worksheetPart.DrawingsPart ?? worksheetPart.AddNewPart<DrawingsPart>();
+    }
+
+    private static void ConfigurarChartPart(ChartPart chartPart, List<GraficoDto> dados, string tituloProficiencia)
+    {
         var chartSpace = new ChartSpace();
+        AdicionarNamespaces(chartSpace);
+
+        var chart = new Chart();
+        chart.Append(new AutoTitleDeleted { Val = false });
+
+        AdicionarTituloGrafico(chart, tituloProficiencia);
+
+        var plotArea = new PlotArea();
+        var barChart = CriarBarChart(dados, tituloProficiencia);
+        plotArea.Append(barChart);
+
+        AdicionarEixos(plotArea);
+
+        chart.Append(plotArea);
+        chart.Append(new PlotVisibleOnly { Val = true });
+        chartSpace.Append(chart);
+
+        chartPart.ChartSpace = chartSpace;
+        chartPart.ChartSpace.Save();
+    }
+
+    private static void AdicionarNamespaces(ChartSpace chartSpace)
+    {
         chartSpace.AddNamespaceDeclaration("c", "http://schemas.openxmlformats.org/drawingml/2006/chart");
         chartSpace.AddNamespaceDeclaration("a", "http://schemas.openxmlformats.org/drawingml/2006/main");
         chartSpace.AddNamespaceDeclaration("r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+    }
 
-        var chart = new Chart();
-        chart.Append(new AutoTitleDeleted() { Val = false });
-
+    private static void AdicionarTituloGrafico(Chart chart, string tituloProficiencia)
+    {
         var chartTitle = new Title();
         var chartText = new ChartText();
         var richText = new RichText();
         richText.Append(new DocumentFormat.OpenXml.Drawing.BodyProperties());
         richText.Append(new DocumentFormat.OpenXml.Drawing.ListStyle());
 
-        var titlePara1 = new DocumentFormat.OpenXml.Drawing.Paragraph();
-        var titleRun1 = new DocumentFormat.OpenXml.Drawing.Run();
-        titleRun1.Append(new DocumentFormat.OpenXml.Drawing.RunProperties() { Bold = true, FontSize = 1400 });
-        titleRun1.Append(new DocumentFormat.OpenXml.Drawing.Text("Gráfico da Sondagem"));
-        titlePara1.Append(titleRun1);
-        richText.Append(titlePara1);
-
-        var titlePara2 = new DocumentFormat.OpenXml.Drawing.Paragraph();
-        var titleRun2 = new DocumentFormat.OpenXml.Drawing.Run();
-        titleRun2.Append(new DocumentFormat.OpenXml.Drawing.RunProperties() { Bold = true, FontSize = 1100 });
-        titleRun2.Append(new DocumentFormat.OpenXml.Drawing.Text(tituloProficiencia));
-        titlePara2.Append(titleRun2);
-        richText.Append(titlePara2);
+        richText.Append(CriarParagrafoTitulo("Gráfico da Sondagem", 1400, true));
+        richText.Append(CriarParagrafoTitulo(tituloProficiencia, 1100, true));
 
         chartText.Append(richText);
         chartTitle.Append(chartText);
-        chartTitle.Append(new Overlay() { Val = false });
+        chartTitle.Append(new Overlay { Val = false });
         chart.Append(chartTitle);
+    }
 
-        var plotArea = new PlotArea();
+    private static DocumentFormat.OpenXml.Drawing.Paragraph CriarParagrafoTitulo(string texto, int fontSize, bool isBold)
+    {
+        var paragraph = new DocumentFormat.OpenXml.Drawing.Paragraph();
+        var run = new DocumentFormat.OpenXml.Drawing.Run();
+        run.Append(new DocumentFormat.OpenXml.Drawing.RunProperties { Bold = isBold, FontSize = fontSize });
+        run.Append(new DocumentFormat.OpenXml.Drawing.Text(texto));
+        paragraph.Append(run);
+        return paragraph;
+    }
 
+    private static BarChart CriarBarChart(List<GraficoDto> dados, string tituloProficiencia)
+    {
         var barChart = new BarChart();
-        barChart.Append(new BarDirection() { Val = BarDirectionValues.Column });
-        barChart.Append(new BarGrouping() { Val = BarGroupingValues.Clustered });
-        barChart.Append(new VaryColors() { Val = false });
+        barChart.Append(new BarDirection { Val = BarDirectionValues.Column });
+        barChart.Append(new BarGrouping { Val = BarGroupingValues.Clustered });
+        barChart.Append(new VaryColors { Val = false });
 
+        var serie = CriarSerieBarra(dados, tituloProficiencia);
+        barChart.Append(serie);
+
+        barChart.Append(new AxisId { Val = 48650112U });
+        barChart.Append(new AxisId { Val = 48672768U });
+
+        return barChart;
+    }
+
+    private static BarChartSeries CriarSerieBarra(List<GraficoDto> dados, string tituloProficiencia)
+    {
         var serie = new BarChartSeries();
-        serie.Append(new Index() { Val = 0 });
-        serie.Append(new Order() { Val = 0 });
+        serie.Append(new Index { Val = 0 });
+        serie.Append(new Order { Val = 0 });
 
         var serTitle = new SeriesText();
         serTitle.Append(new NumericValue(tituloProficiencia));
         serie.Append(serTitle);
 
+        AdicionarPontosDados(serie, dados);
+        AdicionarDadosCategorias(serie, dados);
+        AdicionarDadosValores(serie, dados);
+
+        var dLbls = new DataLabels();
+        dLbls.Append(new ShowLegendKey { Val = false });
+        dLbls.Append(new ShowValue { Val = true });
+        dLbls.Append(new ShowCategoryName { Val = false });
+        dLbls.Append(new ShowSeriesName { Val = false });
+        dLbls.Append(new ShowPercent { Val = false });
+        dLbls.Append(new ShowBubbleSize { Val = false });
+        serie.Append(dLbls);
+
+        return serie;
+    }
+
+    private static void AdicionarPontosDados(BarChartSeries serie, List<GraficoDto> dados)
+    {
         for (int i = 0; i < dados.Count; i++)
         {
             var hex = (dados[i].Cor ?? "CCCCCC").TrimStart('#').ToUpper();
             if (hex.Length != 6) hex = "CCCCCC";
 
             var dp = new DataPoint();
-            dp.Append(new Index() { Val = (uint)i });
-            dp.Append(new InvertIfNegative() { Val = false });
+            dp.Append(new Index { Val = (uint)i });
+            dp.Append(new InvertIfNegative { Val = false });
             var spPr = new ChartShapeProperties();
             var solidFill = new DocumentFormat.OpenXml.Drawing.SolidFill();
-            solidFill.Append(new DocumentFormat.OpenXml.Drawing.RgbColorModelHex() { Val = hex });
+            solidFill.Append(new DocumentFormat.OpenXml.Drawing.RgbColorModelHex { Val = hex });
             spPr.Append(solidFill);
             dp.Append(spPr);
             serie.Append(dp);
         }
+    }
 
+    private static void AdicionarDadosCategorias(BarChartSeries serie, List<GraficoDto> dados)
+    {
         var catValues = new CategoryAxisData();
         var strRef = new StringReference();
         var strCache = new StringCache();
-        strCache.Append(new PointCount() { Val = (uint)dados.Count });
+        strCache.Append(new PointCount { Val = (uint)dados.Count });
         for (int i = 0; i < dados.Count; i++)
-            strCache.Append(new StringPoint() { Index = (uint)i, NumericValue = new NumericValue(dados[i].Descricao) });
+            strCache.Append(new StringPoint { Index = (uint)i, NumericValue = new NumericValue(dados[i].Descricao) });
         strRef.Append(strCache);
         catValues.Append(strRef);
         serie.Append(catValues);
+    }
 
+    private static void AdicionarDadosValores(BarChartSeries serie, List<GraficoDto> dados)
+    {
         var values = new Values();
         var numRef = new NumberReference();
         var numCache = new NumberingCache();
         numCache.Append(new FormatCode("General"));
-        numCache.Append(new PointCount() { Val = (uint)dados.Count });
+        numCache.Append(new PointCount { Val = (uint)dados.Count });
         for (int i = 0; i < dados.Count; i++)
-            numCache.Append(new NumericPoint() { Index = (uint)i, NumericValue = new NumericValue(dados[i].Quantidade.ToString()) });
+            numCache.Append(new NumericPoint { Index = (uint)i, NumericValue = new NumericValue(dados[i].Quantidade.ToString()) });
         numRef.Append(numCache);
         values.Append(numRef);
         serie.Append(values);
+    }
 
-        var dLbls = new DataLabels();
-        dLbls.Append(new ShowLegendKey() { Val = false });
-        dLbls.Append(new ShowValue() { Val = true });
-        dLbls.Append(new ShowCategoryName() { Val = false });
-        dLbls.Append(new ShowSeriesName() { Val = false });
-        dLbls.Append(new ShowPercent() { Val = false });
-        dLbls.Append(new ShowBubbleSize() { Val = false });
-        serie.Append(dLbls);
-
-        barChart.Append(serie);
-        barChart.Append(new AxisId() { Val = 48650112U });
-        barChart.Append(new AxisId() { Val = 48672768U });
-        plotArea.Append(barChart);
-
+    private static void AdicionarEixos(PlotArea plotArea)
+    {
         var catAxis = new CategoryAxis();
-        catAxis.Append(new AxisId() { Val = 48650112U });
-        catAxis.Append(new Scaling(new Orientation() { Val = OrientationValues.MinMax }));
-        catAxis.Append(new Delete() { Val = false });
-        catAxis.Append(new AxisPosition() { Val = AxisPositionValues.Bottom });
-        catAxis.Append(new NumberingFormat() { FormatCode = "General", SourceLinked = true });
-        catAxis.Append(new MajorTickMark() { Val = TickMarkValues.None });
-        catAxis.Append(new MinorTickMark() { Val = TickMarkValues.None });
+        catAxis.Append(new AxisId { Val = 48650112U });
+        catAxis.Append(new Scaling(new Orientation { Val = OrientationValues.MinMax }));
+        catAxis.Append(new Delete { Val = false });
+        catAxis.Append(new AxisPosition { Val = AxisPositionValues.Bottom });
+        catAxis.Append(new NumberingFormat { FormatCode = "General", SourceLinked = true });
+        catAxis.Append(new MajorTickMark { Val = TickMarkValues.None });
+        catAxis.Append(new MinorTickMark { Val = TickMarkValues.None });
 
-        var catAxisTitle = new Title();
-        var catAxisChartText = new ChartText();
-        var catAxisRichText = new RichText();
-        catAxisRichText.Append(new DocumentFormat.OpenXml.Drawing.BodyProperties());
-        catAxisRichText.Append(new DocumentFormat.OpenXml.Drawing.ListStyle());
-        var catAxisPara = new DocumentFormat.OpenXml.Drawing.Paragraph();
-        var catAxisRun = new DocumentFormat.OpenXml.Drawing.Run();
-        catAxisRun.Append(new DocumentFormat.OpenXml.Drawing.RunProperties() { Bold = true, FontSize = 1000 });
-        catAxisRun.Append(new DocumentFormat.OpenXml.Drawing.Text("Opções de respostas"));
-        catAxisPara.Append(catAxisRun);
-        catAxisRichText.Append(catAxisPara);
-        catAxisChartText.Append(catAxisRichText);
-        catAxisTitle.Append(catAxisChartText);
-        catAxisTitle.Append(new Overlay() { Val = false });
-        catAxis.Append(catAxisTitle);
+        ConfigurarTituloEixo(catAxis, "Opções de respostas");
 
-        catAxis.Append(new CrossingAxis() { Val = 48672768U });
+        catAxis.Append(new CrossingAxis { Val = 48672768U });
         plotArea.Append(catAxis);
 
         var valAxis = new ValueAxis();
-        valAxis.Append(new AxisId() { Val = 48672768U });
-        valAxis.Append(new Scaling(new Orientation() { Val = OrientationValues.MinMax }));
-        valAxis.Append(new Delete() { Val = false });
-        valAxis.Append(new AxisPosition() { Val = AxisPositionValues.Left });
-        valAxis.Append(new NumberingFormat() { FormatCode = "General", SourceLinked = true });
-        valAxis.Append(new MajorTickMark() { Val = TickMarkValues.None });
-        valAxis.Append(new MinorTickMark() { Val = TickMarkValues.None });
+        valAxis.Append(new AxisId { Val = 48672768U });
+        valAxis.Append(new Scaling(new Orientation { Val = OrientationValues.MinMax }));
+        valAxis.Append(new Delete { Val = false });
+        valAxis.Append(new AxisPosition { Val = AxisPositionValues.Left });
+        valAxis.Append(new NumberingFormat { FormatCode = "General", SourceLinked = true });
+        valAxis.Append(new MajorTickMark { Val = TickMarkValues.None });
+        valAxis.Append(new MinorTickMark { Val = TickMarkValues.None });
 
-        var valAxisTitle = new Title();
-        var valAxisChartText = new ChartText();
-        var valAxisRichText = new RichText();
-        var valAxisBodyProps = new DocumentFormat.OpenXml.Drawing.BodyProperties();
-        valAxisRichText.Append(valAxisBodyProps);
-        valAxisRichText.Append(new DocumentFormat.OpenXml.Drawing.ListStyle());
-        var valAxisPara = new DocumentFormat.OpenXml.Drawing.Paragraph();
-        var valAxisRun = new DocumentFormat.OpenXml.Drawing.Run();
-        valAxisRun.Append(new DocumentFormat.OpenXml.Drawing.RunProperties() { Bold = true, FontSize = 1000 });
-        valAxisRun.Append(new DocumentFormat.OpenXml.Drawing.Text("Quantidade de estudantes"));
-        valAxisPara.Append(valAxisRun);
-        valAxisRichText.Append(valAxisPara);
-        valAxisChartText.Append(valAxisRichText);
-        valAxisTitle.Append(valAxisChartText);
-        valAxisTitle.Append(new Overlay() { Val = false });
-        valAxis.Append(valAxisTitle);
+        ConfigurarTituloEixo(valAxis, "Quantidade de estudantes");
 
-        valAxis.Append(new CrossingAxis() { Val = 48650112U });
+        valAxis.Append(new CrossingAxis { Val = 48650112U });
         plotArea.Append(valAxis);
+    }
 
-        chart.Append(plotArea);
-        chart.Append(new PlotVisibleOnly() { Val = true });
-        chartSpace.Append(chart);
+    private static void ConfigurarTituloEixo(OpenXmlCompositeElement axis, string titulo)
+    {
+        var axisTitle = new Title();
+        var axisChartText = new ChartText();
+        var axisRichText = new RichText();
+        axisRichText.Append(new DocumentFormat.OpenXml.Drawing.BodyProperties());
+        axisRichText.Append(new DocumentFormat.OpenXml.Drawing.ListStyle());
+        var axisPara = new DocumentFormat.OpenXml.Drawing.Paragraph();
+        var axisRun = new DocumentFormat.OpenXml.Drawing.Run();
+        axisRun.Append(new DocumentFormat.OpenXml.Drawing.RunProperties { Bold = true, FontSize = 1000 });
+        axisRun.Append(new DocumentFormat.OpenXml.Drawing.Text(titulo));
+        axisPara.Append(axisRun);
+        axisRichText.Append(axisPara);
+        axisChartText.Append(axisRichText);
+        axisTitle.Append(axisChartText);
+        axisTitle.Append(new Overlay { Val = false });
+        axis.Append(axisTitle);
+    }
 
-        chartPart.ChartSpace = chartSpace;
-        chartPart.ChartSpace.Save();
-
+    private static void AncorarGrafico(DrawingsPart drawingsPart, ChartPart chartPart, WorksheetPart worksheetPart, int linhaGrafico)
+    {
         var wsDr = drawingsPart.WorksheetDrawing ?? new Xdr.WorksheetDrawing();
+        GarantirNamespacesDesenho(wsDr);
 
+        var chartRelId = drawingsPart.GetIdOfPart(chartPart);
+        var twoCellAnchor = CriarAnchor(chartRelId, linhaGrafico, drawingsPart.Parts.Count());
+
+        wsDr.Append(twoCellAnchor);
+
+        if (drawingsPart.WorksheetDrawing == null)
+            drawingsPart.WorksheetDrawing = new Xdr.WorksheetDrawing(wsDr);
+        else
+            drawingsPart.WorksheetDrawing.Save();
+
+        VincularDesenhoAoWorksheet(worksheetPart, drawingsPart);
+        worksheetPart.Worksheet.Save();
+    }
+
+    private static void GarantirNamespacesDesenho(Xdr.WorksheetDrawing wsDr)
+    {
         if (wsDr.LookupNamespace("xdr") == null)
             wsDr.AddNamespaceDeclaration("xdr", "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing");
         if (wsDr.LookupNamespace("a") == null)
             wsDr.AddNamespaceDeclaration("a", "http://schemas.openxmlformats.org/drawingml/2006/main");
         if (wsDr.LookupNamespace("r") == null)
             wsDr.AddNamespaceDeclaration("r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+    }
 
-        var chartRelId = drawingsPart.GetIdOfPart(chartPart);
-
+    private static Xdr.TwoCellAnchor CriarAnchor(string chartRelId, int linhaGrafico, int partsCount)
+    {
         var twoCellAnchor = new Xdr.TwoCellAnchor();
         twoCellAnchor.Append(new Xdr.FromMarker(
             new Xdr.ColumnId("0"),
@@ -405,41 +462,34 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
             new Xdr.RowOffset("0")
         ));
 
-        var graphicFrame = new Xdr.GraphicFrame() { Macro = "" };
+        var graphicFrame = new Xdr.GraphicFrame { Macro = "" };
         graphicFrame.Append(new Xdr.NonVisualGraphicFrameProperties(
-            new Xdr.NonVisualDrawingProperties() { Id = (uint)(drawingsPart.Parts.Count() + 10), Name = "GraficoSondagem" },
+            new Xdr.NonVisualDrawingProperties { Id = (uint)(partsCount + 10), Name = "GraficoSondagem" },
             new Xdr.NonVisualGraphicFrameDrawingProperties()
         ));
         graphicFrame.Append(new Xdr.Transform(
-            new DocumentFormat.OpenXml.Drawing.Offset() { X = 0L, Y = 0L },
-            new DocumentFormat.OpenXml.Drawing.Extents() { Cx = 0L, Cy = 0L }
+            new DocumentFormat.OpenXml.Drawing.Offset { X = 0L, Y = 0L },
+            new DocumentFormat.OpenXml.Drawing.Extents { Cx = 0L, Cy = 0L }
         ));
 
         var graphic = new DocumentFormat.OpenXml.Drawing.Graphic();
-        var graphicData = new DocumentFormat.OpenXml.Drawing.GraphicData()
-        {
-            Uri = "http://schemas.openxmlformats.org/drawingml/2006/chart"
-        };
-        graphicData.Append(new ChartReference() { Id = chartRelId });
+        var graphicData = new DocumentFormat.OpenXml.Drawing.GraphicData { Uri = "http://schemas.openxmlformats.org/drawingml/2006/chart" };
+        graphicData.Append(new ChartReference { Id = chartRelId });
         graphic.Append(graphicData);
         graphicFrame.Append(graphic);
 
         twoCellAnchor.Append(graphicFrame);
         twoCellAnchor.Append(new Xdr.ClientData());
-        wsDr.Append(twoCellAnchor);
+        return twoCellAnchor;
+    }
 
-        if (drawingsPart.WorksheetDrawing == null)
-            drawingsPart.WorksheetDrawing = new Xdr.WorksheetDrawing(wsDr);
-        else
-            drawingsPart.WorksheetDrawing.Save();
-
+    private static void VincularDesenhoAoWorksheet(WorksheetPart worksheetPart, DrawingsPart drawingsPart)
+    {
         if (!worksheetPart.Worksheet.Elements<Drawing>().Any())
         {
             var drawingRelId = worksheetPart.GetIdOfPart(drawingsPart);
-            worksheetPart.Worksheet.Append(new Drawing() { Id = drawingRelId });
+            worksheetPart.Worksheet.Append(new Drawing { Id = drawingRelId });
         }
-
-        worksheetPart.Worksheet.Save();
     }
 
 
