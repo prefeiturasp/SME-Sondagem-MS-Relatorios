@@ -23,9 +23,29 @@ public class ReportConverterTeste
         // Arrange
         var html = "<html><body><h1>Teste</h1></body></html>";
         var bytesEsperados = new byte[] { 1, 2, 3, 4 };
-        
-        IDocument documentoEnviado = null;
-        
+
+        var globalSettings = new GlobalSettings
+        {
+            ColorMode = ColorMode.Color,
+            Orientation = Orientation.Portrait,
+            PaperSize = PaperKind.A4,
+        };
+
+        var objectSettings = new ObjectSettings
+        {
+            PagesCount = true,
+            HtmlContent = "<h1>Relatório de Sondagem</h1><p>Conteúdo do gráfico...</p>",
+            WebSettings = { DefaultEncoding = "utf-8" },
+            HeaderSettings = { FontName = "Arial", FontSize = 9, Right = "Página [page] de [toPage]", Line = true },
+            FooterSettings = { FontName = "Arial", FontSize = 9, Line = true, Center = "Relatório Gerado por Sistema" }
+        };
+
+        IDocument documentoEnviado = new HtmlToPdfDocument()
+        {
+            GlobalSettings = globalSettings,
+            Objects = { objectSettings }
+        };
+
         _converterMock.Setup(c => c.Convert(It.IsAny<IDocument>()))
             .Callback<IDocument>(doc => documentoEnviado = doc)
             .Returns(bytesEsperados);
