@@ -27,10 +27,10 @@ public class ServicoSgpApiClient : IServicoSgpApiClient
         var resposta = await httpClient.PatchAsync(url, new StringContent(body.ToString(), Encoding.UTF8, "application/json"));
 
         if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
-            throw new Exception($"Erro ao consultar API de sondagem. Status: {resposta.StatusCode}");
+            throw new InvalidOperationException($"Erro ao consultar API de sondagem. Status: {resposta.StatusCode}");
 
         var json = await resposta.Content.ReadAsStringAsync();
         if (!string.IsNullOrWhiteSpace(json))
-            throw new Exception($"Erro ao finalizar solicitação de relatório API do SGP. Status: {resposta.StatusCode}");
+            throw new InvalidOperationException($"Erro ao finalizar solicitação de relatório API do SGP. Status: {resposta.StatusCode}");
     }
 }

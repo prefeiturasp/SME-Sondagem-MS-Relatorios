@@ -24,7 +24,7 @@ public class ServicoLog : IServicoLog
 
     public void Registrar(Exception ex)
     {
-        LogMensagem logMensagem = new LogMensagem("Exception --- ", LogNivel.Critico, ex.Message, ex.StackTrace);
+        LogMensagem logMensagem = new LogMensagem("Exception --- ", LogNivel.Critico, ex.Message, ex.StackTrace ?? string.Empty);
         Registrar(logMensagem);
     }
 
@@ -37,27 +37,27 @@ public class ServicoLog : IServicoLog
 
     public void Registrar(string mensagem, Exception ex)
     {
-        LogMensagem logMensagem = new LogMensagem(mensagem, LogNivel.Critico, ex.Message, ex.StackTrace);
+        LogMensagem logMensagem = new LogMensagem(mensagem, LogNivel.Critico, ex.Message, ex.StackTrace ?? string.Empty);
 
         Registrar(logMensagem);
     }
     private void Registrar(LogMensagem log)
     {
         var body = Encoding.UTF8.GetBytes(log.ConverterObjectParaJson());
-        servicoTelemetria.Registrar(() => PublicarMensagem(body), "RabbitMQ", "Salvar Log Via Rabbit", RotasRabbit.RotaLogs);
+        servicoTelemetria.Registrar(async () => await PublicarMensagem(body), "RabbitMQ", "Salvar Log Via Rabbit", RotasRabbit.RotaLogs);
     }
 
-    private async void PublicarMensagem(byte[] body)
+    private async Task PublicarMensagem(byte[] body)
     {
         try
         {
             string? userName = configuracaoRabbitOptions.UserName;
             var factory = new ConnectionFactory
             {
-                HostName = configuracaoRabbitOptions?.HostName,
-                UserName = userName,
-                Password = configuracaoRabbitOptions.Password,
-                VirtualHost = configuracaoRabbitOptions.VirtualHost
+                HostName = configuracaoRabbitOptions?.HostName ?? string.Empty,
+                UserName = userName ?? string.Empty,
+                Password = configuracaoRabbitOptions?.Password ?? string.Empty,
+                VirtualHost = configuracaoRabbitOptions?.VirtualHost ?? string.Empty
             };
 
             using var conexaoRabbit = await factory.CreateConnectionAsync();
@@ -77,7 +77,7 @@ public class ServicoLog : IServicoLog
         }
         catch (Exception ex)
         {
-            logger.LogError(ex.Message);
+            logger?.LogError(ex, "Ocorreu um erro ao tentar publicar uma mensagem no RabbitMQ.");
         }
     }
 }

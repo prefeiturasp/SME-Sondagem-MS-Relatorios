@@ -12,13 +12,13 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Teste.Services;
 public class ServicoMensageriaTeste
 {
     private readonly Mock<IServicoTelemetria> _telemetriaMock;
-    private readonly Mock<ILogger<ServicoLog>> _loggerMock;
+    private readonly Mock<ILogger<ServicoMensageria>> _loggerMock;
     private readonly RabbitOptions _rabbitOptions;
 
     public ServicoMensageriaTeste()
     {
         _telemetriaMock = new Mock<IServicoTelemetria>();
-        _loggerMock = new Mock<ILogger<ServicoLog>>();
+        _loggerMock = new Mock<ILogger<ServicoMensageria>>();
         _rabbitOptions = new RabbitOptions
         {
             HostName = "localhost",

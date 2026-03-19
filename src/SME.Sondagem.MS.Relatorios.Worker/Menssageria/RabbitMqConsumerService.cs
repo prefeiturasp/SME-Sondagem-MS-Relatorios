@@ -37,8 +37,8 @@ public class RabbitMqConsumerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await using var conexaoRabbit = await _rabbitMqSetupService.CreateConnectionAsync();
-        await using var channel = await conexaoRabbit.CreateChannelAsync();
+        await using var conexaoRabbit = await _rabbitMqSetupService.CreateConnectionAsync(stoppingToken);
+        await using var channel = await conexaoRabbit.CreateChannelAsync(null, stoppingToken);
 
         await _rabbitMqSetupService.SetupExchangesAndQueuesAsync(channel, _comandos);
 
@@ -71,14 +71,21 @@ public class RabbitMqConsumerService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            _logger.LogInformation("Worker ativo em: {Now}", DateTime.Now);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Worker ativo em: {Now}", DateTime.Now);
+            }
             await Task.Delay(10000, stoppingToken);
         }
     }
 
     private static async Task RegistrarConsumerAsync(AsyncEventingBasicConsumer consumer, IChannel channel)
     {
-        foreach (var fila in typeof(RotasRabbit).ObterConstantesPublicas<string>())
+        var filas = typeof(RotasRabbit).ObterConstantesPublicas<string>()
+            .Where(fila => !string.IsNullOrEmpty(fila));
+
+        // S3267 fix: Use Where LINQ method instead of manual null check in loop
+        foreach (var fila in filas)
         {
             await channel.BasicConsumeAsync(fila, false, consumer);
         }
