@@ -1,6 +1,6 @@
-﻿using Elastic.Apm.Api;
-using SME.Sondagem.MS.Relatorios.Infra.Constantes;
+﻿using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 using System.Net;
 using System.Text;
@@ -37,12 +37,9 @@ public class ServicoEolApiClient : IServicoEolApiClient
         if (string.IsNullOrWhiteSpace(json))
             return [];
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
 
-        return JsonSerializer.Deserialize<List<EscolaDto>>(json, options);
+        return JsonSerializer.Deserialize<List<EscolaDto>>(json, options) ?? [];
     }
 
     public async Task<TurmaDto> ObterDadosTurmaAsync(int codigoTurma)
@@ -59,12 +56,9 @@ public class ServicoEolApiClient : IServicoEolApiClient
         if (string.IsNullOrWhiteSpace(json))
             return new TurmaDto();
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
 
-        return JsonSerializer.Deserialize<TurmaDto>(json, options);
+        return JsonSerializer.Deserialize<TurmaDto>(json, options) ?? new TurmaDto();
     }
 
     public async Task<DadosUsuarioDto> ObterDadosUsuarioAsync(string codigoRf)
@@ -80,12 +74,9 @@ public class ServicoEolApiClient : IServicoEolApiClient
         var json = await resposta.Content.ReadAsStringAsync();
         if (string.IsNullOrWhiteSpace(json))
             return new DadosUsuarioDto();
+        
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
 
-        var options = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
-
-        return JsonSerializer.Deserialize<DadosUsuarioDto>(json, options);
+        return JsonSerializer.Deserialize<DadosUsuarioDto>(json, options) ?? new DadosUsuarioDto();
     }
 }

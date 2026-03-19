@@ -35,12 +35,9 @@ internal static class RegistrarHttpClients
 
     private static void ConfigurarHttpClientEol(this IServiceCollection services, IConfiguration configuration)
     {
-        var url = configuration.ValidarConfiguracao("UrlApiEOL");
-        var apiKey = configuration.GetValue<string>("ApiKeyEOLApi");
-
         services.AddHttpClient(name: ServicoEolConstantes.SERVICO, c =>
         {
-            c.BaseAddress = new Uri(configuration.GetSection("UrlApiEOL").Value);
+            c.BaseAddress = new Uri(configuration.GetSection("UrlApiEOL").Value ?? "");
             c.DefaultRequestHeaders.Add("Accept", "application/json");
             c.DefaultRequestHeaders.Add("x-api-eol-key", configuration.GetSection("ApiKeyEolApi").Value);
         });

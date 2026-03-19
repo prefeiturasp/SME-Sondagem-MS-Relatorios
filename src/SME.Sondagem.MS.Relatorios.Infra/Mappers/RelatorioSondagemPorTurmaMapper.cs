@@ -30,7 +30,7 @@ public static class RelatorioSondagemPorTurmaMapper
             Semestre = source.SemestreId,
             Bimestre = source.BimestreId,
             Usuario = $"{dadosUsuarioDto.Nome} ({dadosUsuarioDto.CodigoRf})",
-            Estudantes = source?.Estudantes?.Select(e => e.ParaDto())?.ToList(),
+            Estudantes = source?.Estudantes?.Select(e => e.ParaDto())?.ToList() ?? [],
             ExibeColunaLinguaPortuguesaSegundaLingua = exibeColunaLinguaPortuguesaSegundaLingua
         };
     }
