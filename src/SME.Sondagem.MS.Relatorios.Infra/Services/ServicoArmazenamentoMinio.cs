@@ -42,7 +42,7 @@ public class ServicoArmazenamentoMinio : IServicoArmazenamentoMinio
         }
     }
 
-    public async Task<string> UploadRelatorioAsync(byte[] arquivo, string nomeArquivo, string contentType)
+    public async Task<string> UploadRelatorioAsync(byte[] arquivo, string nomeArquivo, string contentType = "application/pdf")
     {
         try
         {

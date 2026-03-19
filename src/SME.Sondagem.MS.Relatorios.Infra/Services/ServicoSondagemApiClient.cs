@@ -25,7 +25,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
         var resposta = await httpClient.GetAsync(urlFinal);
 
         if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
-            new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, string.Empty, new(), new(), 0);
+           return new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, string.Empty, new(), new(), 0);
 
         var jsonString = await resposta.Content.ReadAsStringAsync();
         var options = JsonSerializerExtensions.ObterConfigSerializer();
@@ -42,7 +42,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
         var resposta = await httpClient.GetAsync(urlFinal, cancellationToken);
 
         if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
-            new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, string.Empty, new(), new(), 0);
+           return [];
 
         var jsonString = await resposta.Content.ReadAsStringAsync(cancellationToken);
         var options = JsonSerializerExtensions.ObterConfigSerializer();
