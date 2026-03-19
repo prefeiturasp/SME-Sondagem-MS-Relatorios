@@ -2,7 +2,7 @@
 
 public class PublicaFilaDto
 {
-    public PublicaFilaDto(object dados, string rota, string exchange = null, Guid codigoCorrelacao = default, string codigoRfUsuario = default)
+    public PublicaFilaDto(object dados, string rota, string exchange = "", Guid codigoCorrelacao = default, string codigoRfUsuario = "")
     {
         Dados = dados;
 
@@ -13,11 +13,11 @@ public class PublicaFilaDto
         UsuarioLogadoRF = codigoRfUsuario;
     }
 
-    public string NomeFila { get; set; }
+    public string? NomeFila { get; set; }
     public object Dados { get; set; }
-    public string Rota { get; }
-    public string Exchange { get; set; }
-    public string UsuarioLogadoRF { get; }
+    public string? Rota { get; }
+    public string? Exchange { get; set; }
+    public string? UsuarioLogadoRF { get; }
 
     public Guid CodigoCorrelacao { get; set; }
 }

@@ -5,6 +5,6 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 public interface IRabbitMqSetupService
 {
-    Task<IConnection> CreateConnectionAsync();
+    Task<IConnection> CreateConnectionAsync(CancellationToken stoppingToken);
     Task SetupExchangesAndQueuesAsync(IChannel channel, Dictionary<string, ComandoRabbit> comandos);
 }

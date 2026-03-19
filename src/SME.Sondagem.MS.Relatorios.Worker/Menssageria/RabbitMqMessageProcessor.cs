@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -9,6 +9,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Fila;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 using System.Text;
+using static SME.Sondagem.MS.Relatorios.Infra.Services.ServicoTelemetria;
 
 namespace SME.Sondagem.MS.Relatorios.Worker.Menssageria;
 
@@ -37,10 +38,10 @@ public class RabbitMqMessageProcessor : IRabbitMqMessageProcessor
     public async Task ProcessMessageAsync(BasicDeliverEventArgs ea, IChannel channel, Dictionary<string, ComandoRabbit> comandos)
     {
         var mensagem = Encoding.UTF8.GetString(ea.Body.ToArray());
-        _logger.LogInformation("Mensagem recebida: {mensagem}", mensagem);
+        LogMensagemRecebida(mensagem);
         var rota = ea.RoutingKey;
 
-        if (!comandos.ContainsKey(rota))
+        if (!comandos.TryGetValue(rota, out var comandoRabbit))
         {
             await channel.BasicRejectAsync(ea.DeliveryTag, false);
             return;
@@ -48,53 +49,29 @@ public class RabbitMqMessageProcessor : IRabbitMqMessageProcessor
 
         var transacao = _servicoTelemetria.IniciarTransacao(rota);
         var mensagemRabbit = mensagem.ConverterObjectStringPraObjeto<MensagemRabbit>();
-        var comandoRabbit = comandos[rota];
 
         try
         {
             using var scope = _serviceScopeFactory.CreateScope();
-            var casoDeUso = scope.ServiceProvider.GetService(comandoRabbit.TipoCasoUso);
+            var casoDeUso = scope.ServiceProvider.GetService(comandoRabbit.TipoCasoUso)
+                ?? throw new ArgumentNullException(comandoRabbit.TipoCasoUso.Name);
 
-            if (casoDeUso == null)
-                throw new ArgumentNullException(comandoRabbit.TipoCasoUso.Name);
-
-            await _servicoTelemetria.RegistrarAsync(() =>
-                comandoRabbit.TipoCasoUso.ObterMetodo("Executar").InvokeAsync(casoDeUso, mensagemRabbit),
-                "RabbitMq",
-                rota,
-                rota);
+            if (mensagemRabbit is not null)
+            {
+                await ExecutarCasoDeUsoAsync(comandoRabbit, casoDeUso, mensagemRabbit, rota);
+            }
 
             await channel.BasicAckAsync(ea.DeliveryTag, false);
         }
         catch (NegocioException nex)
         {
-            _logger.LogError("Error: {0}", nex);
-            await channel.BasicAckAsync(ea.DeliveryTag, false);
-            RegistrarLog(ea, mensagemRabbit, nex, LogNivel.Negocio, $"Erros: {nex.Message}");
-            _servicoTelemetria.RegistrarExcecao(transacao, nex);
+            if (mensagemRabbit is not null)
+                await HandleNegocioExceptionAsync(ea, channel, mensagemRabbit, nex, transacao);
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error: {0}", ex);
-            _servicoTelemetria.RegistrarExcecao(transacao, ex);
-            var rejeicoes = GetRetryCount(ea.BasicProperties);
-
-            if (++rejeicoes >= comandoRabbit.QuantidadeReprocessamentoDeadLetter)
-            {
-                await channel.BasicAckAsync(ea.DeliveryTag, false);
-
-                var filaFinal = $"{ea.RoutingKey}.deadletter.final";
-
-                await _servicoMensageria.Publicar(mensagemRabbit, filaFinal,
-                    ExchangeRabbit.SgpDeadLetter,
-                    "PublicarDeadLetter");
-            }
-            else
-            {
-                await channel.BasicRejectAsync(ea.DeliveryTag, false);
-            }
-
-            RegistrarLog(ea, mensagemRabbit, ex, LogNivel.Critico, $"Erros: {ex.Message}");
+            if (mensagemRabbit is not null)
+                await HandleExceptionAsync(ea, channel, mensagemRabbit, comandoRabbit, ex, transacao);
         }
         finally
         {
@@ -102,21 +79,72 @@ public class RabbitMqMessageProcessor : IRabbitMqMessageProcessor
         }
     }
 
-    private ulong GetRetryCount(IReadOnlyBasicProperties properties)
+    private void LogMensagemRecebida(string mensagem)
     {
-        if (properties.Headers == null || !properties.Headers.ContainsKey("x-death"))
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("MensagemRecebida: {MensagemRecebida}", mensagem);
+        }
+    }
+
+    private async Task ExecutarCasoDeUsoAsync(ComandoRabbit comandoRabbit, object casoDeUso, MensagemRabbit mensagemRabbit, string rota)
+    {
+        var metodo = (comandoRabbit.TipoCasoUso?.ObterMetodo("Executar")) ?? throw new InvalidOperationException($"O método 'Executar' não foi encontrado em {comandoRabbit.TipoCasoUso?.FullName ?? "tipo desconhecido"}.");
+        await _servicoTelemetria.RegistrarAsync(() =>
+            metodo.InvokeAsync(casoDeUso, mensagemRabbit),
+            "RabbitMq",
+            rota,
+            rota);
+    }
+
+    private async Task HandleNegocioExceptionAsync(BasicDeliverEventArgs ea, IChannel channel, MensagemRabbit mensagemRabbit, NegocioException nex, ServicoTelemetriaTransacao transacao)
+    {
+        await channel.BasicAckAsync(ea.DeliveryTag, false);
+
+        if (mensagemRabbit != null)
+            RegistrarLog(ea, mensagemRabbit, nex, LogNivel.Negocio, $"Erros: {nex.Message}");
+
+        _servicoTelemetria.RegistrarExcecao(transacao, nex);
+    }
+
+    private async Task HandleExceptionAsync(BasicDeliverEventArgs ea, IChannel channel, MensagemRabbit mensagemRabbit, ComandoRabbit comandoRabbit, Exception ex, ServicoTelemetriaTransacao transacao)
+    {
+        _servicoTelemetria.RegistrarExcecao(transacao, ex);
+        var rejeicoes = GetRetryCount(ea.BasicProperties);
+
+        if (rejeicoes + 1 >= comandoRabbit.QuantidadeReprocessamentoDeadLetter)
+        {
+            await channel.BasicAckAsync(ea.DeliveryTag, false);
+
+            var filaFinal = $"{ea.RoutingKey}.deadletter.final";
+
+            if (mensagemRabbit != null)
+                await _servicoMensageria.Publicar(mensagemRabbit, filaFinal, ExchangeRabbit.SgpDeadLetter, "PublicarDeadLetter");
+        }
+        else
+        {
+            await channel.BasicRejectAsync(ea.DeliveryTag, false);
+        }
+
+        if (mensagemRabbit != null)
+            RegistrarLog(ea, mensagemRabbit, ex, LogNivel.Critico, $"Erros: {ex.Message}");
+    }
+
+    private static ulong GetRetryCount(IReadOnlyBasicProperties properties)
+    {
+        if (properties.Headers is null ||
+            !properties.Headers.TryGetValue("x-death", out var xDeath) ||
+            xDeath is not IList<object> deathProperties ||
+            deathProperties.Count == 0)
+        {
             return 0;
+        }
 
-        var deathProperties = (List<object>)properties.Headers["x-death"];
-        if (deathProperties.Count == 0)
+        if (deathProperties[0] is not IDictionary<string, object> lastRetry ||
+            !lastRetry.TryGetValue("count", out var count))
+        {
             return 0;
-
-        var lastRetry = (Dictionary<string, object>)deathProperties[0];
-
-        if (!lastRetry.ContainsKey("count"))
-            return 0;
-
-        var count = lastRetry["count"];
+        }
 
         return (ulong)Convert.ToInt64(count);
     }
@@ -125,7 +153,7 @@ public class RabbitMqMessageProcessor : IRabbitMqMessageProcessor
     {
         var mensagem = $"Worker Abrangencia: Rota -> {ea.RoutingKey}  Cod Correl -> {mensagemRabbit.CodigoCorrelacao.ToString()[..3]}";
 
-        var logMensagem = new LogMensagem(mensagem, logNivel, observacao, ex?.StackTrace, ex?.InnerException?.Message);
+        var logMensagem = new LogMensagem(mensagem, logNivel, observacao, ex?.StackTrace ?? string.Empty, ex?.InnerException?.Message ?? string.Empty);
 
         var exceptionToLog = new Exception(logMensagem.Mensagem, ex);
 

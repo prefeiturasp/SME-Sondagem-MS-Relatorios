@@ -4,7 +4,7 @@ namespace SME.Sondagem.MS.Relatorios.Dominio.Entidades;
 
 public class LogMensagem
 {
-    public LogMensagem(string mensagem, LogNivel nivel, string observacao, string rastreamento = null, string excecaoInterna = null, string projeto = "SME.Sondagem.MS.Relatorios")
+    public LogMensagem(string mensagem, LogNivel nivel, string observacao, string rastreamento = "", string excecaoInterna = "", string projeto = "SME.Sondagem.MS.Relatorios")
     {
         Mensagem = mensagem;
         Nivel = nivel;

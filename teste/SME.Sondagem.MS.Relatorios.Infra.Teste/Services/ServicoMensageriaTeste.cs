@@ -12,13 +12,13 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Teste.Services;
 public class ServicoMensageriaTeste
 {
     private readonly Mock<IServicoTelemetria> _telemetriaMock;
-    private readonly Mock<ILogger<ServicoLog>> _loggerMock;
+    private readonly Mock<ILogger<ServicoMensageria>> _loggerMock;
     private readonly RabbitOptions _rabbitOptions;
 
     public ServicoMensageriaTeste()
     {
         _telemetriaMock = new Mock<IServicoTelemetria>();
-        _loggerMock = new Mock<ILogger<ServicoLog>>();
+        _loggerMock = new Mock<ILogger<ServicoMensageria>>();
         _rabbitOptions = new RabbitOptions
         {
             HostName = "localhost",
@@ -68,8 +68,6 @@ public class ServicoMensageriaTeste
         var servico = CriarServico();
         var mensagem = new MensagemRabbit("{}", Guid.NewGuid());
 
-        // O método delega a publicação real para o RabbitMQ via telemetria;
-        // a ação real lançará exceção de conexão no ambiente de test, mas é tratada internamente.
         var resultado = await servico.Publicar(mensagem, "rota-teste", "exchange-teste", "acao-teste");
 
         resultado.Should().BeTrue();

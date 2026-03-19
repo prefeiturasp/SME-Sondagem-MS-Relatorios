@@ -14,4 +14,8 @@
     <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.Infra\SME.Sondagem.MS.Relatorios.Infra.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Interceptors\" />
+  </ItemGroup>
+
 </Project>

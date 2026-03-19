@@ -3,10 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Nest;
-using SME.Sondagem.MS.Relatorios.Dados.Interceptors;
 using SME.Sondagem.MS.Relatorios.Infra.EnvironmentVariables;
-using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
-using SME.Sondagem.MS.Relatorios.Infra.Services;
 
 namespace SME.Sondagem.MS.Relatorios.IoC;
 
@@ -20,33 +17,24 @@ public static class ConfigureServices
         services.Configure<TelemetriaOptions>(configuration.GetSection(TelemetriaOptions.Secao));
         services.Configure<ElasticOptions>(configuration.GetSection(ElasticOptions.Secao));
 
-        // Registra o cliente do Elasticsearch.
         services.AddSingleton<IElasticClient>(provider =>
         {
             var elasticOptions = provider.GetRequiredService<IOptions<ElasticOptions>>().Value;
-            var nodes = elasticOptions.Urls.Split(',').Select(url => new Uri(url)).ToList();
+            var nodes = elasticOptions?.Urls?.Split(',').Select(url => new Uri(url)).ToList();
 
             var connectionPool = new StaticConnectionPool(nodes);
             var connectionSettings = new ConnectionSettings(connectionPool)
-                .DefaultIndex(elasticOptions.IndicePadrao);
+                .DefaultIndex(elasticOptions?.IndicePadrao);
 
-            if (!string.IsNullOrEmpty(elasticOptions.CertificateFingerprint))
-                connectionSettings.CertificateFingerprint(elasticOptions.CertificateFingerprint);
+            if (!string.IsNullOrEmpty(elasticOptions?.CertificateFingerprint))
+                connectionSettings.CertificateFingerprint(elasticOptions?.CertificateFingerprint);
 
-            if (!string.IsNullOrEmpty(elasticOptions.Usuario) && !string.IsNullOrEmpty(elasticOptions.Senha))
+            if (!string.IsNullOrEmpty(elasticOptions?.Usuario) && !string.IsNullOrEmpty(elasticOptions?.Senha))
             {
-                connectionSettings.BasicAuthentication(elasticOptions.Usuario, elasticOptions.Senha);
+                connectionSettings?.BasicAuthentication(elasticOptions.Usuario, elasticOptions.Senha);
             }
 
             return new ElasticClient(connectionSettings);
-        });
-
-        services.AddSingleton<IServicoTelemetria>(provider =>
-        {
-            var telemetriaOptions = provider.GetRequiredService<IOptions<TelemetriaOptions>>().Value;
-            var servicoTelemetria = new ServicoTelemetria(telemetriaOptions);
-            DapperExtensionMethods.Init(servicoTelemetria);
-            return servicoTelemetria;
         });
     }
 

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using RabbitMQ.Client;
+﻿using RabbitMQ.Client;
 using SME.Sondagem.MS.Relatorios.Infra.EnvironmentVariables;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Fila;
@@ -10,25 +9,23 @@ namespace SME.Sondagem.MS.Relatorios.Worker.Menssageria;
 public class RabbitMqSetupService : IRabbitMqSetupService
 {
     private readonly RabbitOptions _rabbitOptions;
-    private readonly ILogger<RabbitMqSetupService> _logger;
 
-    public RabbitMqSetupService(RabbitOptions rabbitOptions, ILogger<RabbitMqSetupService> logger)
+    public RabbitMqSetupService(RabbitOptions rabbitOptions)
     {
         _rabbitOptions = rabbitOptions ?? throw new ArgumentNullException(nameof(rabbitOptions));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<IConnection> CreateConnectionAsync()
+    public async Task<IConnection> CreateConnectionAsync(CancellationToken stoppingToken)
     {
         var factory = new ConnectionFactory
         {
-            HostName = _rabbitOptions.HostName,
-            UserName = _rabbitOptions.UserName,
-            Password = _rabbitOptions.Password,
-            VirtualHost = _rabbitOptions.VirtualHost
+            HostName = _rabbitOptions?.HostName ?? string.Empty,
+            UserName = _rabbitOptions?.UserName ?? string.Empty,
+            Password = _rabbitOptions?.Password ?? string.Empty,
+            VirtualHost = _rabbitOptions?.VirtualHost ?? string.Empty
         };
 
-        return await factory.CreateConnectionAsync();
+        return await factory.CreateConnectionAsync(stoppingToken);
     }
 
     public async Task SetupExchangesAndQueuesAsync(IChannel channel, Dictionary<string, ComandoRabbit> comandos)
@@ -45,6 +42,9 @@ public class RabbitMqSetupService : IRabbitMqSetupService
     {
         foreach (var fila in typeof(RotasRabbit).ObterConstantesPublicas<string>())
         {
+            if (fila is null)
+                continue;
+
             var filaDeadLetter = $"{fila}.deadletter";
             var filaDeadLetterFinal = $"{fila}.deadletter.final";
 
@@ -65,7 +65,7 @@ public class RabbitMqSetupService : IRabbitMqSetupService
 
             await channel.QueueBindAsync(filaDeadLetter, ExchangeRabbit.SgpDeadLetter, fila, null);
 
-            var argsFinal = new Dictionary<string, object> { { "x-queue-mode", "lazy" } };
+            var argsFinal = new Dictionary<string, object?> { { "x-queue-mode", "lazy" } };
 
             await channel.QueueDeclareAsync(
                 queue: filaDeadLetterFinal,
@@ -78,20 +78,20 @@ public class RabbitMqSetupService : IRabbitMqSetupService
         }
     }
 
-    private static Dictionary<string, object> ObterArgumentoDaFila(string fila, Dictionary<string, ComandoRabbit> comandos)
+    private static Dictionary<string, object?> ObterArgumentoDaFila(string fila, Dictionary<string, ComandoRabbit> comandos)
     {
-        var args = new Dictionary<string, object>
+        var args = new Dictionary<string, object?>
             { { "x-dead-letter-exchange", ExchangeRabbit.SgpDeadLetter } };
 
-        if (comandos.ContainsKey(fila) && comandos[fila].ModeLazy)
+        if (comandos.TryGetValue(fila, out ComandoRabbit? value) && value.ModeLazy)
             args.Add("x-queue-mode", "lazy");
 
         return args;
     }
 
-    private static Dictionary<string, object> ObterArgumentoDaFilaDeadLetter(string fila, Dictionary<string, ComandoRabbit> comandos)
+    private static Dictionary<string, object?> ObterArgumentoDaFilaDeadLetter(string fila, Dictionary<string, ComandoRabbit> comandos)
     {
-        var argsDlq = new Dictionary<string, object>();
+        var argsDlq = new Dictionary<string, object?>();
         var ttl = comandos.TryGetValue(fila, out ComandoRabbit? value) ? value.Ttl : ExchangeRabbit.SgpDeadLetterTTL_3;
 
         argsDlq.Add("x-dead-letter-exchange", ExchangeRabbit.Sgp);

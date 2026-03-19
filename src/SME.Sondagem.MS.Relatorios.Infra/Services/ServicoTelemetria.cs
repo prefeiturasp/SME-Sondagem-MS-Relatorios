@@ -39,10 +39,11 @@ public class ServicoTelemetria : IServicoTelemetria
             servicoTelemetriaTransacao.TransacaoApm?.CaptureException(ex);
     }
 
+    // Fix for CS8600: Use 'default!' to suppress nullable warnings for dynamic assignment
     public async Task<dynamic> RegistrarComRetornoAsync<T>(Func<Task<object>> acao, string acaoNome,
         string telemetriaNome, string telemetriaValor, string parametros)
     {
-        dynamic result = default;
+        dynamic result = default!;
         if (telemetriaOptions.Apm)
         {
             var transactionElk = Agent.Tracer.CurrentTransaction;
@@ -63,12 +64,12 @@ public class ServicoTelemetria : IServicoTelemetria
 
     public async Task<dynamic> RegistrarComRetornoAsync<T>(Func<Task<object>> acao, string acaoNome, string telemetriaNome, string telemetriaValor)
     {
-        return await RegistrarComRetornoAsync<T>(acao, acaoNome, telemetriaNome, telemetriaValor, null);
+        return await RegistrarComRetornoAsync<T>(acao, acaoNome, telemetriaNome, telemetriaValor, "");
     }
 
     public dynamic RegistrarComRetorno<T>(Func<object> acao, string acaoNome, string telemetriaNome, string telemetriaValor)
     {
-        dynamic result = default;
+        dynamic result = default!;
         if (telemetriaOptions.Apm)
         {
             var transactionElk = Agent.Tracer.CurrentTransaction;
@@ -131,6 +132,8 @@ public class ServicoTelemetria : IServicoTelemetria
         {
             Nome = nome;
             Sucesso = true;
+            TransacaoApm = null!;
+            Temporizador = null!;
         }
 
         public string Nome { get; set; }
