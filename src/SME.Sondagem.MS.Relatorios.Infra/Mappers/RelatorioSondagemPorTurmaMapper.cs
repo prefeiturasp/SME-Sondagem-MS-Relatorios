@@ -1,24 +1,23 @@
 ﻿using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Records;
 
 namespace SME.Sondagem.MS.Relatorios.Infra.Mappers;
 
-public static class ConsultaSondagemMapper
+public static class RelatorioSondagemPorTurmaMapper
 {
-    public static ConsultaSondagemPorTurmaDto ParaDto(this RetornoApiSondagemQuestionarioDto source, 
+    public static RelatorioSondagemPorTurmaDto ParaDto(this RetornoApiSondagemQuestionarioDto source, 
                                                       EscolaDto? escolaDto, 
                                                       TurmaDto turmaDto, 
                                                       DadosUsuarioDto dadosUsuarioDto,
                                                       Modalidade modalidade,
-                                                      bool exibeColunaLinguaPortuguesaSegundaLingua,
-                                                      int? bimestreId,
-                                                      int? semestreId)
+                                                      bool exibeColunaLinguaPortuguesaSegundaLingua)
     {
-        if (source == null) return new ConsultaSondagemPorTurmaDto();
+        if (source == null) return new RelatorioSondagemPorTurmaDto();
 
-        return new ConsultaSondagemPorTurmaDto
+        return new RelatorioSondagemPorTurmaDto
         {
             AnoLetivo = turmaDto.AnoLetivo,
             Dre = escolaDto?.NomeDRE,
@@ -28,8 +27,8 @@ public static class ConsultaSondagemMapper
             Proficiencia = source.TituloTabelaRespostas,
             Modalidade = modalidade,
             TituloTabelaRespostas = source.TituloTabelaRespostas,
-            Semestre = semestreId.ToString(),
-            Bimestre = bimestreId?.ToString(),
+            Semestre = source.SemestreId,
+            Bimestre = source.BimestreId,
             Usuario = $"{dadosUsuarioDto.Nome} ({dadosUsuarioDto.CodigoRf})",
             Estudantes = source?.Estudantes?.Select(e => e.ParaDto())?.ToList(),
             ExibeColunaLinguaPortuguesaSegundaLingua = exibeColunaLinguaPortuguesaSegundaLingua
@@ -38,7 +37,7 @@ public static class ConsultaSondagemMapper
 
     private static EstudanteDto ParaDto(this Estudante source)
     {
-        if (source == null) return null;
+        if (source == null) return new EstudanteDto();
 
         return new EstudanteDto
         {
@@ -51,15 +50,15 @@ public static class ConsultaSondagemMapper
             Pap = source.Pap,
             Aee = source.Aee,
             PossuiDeficiencia = source.PossuiDeficiencia,
-            Coluna = source.Colunas?.Select(c => c.ParaDto()).ToList()
+            Coluna = source?.Colunas?.Select(c => c.ParaDto())?.ToList() ?? []
         };
     }
 
-    private static ColunaDto ParaDto(this Coluna source)
+    private static ColunaQuestionarioDto ParaDto(this Coluna source)
     {
-        if (source == null) return null;
+        if (source == null) return new ColunaQuestionarioDto();
 
-        return new ColunaDto
+        return new ColunaQuestionarioDto
         {
             IdCiclo = source.IdCiclo,
             DescricaoColuna = source.DescricaoColuna,
@@ -72,7 +71,7 @@ public static class ConsultaSondagemMapper
 
     private static OpcaoRespostaDto ParaDto(this OpcaoResposta source)
     {
-        if (source == null) return null;
+        if (source == null) return new OpcaoRespostaDto();
 
         return new OpcaoRespostaDto
         {
@@ -87,7 +86,7 @@ public static class ConsultaSondagemMapper
 
     private static RespostaDto ParaDto(this Resposta source)
     {
-        if (source == null) return null;
+        if (source == null) return new RespostaDto();
 
         return new RespostaDto
         {
