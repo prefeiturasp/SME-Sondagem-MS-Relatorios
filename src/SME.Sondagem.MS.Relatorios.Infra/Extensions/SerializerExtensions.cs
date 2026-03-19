@@ -4,7 +4,7 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Extensions;
 
 public static class JsonSerializerExtensions
 {
-    private static JsonSerializerOptions ObterConfigSerializer()
+    public static JsonSerializerOptions ObterConfigSerializer()
     {
         return new JsonSerializerOptions
         {

@@ -31,14 +31,14 @@ public class RabbitMqConsumerService : BackgroundService
         _rabbitMqSetupService = rabbitMqSetupService ?? throw new ArgumentNullException(nameof(rabbitMqSetupService));
         _rabbitMqMessageProcessor = rabbitMqMessageProcessor ?? throw new ArgumentNullException(nameof(rabbitMqMessageProcessor));
 
-        _comandos = new Dictionary<string, ComandoRabbit>();
+        _comandos = [];
         RegistrarUseCases();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await using var conexaoRabbit = await _rabbitMqSetupService.CreateConnectionAsync();
-        await using var channel = await conexaoRabbit.CreateChannelAsync();
+        await using var conexaoRabbit = await _rabbitMqSetupService.CreateConnectionAsync(stoppingToken);
+        await using var channel = await conexaoRabbit.CreateChannelAsync(null, stoppingToken);
 
         await _rabbitMqSetupService.SetupExchangesAndQueuesAsync(channel, _comandos);
 
@@ -71,15 +71,22 @@ public class RabbitMqConsumerService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            _logger.LogInformation("Worker ativo em: {Now}", DateTime.Now);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Worker ativo em: {Now}", DateTime.Now);
+            }
             await Task.Delay(10000, stoppingToken);
         }
     }
 
     private static async Task RegistrarConsumerAsync(AsyncEventingBasicConsumer consumer, IChannel channel)
     {
-        foreach (var fila in typeof(RotasRabbit).ObterConstantesPublicas<string>())
+        var filas = typeof(RotasRabbit).ObterConstantesPublicas<string>()
+            .Where(fila => !string.IsNullOrEmpty(fila));
+
+        foreach (var fila in filas)
         {
+            if (fila == null) continue;
             await channel.BasicConsumeAsync(fila, false, consumer);
         }
     }

@@ -38,11 +38,11 @@ public class ServicoArmazenamentoMinio : IServicoArmazenamentoMinio
         }
         catch (Exception ex)
         {
-            throw new Exception($"Erro ao gerar link no MinIO: {ex.Message}");
+            throw new InvalidOperationException("Erro ao gerar link no MinIO.", ex);
         }
     }
 
-    public async Task<string> UploadRelatorioAsync(byte[] arquivo, string nomeArquivo, string contentType)
+    public async Task<string> UploadRelatorioAsync(byte[] arquivo, string nomeArquivo, string contentType = "application/pdf")
     {
         try
         {
@@ -69,7 +69,7 @@ public class ServicoArmazenamentoMinio : IServicoArmazenamentoMinio
         }
         catch (Exception ex)
         {
-            throw new Exception($"Erro ao enviar para o MinIO: {ex.Message}");
+            throw new InvalidOperationException("Erro ao gerar link no MinIO.", ex);
         }
     }
 }

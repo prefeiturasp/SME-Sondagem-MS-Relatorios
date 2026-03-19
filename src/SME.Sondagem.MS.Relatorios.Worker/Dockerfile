@@ -1,24 +1,29 @@
 FROM mcr.microsoft.com/dotnet/runtime:10.0 AS base
 WORKDIR /app
 
+# Definição do usuário padrão caso não seja informado em build time
+ARG APP_UID=1000
+
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgdiplus \
-    libx11-6 \
-    libxrender1 \
-    libxext6 \
-    libfontconfig1 \
-    libfreetype6 \
-    libpng16-16 \
-    libjpeg-turbo8 \
-    zlib1g \
-    libicu-dev \
-    xfonts-75dpi \
-    xfonts-base \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libfontconfig1 \
+        libfreetype6 \
+        libgdiplus \
+        libicu-dev \
+        libjpeg-turbo8 \
+        libpng16-16 \
+        libx11-6 \
+        libxext6 \
+        libxrender1 \
+        xfonts-75dpi \
+        xfonts-base \
+        zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
 ENV LD_LIBRARY_PATH="/app:/usr/lib"
-USER $APP_UID
+USER "$APP_UID"
+
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
@@ -34,18 +39,28 @@ RUN dotnet restore "src/SME.Sondagem.MS.Relatorios.Worker/SME.Sondagem.MS.Relato
 
 COPY . .
 WORKDIR "/src/src/SME.Sondagem.MS.Relatorios.Worker"
-RUN dotnet build "SME.Sondagem.MS.Relatorios.Worker.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+RUN dotnet build "SME.Sondagem.MS.Relatorios.Worker.csproj" \
+    -c "$BUILD_CONFIGURATION" \
+    -o /app/build
+
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "SME.Sondagem.MS.Relatorios.Worker.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+RUN dotnet publish "SME.Sondagem.MS.Relatorios.Worker.csproj" \
+    -c "$BUILD_CONFIGURATION" \
+    -o /app/publish \
+    /p:UseAppHost=false
+
 
 FROM base AS final
 WORKDIR /app
+
 COPY --from=publish /app/publish .
 
 USER root
 RUN if [ -f /app/libwkhtmltox.so ]; then chmod +x /app/libwkhtmltox.so; fi
-USER $APP_UID
+USER "$APP_UID"
 
 ENTRYPOINT ["dotnet", "SME.Sondagem.MS.Relatorios.Worker.dll"]

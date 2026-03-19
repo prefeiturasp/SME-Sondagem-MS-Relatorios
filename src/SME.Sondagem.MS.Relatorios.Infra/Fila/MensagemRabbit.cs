@@ -14,6 +14,6 @@ public class MensagemRabbit
     public Guid CodigoCorrelacao { get; set; }
     public T? ObterObjetoMensagem<T>() where T : class
     {
-        return Mensagem?.ToString().ConverterObjectStringPraObjeto<T>();
+        return Mensagem?.ToString()?.ConverterObjectStringPraObjeto<T>();
     }
 }

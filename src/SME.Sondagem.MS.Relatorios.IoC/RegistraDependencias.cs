@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 using SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 using SME.Sondagem.MS.Relatorios.Excel.Interfaces;
@@ -24,8 +25,6 @@ public static class RegistraDependencias
         ConfigurarRabbitmq(services, configuration);
         ConfigurarRabbitmqLog(services, configuration);
 
-        RegistrarRepositorios(services);
-
         var context = new CustomAssemblyLoadContext();
         var nomeBliblioteca = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? "libwkhtmltox.dll" : "libwkhtmltox.so";
         context.LoadUnmanagedLibrary(Path.Combine(Directory.GetCurrentDirectory(), nomeBliblioteca));
@@ -35,13 +34,15 @@ public static class RegistraDependencias
         RegistrarIntegracoes(services);
     }
 
-    private static void RegistrarRepositorios(IServiceCollection services)
-    {
-
-    }
-
     private static void RegistrarServicos(IServiceCollection services, IConfiguration configuration)
     {
+        var telemetria = new TelemetriaOptions();
+        configuration.GetSection(TelemetriaOptions.Secao).Bind(telemetria, c => c.BindNonPublicProperties = true);
+        services.AddSingleton(telemetria);
+
+        // or reuse IOptions<T>:
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<TelemetriaOptions>>().Value);
+
         services.TryAddScoped<IServicoTelemetria, ServicoTelemetria>();
         services.TryAddScoped<IServicoLog, ServicoLog>();
         services.TryAddSingleton<IServicoMensageria, ServicoMensageria>();
