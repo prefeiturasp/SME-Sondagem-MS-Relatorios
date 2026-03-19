@@ -7,8 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.Excel\SME.Sondagem.MS.Relatorios.Excel.csproj" />
-    <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.HtmlPdf\SME.Sondagem.MS.Relatorios.HtmlPdf.csproj" />
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.Infra\SME.Sondagem.MS.Relatorios.Infra.csproj" />
   </ItemGroup>
 

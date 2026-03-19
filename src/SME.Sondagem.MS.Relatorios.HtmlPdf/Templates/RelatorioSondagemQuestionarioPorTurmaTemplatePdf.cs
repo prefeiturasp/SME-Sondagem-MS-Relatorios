@@ -1,14 +1,18 @@
-﻿using SME.Sondagem.MS.Relatorios.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
+using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using System.Globalization;
 using System.Text;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
-public static class RelatorioSondagemQuestionarioPorTurmaTemplate
+public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondagemQuestionarioPorTurmaTemplatePdf
 {
-    public static string GerarHtml(ConsultaSondagemPorTurmaDto dto)
+    private static string FechaDiv = "</div>";
+
+    public string GerarHtml(RelatorioSondagemPorTurmaDto dto)
     {
         var html = new StringBuilder();
 
@@ -240,77 +244,100 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         return html.ToString();
     }
 
-    private static GraficoSondagemDto ConsolidarGrafico(ConsultaSondagemPorTurmaDto dto)
+    private static GraficoSondagemDto ConsolidarGrafico(RelatorioSondagemPorTurmaDto dto)
     {
-        var colunas = dto.Estudantes?
-        .FirstOrDefault()?.Coluna?.ToList();
-
-        var totaisPorOpcao = new Dictionary<int, (string Legenda, string CorFundo, string CorTexto, int Count)>();
+        var totaisPorOpcao = new Dictionary<int, GraficoBarraDto>();
         int totalVazio = 0;
 
-        if (dto.Estudantes != null)
+        var colunasReferencia = dto.Estudantes?.FirstOrDefault()?.Coluna?.ToList() ?? new List<ColunaQuestionarioDto>();
+        var estudantes = dto.Estudantes ?? new List<EstudanteDto>();
+
+        foreach (var estudante in estudantes)
         {
-            foreach (var estudante in dto.Estudantes)
-            {
-                foreach (var coluna in colunas)
-                {
-                    var col = estudante.Coluna?
-                        .FirstOrDefault(c => c.IdCiclo == coluna.IdCiclo
-                                          && c.QuestaoSubrespostaId == coluna.QuestaoSubrespostaId);
-
-                    if (col?.Resposta == null) continue;
-
-                    var opcao = col.Resposta.OpcaoRespostaId != null && col.OpcaoResposta != null
-                        ? col.OpcaoResposta.FirstOrDefault(o => o.Id == col.Resposta.OpcaoRespostaId)
-                        : null;
-
-                    if (opcao == null)
-                    {
-                        totalVazio++;
-                    }
-                    else
-                    {
-                        if (totaisPorOpcao.ContainsKey(opcao.Id))
-                        {
-                            var t = totaisPorOpcao[opcao.Id];
-                            totaisPorOpcao[opcao.Id] = (t.Legenda, t.CorFundo, t.CorTexto, t.Count + 1);
-                        }
-                        else
-                        {
-                            totaisPorOpcao[opcao.Id] = (
-                                opcao.DescricaoOpcaoResposta ?? opcao.Legenda ?? "?",
-                                opcao.CorFundo ?? "#BFBFC2",
-                                opcao.CorTexto ?? "#fff",
-                                1
-                            );
-                        }
-                    }
-                }
-            }
+            ProcessarColunasEstudante(estudante, colunasReferencia, totaisPorOpcao, ref totalVazio);
         }
 
-        var barras = totaisPorOpcao.Values
-            .OrderByDescending(b => b.Count)
-            .Select(b => new GraficoBarraDto { Legenda = b.Legenda, CorFundo = b.CorFundo, CorTexto = b.CorTexto, Quantidade = b.Count })
+        return GerarDtoGrafico(dto.TituloTabelaRespostas, totaisPorOpcao, totalVazio);
+    }
+
+    private static void ProcessarColunasEstudante(
+        EstudanteDto estudante,
+        List<ColunaQuestionarioDto> colunasReferencia,
+        Dictionary<int, GraficoBarraDto> totais,
+        ref int totalVazio)
+    {
+        foreach (var refColuna in colunasReferencia)
+        {
+            var coluna = estudante.Coluna?.FirstOrDefault(c =>
+                c.IdCiclo == refColuna.IdCiclo &&
+                c.QuestaoSubrespostaId == refColuna.QuestaoSubrespostaId);
+
+            if (coluna?.Resposta == null) continue;
+
+            var opcao = ObterOpcaoSelecionada(coluna);
+
+            if (opcao == null)
+                totalVazio++;
+            else
+                AcumularTotalPorOpcao(totais, opcao);
+        }
+    }
+
+    private static OpcaoRespostaDto ObterOpcaoSelecionada(ColunaQuestionarioDto coluna)
+    {
+        if (coluna?.Resposta?.OpcaoRespostaId == null || coluna.OpcaoResposta == null)
+            return new OpcaoRespostaDto();
+
+        return coluna?.OpcaoResposta?.FirstOrDefault(o => o.Id == coluna?.Resposta?.OpcaoRespostaId) ?? new OpcaoRespostaDto();
+    }
+
+    private static void AcumularTotalPorOpcao(Dictionary<int, GraficoBarraDto> totais, OpcaoRespostaDto opcao)
+    {
+        if (totais.TryGetValue(opcao.Id, out var barra))
+        {
+            barra.Quantidade++;
+        }
+        else
+        {
+            totais[opcao.Id] = new GraficoBarraDto
+            {
+                Legenda = opcao.DescricaoOpcaoResposta ?? opcao.Legenda ?? "?",
+                CorFundo = opcao.CorFundo ?? "#BFBFC2",
+                CorTexto = opcao.CorTexto ?? "#fff",
+                Quantidade = 1
+            };
+        }
+    }
+
+    private static GraficoSondagemDto GerarDtoGrafico(string subtitulo, Dictionary<int, GraficoBarraDto> totais, int totalVazio)
+    {
+        var barras = totais.Values
+            .OrderByDescending(b => b.Quantidade)
             .ToList();
 
         if (totalVazio > 0)
-            barras.Add(new GraficoBarraDto { Legenda = "Vazio", CorFundo = "#E0E0E0", CorTexto = "#42474A", Quantidade = totalVazio });
+        {
+            barras.Add(new GraficoBarraDto
+            {
+                Legenda = "Vazio",
+                CorFundo = "#E0E0E0",
+                CorTexto = "#42474A",
+                Quantidade = totalVazio
+            });
+        }
 
-        var grafico = new GraficoSondagemDto
+        return new GraficoSondagemDto
         {
             Titulo = "Gráfico da Sondagem",
-            Subtitulo = dto.TituloTabelaRespostas,
+            Subtitulo = subtitulo,
             Barras = barras
         };
-
-        return grafico;
     }
 
-    private static string GerarCabecalho(ConsultaSondagemPorTurmaDto dto)
+    private static string GerarCabecalho(RelatorioSondagemPorTurmaDto dto)
     {
         var sb = new StringBuilder();
-        var semestreBimestre = ObterFiltroSemestreOuBimestre(dto.Bimestre, dto.Semestre, dto.Modalidade);
+        var semestreBimestre = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(dto.Bimestre, dto.Semestre, dto.Modalidade);
 
         sb.Append($@"
                         <div class=""header-logo"">
@@ -342,56 +369,49 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         return sb.ToString();
     }
 
-
-
-    private static (string NomeFiltro, string ValorFiltro) ObterFiltroSemestreOuBimestre(string bimestre, string semestre, Dominio.Enums.Modalidade modalidade)
+    public static string GerarTemplate(RelatorioSondagemPorTurmaDto model)
     {
-        var nomeFiltro = "";
-        var valorFiltro = "Todos";
-
-        if (modalidade == Modalidade.EJA)
-        {
-            nomeFiltro = "Semestre";
-
-            if (!string.IsNullOrEmpty(semestre) && semestre != "0" && Enum.TryParse(semestre, out Semestre semestreEnum))
-            {
-                valorFiltro = semestreEnum.ToString();
-            }
-        }
-        else
-        {
-            nomeFiltro = "Bimestre";
-
-            if (!string.IsNullOrEmpty(bimestre) && bimestre != "0" && Enum.TryParse(bimestre, out Bimestre bimestreEnum))
-            {
-                valorFiltro = bimestreEnum.ToString();
-            }
-        }
-
-        return (nomeFiltro, valorFiltro);
-    }
-
-    public static string GerarTemplate(ConsultaSondagemPorTurmaDto model)
-    {
-
-        var colunas = model.Estudantes?.FirstOrDefault()?.Coluna?.ToList()
-                      ?? new List<ColunaDto>();
-
+        var colunas = ObterColunasReferencia(model);
         int nColunas = colunas.Count > 0 ? colunas.Count : 1;
-        string larguraResp = (41.58 / nColunas).ToString("F2", CultureInfo.InvariantCulture) + "%";
+        string larguraResp = CalcularLarguraResposta(nColunas);
 
         var sb = new StringBuilder();
-        sb.AppendLine("<div class=\"report-title\">");
-        sb.AppendLine($"    <h1>Relatório da Sondagem</h1>");
-        sb.AppendLine($"    <h2>{model.TituloTabelaRespostas}</h2>");
-        sb.AppendLine("</div>");
+        GerarSecaoTitulo(sb, model.TituloTabelaRespostas);
 
         sb.AppendLine("<table class=\"main-table\">");
+        GerarColgroup(sb, model.ExibeColunaLinguaPortuguesaSegundaLingua, nColunas, larguraResp);
+        GerarCabecalhoTabela(sb, model.ExibeColunaLinguaPortuguesaSegundaLingua, nColunas, model.TituloTabelaRespostas, colunas);
+        GerarCorpoTabela(sb, model, colunas);
+        sb.AppendLine("</table>");
 
+        return sb.ToString();
+    }
+
+    private static List<ColunaQuestionarioDto> ObterColunasReferencia(RelatorioSondagemPorTurmaDto model)
+    {
+        return model.Estudantes?.FirstOrDefault()?.Coluna?.ToList()
+               ?? new List<ColunaQuestionarioDto>();
+    }
+
+    private static string CalcularLarguraResposta(int nColunas)
+    {
+        return (41.58 / nColunas).ToString("F2", CultureInfo.InvariantCulture) + "%";
+    }
+
+    private static void GerarSecaoTitulo(StringBuilder sb, string titulo)
+    {
+        sb.AppendLine("<div class=\"report-title\">");
+        sb.AppendLine("    <h1>Relatório da Sondagem</h1>");
+        sb.AppendLine($"    <h2>{titulo}</h2>");
+        sb.AppendLine(FechaDiv);
+    }
+
+    private static void GerarColgroup(StringBuilder sb, bool exibeLP, int nColunas, string larguraResp)
+    {
         sb.AppendLine("    <colgroup>");
         sb.AppendLine("        <col style=\"width: 4.97%;\" />");
         sb.AppendLine("        <col style=\"width: 23.09%;\" />");
-        if (model.ExibeColunaLinguaPortuguesaSegundaLingua)
+        if (exibeLP)
             sb.AppendLine("        <col style=\"width: 10.12%;\" />");
         sb.AppendLine("        <col style=\"width: 10.12%;\" />");
         sb.AppendLine("        <col style=\"width: 10.12%;\" />");
@@ -400,19 +420,22 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
             sb.AppendLine($"        <col style=\"width: {larguraResp};\" />");
         }
         sb.AppendLine("    </colgroup>");
+    }
 
+    private static void GerarCabecalhoTabela(StringBuilder sb, bool exibeLP, int nColunas, string titulo, List<ColunaQuestionarioDto> colunas)
+    {
         sb.AppendLine("    <thead>");
-        sb.AppendLine("        <tr>");
+        sb.AppendLine("<tr>");
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-num\">N°</th>");
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-nome\">Nome</th>");
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-raca\">Raça</th>");
         sb.AppendLine("            <th rowspan=\"2\" class=\"col-genero\">Gênero</th>");
 
-        if (model.ExibeColunaLinguaPortuguesaSegundaLingua)
+        if (exibeLP)
             sb.AppendLine("            <th rowspan=\"2\" class=\"col-lp\">LP como 2° língua?</th>");
 
-        sb.AppendLine($"            <th colspan=\"{nColunas}\">{model.TituloTabelaRespostas}</th>");
-        sb.AppendLine("        </tr>");
+        sb.AppendLine($"            <th colspan=\"{nColunas}\">{titulo}</th>");
+        sb.AppendLine("</tr>");
         sb.AppendLine("        <tr>");
         foreach (var col in colunas)
         {
@@ -420,54 +443,73 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         }
         sb.AppendLine("        </tr>");
         sb.AppendLine("    </thead>");
-
-        sb.AppendLine("    <tbody>");
-        if (model.Estudantes != null)
-        {
-            foreach (var estudante in model.Estudantes)
-            {
-                sb.AppendLine("        <tr>");
-                sb.AppendLine($"            <td class=\"col-num\">{estudante.NumeroAlunoChamada}</td>");
-
-                sb.AppendLine("            <td class=\"col-nome aluno-nome\">");
-                sb.AppendLine($"                {estudante.NomeRelatorio}");
-                if (estudante.Aee || estudante.Pap || estudante.PossuiDeficiencia)
-                {
-                    sb.AppendLine("                <div class=\"badges-container\">");
-                    if (estudante.Aee) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_AEE}\" class=\"badge-icon\" alt=\"AEE\" />");
-                    if (estudante.Pap) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_PAP}\" class=\"badge-icon\" alt=\"PAP\" />");
-                    if (estudante.PossuiDeficiencia) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_Acessibilidade}\" class=\"badge-icon\" alt=\"Deficiência\" />");
-                    sb.AppendLine("                </div>");
-                }
-                sb.AppendLine("            </td>");
-
-                sb.AppendLine($"            <td class=\"col-raca\">{estudante.Raca}</td>");
-                sb.AppendLine($"            <td class=\"col-genero\">{estudante.Genero}</td>");
-
-                if (model.ExibeColunaLinguaPortuguesaSegundaLingua)
-                {
-                    string checkLp = estudante.LinguaPortuguesaSegundaLingua
-                                  ? "<span class=\"checkbox-lp checked\">&#10003;</span>"
-                                  : "<span class=\"checkbox-lp\"></span>";
-                    sb.AppendLine($"            <td class=\"col-lp\">{checkLp}</td>");
-                }
-
-
-                foreach (var colCabecalho in colunas)
-                {
-                    sb.Append(GerarTdResposta(estudante, colCabecalho));
-                }
-
-                sb.AppendLine("        </tr>");
-            }
-        }
-        sb.AppendLine("    </tbody>");
-        sb.AppendLine("</table>");
-
-        return sb.ToString();
     }
 
-    private static string GerarTdResposta(EstudanteDto estudante, ColunaDto colRef)
+    private static void GerarCorpoTabela(StringBuilder sb, RelatorioSondagemPorTurmaDto model, List<ColunaQuestionarioDto> colunas)
+    {
+        sb.AppendLine("    <tbody>");
+        if (model.Estudantes == null)
+        {
+            sb.AppendLine("    </tbody>");
+            return;
+        }
+
+        foreach (var estudante in model.Estudantes)
+        {
+            GerarLinhaEstudante(sb, model, estudante, colunas);
+        }
+        sb.AppendLine("    </tbody>");
+    }
+
+    private static void GerarLinhaEstudante(StringBuilder sb, RelatorioSondagemPorTurmaDto model, EstudanteDto estudante, List<ColunaQuestionarioDto> colunas)
+    {
+        sb.AppendLine("        <tr>");
+        sb.AppendLine($"            <td class=\"col-num\">{estudante.NumeroAlunoChamada}</td>");
+
+        GerarCelulaNomeComBadges(sb, estudante);
+
+        sb.AppendLine($"            <td class=\"col-raca\">{estudante.Raca}</td>");
+        sb.AppendLine($"            <td class=\"col-genero\">{estudante.Genero}</td>");
+
+        if (model.ExibeColunaLinguaPortuguesaSegundaLingua)
+        {
+            GerarCelulaLP(sb, estudante.LinguaPortuguesaSegundaLingua);
+        }
+
+        foreach (var colCabecalho in colunas)
+        {
+            sb.Append(GerarTdResposta(estudante, colCabecalho));
+        }
+
+        sb.AppendLine("        </tr>");
+    }
+
+    private static void GerarCelulaNomeComBadges(StringBuilder sb, EstudanteDto estudante)
+    {
+        sb.AppendLine("            <td class=\"col-nome aluno-nome\">");
+        sb.AppendLine($"                {estudante.NomeRelatorio}");
+
+        if (estudante.Aee || estudante.Pap || estudante.PossuiDeficiencia)
+        {
+            sb.AppendLine("                <div class=\"badges-container\">");
+            if (estudante.Aee) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_AEE}\" class=\"badge-icon\" alt=\"AEE\" />");
+            if (estudante.Pap) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_PAP}\" class=\"badge-icon\" alt=\"PAP\" />");
+            if (estudante.PossuiDeficiencia) sb.AppendLine($"                    <img src=\"{SmeConstants.Logo_Acessibilidade}\" class=\"badge-icon\" alt=\"Deficiência\" />");
+            sb.AppendLine(FechaDiv);
+        }
+
+        sb.AppendLine("</td>");
+    }
+
+    private static void GerarCelulaLP(StringBuilder sb, bool linguaPortuguesaSegundaLingua)
+    {
+        string checkLp = linguaPortuguesaSegundaLingua
+                      ? "<span class=\"checkbox-lp checked\">&#10003;</span>"
+                      : "<span class=\"checkbox-lp\"></span>";
+        sb.AppendLine($"            <td class=\"col-lp\">{checkLp}</td>");
+    }
+
+    private static string GerarTdResposta(EstudanteDto estudante, ColunaQuestionarioDto colRef)
     {
         var colEstudante = estudante.Coluna?.FirstOrDefault(c =>
             c.IdCiclo == colRef.IdCiclo && c.QuestaoSubrespostaId == colRef.QuestaoSubrespostaId);
@@ -481,7 +523,7 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
             return "            <td class=\"col-resp\"><span class=\"resposta-vazio\">Vazio</span></td>";
 
         string style = $"style=\"background-color: {opcao.CorFundo ?? "transparent"}; color: {opcao.CorTexto ?? "#333"};\"";
-        string texto = opcao.DescricaoOpcaoResposta ?? opcao.Legenda;
+        string texto = opcao?.DescricaoOpcaoResposta ?? "";
 
         return $"            <td class=\"col-resp\" {style}>{texto}</td>";
     }
@@ -550,7 +592,7 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
             sb.AppendLine("                            </td>");
             sb.AppendLine("                        </tr>");
             sb.AppendLine("                    </table>");
-            sb.AppendLine("                </div>");
+            sb.AppendLine(FechaDiv);
         }
         sb.AppendLine("            </td>");
         sb.AppendLine($"            <td style=\"width:{areaWidth}px; padding:0; border:none; vertical-align:top;\">");
@@ -597,7 +639,7 @@ public static class RelatorioSondagemQuestionarioPorTurmaTemplate
         sb.AppendLine("            </td>");
         sb.AppendLine("        </tr>");
         sb.AppendLine("    </table>");
-        sb.AppendLine("</div>");
+        sb.AppendLine(FechaDiv);
 
         return sb.ToString();
     }

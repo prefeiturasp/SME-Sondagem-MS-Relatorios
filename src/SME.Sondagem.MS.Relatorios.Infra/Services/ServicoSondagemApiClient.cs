@@ -17,7 +17,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<RetornoApiSondagemQuestionarioDto> ObterDadosQuestionarioAsync(FiltroRelatorioSondagemQuestionarioPorTurmaDto filtroRelatorio)
+    public async Task<RetornoApiSondagemQuestionarioDto> ObterDadosQuestionarioAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 

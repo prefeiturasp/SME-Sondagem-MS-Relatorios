@@ -1,6 +1,6 @@
 ﻿namespace SME.Sondagem.MS.Relatorios.Infra.Fila;
 
-public class RotasRabbit
+public static class RotasRabbit
 {
     public static string RotaLogs => "ApplicationLog";
     public static string Log => "ApplicationLog";

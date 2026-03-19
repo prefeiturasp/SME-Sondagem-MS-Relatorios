@@ -5,8 +5,8 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Records;
 public record RetornoApiSondagemQuestionarioDto
 (
     [property: JsonPropertyName("tituloTabelaRespostas")] string TituloTabelaRespostas,
-    [property: JsonPropertyName("semestreId")] string Semestre,
-    [property: JsonPropertyName("bimestreId")] string Bimestre,
+    [property: JsonPropertyName("semestreId")] string SemestreId,
+    [property: JsonPropertyName("bimestreId")] string BimestreId,
     [property: JsonPropertyName("estudantes")] List<Estudante> Estudantes,
     [property: JsonPropertyName("legenda")] List<Legenda> Legendas,
     [property: JsonPropertyName("questionarioId")] int QuestionarioId

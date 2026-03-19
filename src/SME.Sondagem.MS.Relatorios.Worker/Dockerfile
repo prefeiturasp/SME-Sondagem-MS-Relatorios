@@ -26,6 +26,7 @@ WORKDIR /src
 
 COPY ["src/SME.Sondagem.MS.Relatorios.Worker/SME.Sondagem.MS.Relatorios.Worker.csproj", "src/SME.Sondagem.MS.Relatorios.Worker/"]
 COPY ["src/SME.Sondagem.MS.Relatorios.HtmlPdf/SME.Sondagem.MS.Relatorios.HtmlPdf.csproj", "src/SME.Sondagem.MS.Relatorios.HtmlPdf/"]
+COPY ["src/SME.Sondagem.MS.Relatorios.Excel/SME.Sondagem.MS.Relatorios.Excel.csproj", "src/SME.Sondagem.MS.Relatorios.Excel/"]
 COPY ["src/SME.Sondagem.MS.Relatorios.Infra/SME.Sondagem.MS.Relatorios.Infra.csproj", "src/SME.Sondagem.MS.Relatorios.Infra/"]
 COPY ["src/SME.Sondagem.MS.Relatorios.IoC/SME.Sondagem.MS.Relatorios.IoC.csproj", "src/SME.Sondagem.MS.Relatorios.IoC/"]
 

@@ -1,16 +1,19 @@
-﻿using WkHtmlToPdfDotNet;
-using WkHtmlToPdfDotNet.Contracts;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 using SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
+using SME.Sondagem.MS.Relatorios.Excel.Interfaces;
+using SME.Sondagem.MS.Relatorios.Excel.Templates;
 using SME.Sondagem.MS.Relatorios.HtmlPdf;
 using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
+using SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 using SME.Sondagem.MS.Relatorios.Infra.EnvironmentVariables;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Services;
 using SME.Sondagem.MS.Relatorios.IoC.Extensions;
+using WkHtmlToPdfDotNet;
+using WkHtmlToPdfDotNet.Contracts;
 
 namespace SME.Sondagem.MS.Relatorios.IoC;
 
@@ -51,6 +54,8 @@ public static class RegistraDependencias
         services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
         services.TryAddScoped<IReportConverter, ReportConverter>();
         services.TryAddScoped<IServicoArmazenamentoMinio, ServicoArmazenamentoMinio>();
+        services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaTemplatePdf, RelatorioSondagemQuestionarioPorTurmaTemplatePdf>();
+        services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaTemplateExcel, RelatorioSondagemQuestionarioPorTurmaTemplateExcel>();
 
     }
 
