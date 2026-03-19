@@ -92,7 +92,7 @@ public class RabbitMqSetupService : IRabbitMqSetupService
     private static Dictionary<string, object> ObterArgumentoDaFilaDeadLetter(string fila, Dictionary<string, ComandoRabbit> comandos)
     {
         var argsDlq = new Dictionary<string, object>();
-        var ttl = comandos.ContainsKey(fila) ? comandos[fila].Ttl : ExchangeRabbit.SgpDeadLetterTTL_3;
+        var ttl = comandos.TryGetValue(fila, out ComandoRabbit? value) ? value.Ttl : ExchangeRabbit.SgpDeadLetterTTL_3;
 
         argsDlq.Add("x-dead-letter-exchange", ExchangeRabbit.Sgp);
         argsDlq.Add("x-message-ttl", ttl);

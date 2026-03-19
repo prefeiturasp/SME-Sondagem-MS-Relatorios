@@ -28,7 +28,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
             new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, string.Empty, new(), new(), 0);
 
         var jsonString = await resposta.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
 
         return JsonSerializer.Deserialize<RetornoApiSondagemQuestionarioDto>(jsonString, options)
                  ?? new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, string.Empty, new(), new(), 0);
@@ -39,13 +39,13 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
         string urlFinal = string.Format(ServicoSondagemConstantes.URL_PARAMETROS_SONDAGEM, questionoarioId);
-        var resposta = await httpClient.GetAsync(urlFinal);
+        var resposta = await httpClient.GetAsync(urlFinal, cancellationToken);
 
         if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
             new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, string.Empty, new(), new(), 0);
 
-        var jsonString = await resposta.Content.ReadAsStringAsync();
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var jsonString = await resposta.Content.ReadAsStringAsync(cancellationToken);
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
 
         return JsonSerializer.Deserialize<List<ParametroSondagemDto>>(jsonString, options)
                  ?? [];
