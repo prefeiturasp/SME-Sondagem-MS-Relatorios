@@ -31,7 +31,7 @@ public class RabbitMqConsumerService : BackgroundService
         _rabbitMqSetupService = rabbitMqSetupService ?? throw new ArgumentNullException(nameof(rabbitMqSetupService));
         _rabbitMqMessageProcessor = rabbitMqMessageProcessor ?? throw new ArgumentNullException(nameof(rabbitMqMessageProcessor));
 
-        _comandos = new Dictionary<string, ComandoRabbit>();
+        _comandos = [];
         RegistrarUseCases();
     }
 
@@ -84,9 +84,9 @@ public class RabbitMqConsumerService : BackgroundService
         var filas = typeof(RotasRabbit).ObterConstantesPublicas<string>()
             .Where(fila => !string.IsNullOrEmpty(fila));
 
-        // S3267 fix: Use Where LINQ method instead of manual null check in loop
         foreach (var fila in filas)
         {
+            if (fila == null) continue;
             await channel.BasicConsumeAsync(fila, false, consumer);
         }
     }

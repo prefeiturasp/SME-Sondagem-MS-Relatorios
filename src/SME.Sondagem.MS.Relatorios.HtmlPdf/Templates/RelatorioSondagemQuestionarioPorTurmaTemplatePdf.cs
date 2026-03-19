@@ -10,7 +10,7 @@ namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
 public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondagemQuestionarioPorTurmaTemplatePdf
 {
-    private static string FechaDiv = "</div>";
+    private static readonly string FechaDiv = "</div>";
 
     public string GerarHtml(RelatorioSondagemPorTurmaDto dto)
     {
@@ -249,8 +249,8 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
         var totaisPorOpcao = new Dictionary<int, GraficoBarraDto>();
         int totalVazio = 0;
 
-        var colunasReferencia = dto.Estudantes?.FirstOrDefault()?.Coluna?.ToList() ?? new List<ColunaQuestionarioDto>();
-        var estudantes = dto.Estudantes ?? new List<EstudanteDto>();
+        var colunasReferencia = dto.Estudantes?.FirstOrDefault()?.Coluna?.ToList() ?? [];
+        var estudantes = dto.Estudantes ?? [];
 
         foreach (var estudante in estudantes)
         {
@@ -337,7 +337,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
     private static string GerarCabecalho(RelatorioSondagemPorTurmaDto dto)
     {
         var sb = new StringBuilder();
-        var semestreBimestre = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(dto.Bimestre, dto.Semestre, dto.Modalidade);
+        var (NomeFiltro, ValorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(dto.Bimestre, dto.Semestre, dto.Modalidade);
 
         sb.Append($@"
                         <div class=""header-logo"">
@@ -357,7 +357,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
                                             <tr>
                                           
                                               <td colspan=""2""><strong>Proficiência:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
-                                              <td><strong>{semestreBimestre.NomeFiltro}:</strong> {System.Web.HttpUtility.HtmlEncode(semestreBimestre.ValorFiltro)}</td>
+                                              <td><strong>{NomeFiltro}:</strong> {System.Web.HttpUtility.HtmlEncode(ValorFiltro)}</td>
                                             </tr>
                                             <tr>
                                               <td colspan=""2""><strong>Usuário:</strong> {System.Web.HttpUtility.HtmlEncode(dto.Usuario)}</td>
@@ -390,7 +390,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
     private static List<ColunaQuestionarioDto> ObterColunasReferencia(RelatorioSondagemPorTurmaDto model)
     {
         return model.Estudantes?.FirstOrDefault()?.Coluna?.ToList()
-               ?? new List<ColunaQuestionarioDto>();
+               ?? [];
     }
 
     private static string CalcularLarguraResposta(int nColunas)

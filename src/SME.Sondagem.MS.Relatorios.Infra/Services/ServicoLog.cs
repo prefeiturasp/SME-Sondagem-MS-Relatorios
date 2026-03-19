@@ -24,20 +24,20 @@ public class ServicoLog : IServicoLog
 
     public void Registrar(Exception ex)
     {
-        LogMensagem logMensagem = new LogMensagem("Exception --- ", LogNivel.Critico, ex.Message, ex.StackTrace ?? string.Empty);
+        LogMensagem logMensagem = new("Exception --- ", LogNivel.Critico, ex.Message, ex.StackTrace ?? string.Empty);
         Registrar(logMensagem);
     }
 
     public void Registrar(LogNivel nivel, string erro, string observacoes, string stackTrace)
     {
-        LogMensagem logMensagem = new LogMensagem(erro, nivel, observacoes, stackTrace);
+        LogMensagem logMensagem = new(erro, nivel, observacoes, stackTrace);
         Registrar(logMensagem);
 
     }
 
     public void Registrar(string mensagem, Exception ex)
     {
-        LogMensagem logMensagem = new LogMensagem(mensagem, LogNivel.Critico, ex.Message, ex.StackTrace ?? string.Empty);
+        LogMensagem logMensagem = new(mensagem, LogNivel.Critico, ex.Message, ex.StackTrace ?? string.Empty);
 
         Registrar(logMensagem);
     }

@@ -8,11 +8,10 @@ public static class ExtensionMethods
 {
     public static List<T?> ObterConstantesPublicas<T>(this Type type)
     {
-        return type
+        return [.. type
             .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
             .Where(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(T))
-            .Select(x => (T?)x.GetRawConstantValue())
-            .ToList();
+            .Select(x => (T?)x.GetRawConstantValue())];
     }
 
     public static MethodInfo? ObterMetodo(this Type type, string method)
@@ -35,10 +34,7 @@ public static class ExtensionMethods
 
     public static async Task<object> InvokeAsync(this MethodInfo @this, object obj, params object[] parameters)
     {
-        var awaitable = @this.Invoke(obj, parameters);
-        if (awaitable == null)
-            throw new InvalidOperationException("Method invocation returned null, cannot await.");
-
+        var awaitable = @this.Invoke(obj, parameters) ?? throw new InvalidOperationException("Method invocation returned null, cannot await.");
         dynamic dynAwaitable = awaitable;
         await dynAwaitable;
         return dynAwaitable.GetAwaiter().GetResult();

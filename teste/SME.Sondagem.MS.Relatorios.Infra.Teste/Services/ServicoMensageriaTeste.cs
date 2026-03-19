@@ -68,8 +68,6 @@ public class ServicoMensageriaTeste
         var servico = CriarServico();
         var mensagem = new MensagemRabbit("{}", Guid.NewGuid());
 
-        // O método delega a publicação real para o RabbitMQ via telemetria;
-        // a ação real lançará exceção de conexão no ambiente de test, mas é tratada internamente.
         var resultado = await servico.Publicar(mensagem, "rota-teste", "exchange-teste", "acao-teste");
 
         resultado.Should().BeTrue();
