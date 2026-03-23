@@ -3,6 +3,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
+using SME.Sondagem.MS.Relatorios.Infra.Records;
 using System.Globalization;
 using System.Text;
 
@@ -98,6 +99,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
 
                                             /* Tabela principal */
                                             .main-table {
+                                                margin-top: inherit;
                                                 width: 100%;
                                                 border-collapse: collapse;
                                                 table-layout: fixed;
@@ -371,18 +373,26 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
 
     public static string GerarTemplate(RelatorioSondagemPorTurmaDto model)
     {
-        var colunas = ObterColunasReferencia(model);
-        int nColunas = colunas.Count > 0 ? colunas.Count : 1;
-        string larguraResp = CalcularLarguraResposta(nColunas);
-
         var sb = new StringBuilder();
+        var colunasReferencia = ObterColunasReferencia(model);
+        var colunasAgrupadasPorCiclo = colunasReferencia
+                .GroupBy(c => c.IdCiclo)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
         GerarSecaoTitulo(sb, model.TituloTabelaRespostas);
 
-        sb.AppendLine("<table class=\"main-table\">");
-        GerarColgroup(sb, model.ExibeColunaLinguaPortuguesaSegundaLingua, nColunas, larguraResp);
-        GerarCabecalhoTabela(sb, model.ExibeColunaLinguaPortuguesaSegundaLingua, nColunas, model.TituloTabelaRespostas, colunas);
-        GerarCorpoTabela(sb, model, colunas);
-        sb.AppendLine("</table>");
+        foreach (var colunas in colunasAgrupadasPorCiclo.Values)
+        {
+            int nColunas = colunas.Count > 0 ? colunas.Count : 1;
+            string larguraResp = CalcularLarguraResposta(nColunas);
+
+
+            sb.AppendLine("<table class=\"main-table\">");
+            GerarColgroup(sb, model.ExibeColunaLinguaPortuguesaSegundaLingua, nColunas, larguraResp);
+            GerarCabecalhoTabela(sb, model.ExibeColunaLinguaPortuguesaSegundaLingua, nColunas, model.TituloTabelaRespostas, colunas);
+            GerarCorpoTabela(sb, model, colunas);
+            sb.AppendLine("</table>");
+        }
 
         return sb.ToString();
     }
