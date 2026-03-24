@@ -64,8 +64,6 @@ public class RelatorioSondagemPorTurmaMapperTeste
         resultado.SiglaDre.Should().Be("DN");
         resultado.Proficiencia.Should().Be("Meu Titulo");
         resultado.TituloTabelaRespostas.Should().Be("Meu Titulo");
-        resultado.Semestre.Should().Be("1");
-        resultado.Bimestre.Should().Be("2");
         resultado.Modalidade.Should().Be(Modalidade.Fundamental);
         resultado.ExibeColunaLinguaPortuguesaSegundaLingua.Should().BeFalse();
     }

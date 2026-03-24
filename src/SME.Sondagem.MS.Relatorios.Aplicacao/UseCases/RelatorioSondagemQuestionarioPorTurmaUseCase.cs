@@ -96,6 +96,8 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
                                         exibeColunaLinguaPortuguesaSegundaLingua);
 
         relatorioSondagemPorTurmaDto.CodigoCorrelacao = codigoCorrelacao;
+        relatorioSondagemPorTurmaDto.Bimestre = mensagemSondagemQuestionarioDto.FiltrosUsados.BimestreId;
+        relatorioSondagemPorTurmaDto.Semestre = mensagemSondagemQuestionarioDto.FiltrosUsados.SemestreId;
         return relatorioSondagemPorTurmaDto;
     }
 

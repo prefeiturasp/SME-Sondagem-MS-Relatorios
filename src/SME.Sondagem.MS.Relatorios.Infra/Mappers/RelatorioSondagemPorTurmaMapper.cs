@@ -27,8 +27,6 @@ public static class RelatorioSondagemPorTurmaMapper
             Proficiencia = source.TituloTabelaRespostas,
             Modalidade = modalidade,
             TituloTabelaRespostas = source.TituloTabelaRespostas,
-            Semestre = source.SemestreId,
-            Bimestre = source.BimestreId,
             Usuario = $"{dadosUsuarioDto.Nome} ({dadosUsuarioDto.CodigoRf})",
             Estudantes = source?.Estudantes?.Select(e => e.ParaDto())?.ToList() ?? [],
             ExibeColunaLinguaPortuguesaSegundaLingua = exibeColunaLinguaPortuguesaSegundaLingua

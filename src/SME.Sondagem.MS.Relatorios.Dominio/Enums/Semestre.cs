@@ -4,9 +4,9 @@ namespace SME.Sondagem.MS.Relatorios.Dominio.Enums;
 
 public enum Semestre
 {
-    [Display(Name = "1° semestre", ShortName = "1° semestre")]
+    [Display(Name = "1° Semestre", ShortName = "1° Semestre")]
     Primeiro = 1,
 
-    [Display(Name = "2° semestre", ShortName = "2° semestre")]
+    [Display(Name = "2° Semestre", ShortName = "2° Semestre")]
     Segundo = 2,
 }

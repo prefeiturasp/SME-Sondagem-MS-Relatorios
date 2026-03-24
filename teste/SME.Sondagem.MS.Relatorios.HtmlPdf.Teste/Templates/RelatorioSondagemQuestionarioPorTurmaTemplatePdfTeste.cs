@@ -30,10 +30,10 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdfTeste
             UnidadeEducacional = "EMEF TESTE",
             Turma = "1A",
             Proficiencia = "Leitura",
-            Bimestre = "1",
-            Semestre = "1",
+            Bimestre = 1,
+            Semestre = 1,
             Usuario = "admin",
-            DataImpressao = new DateTime(2023, 10, 10),
+            DataImpressao = new DateTime(2023, 10, 10, 0, 0, 0, DateTimeKind.Utc),
             TituloTabelaRespostas = "Sondagem de Leitura",
             ExibeColunaLinguaPortuguesaSegundaLingua = true,
             Estudantes = new List<EstudanteDto>
@@ -91,8 +91,8 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdfTeste
         var dto = new RelatorioSondagemPorTurmaDto
         {
             AnoLetivo = 2023,
-            Bimestre = "1",
-            Semestre = "1",
+            Bimestre = 1,
+            Semestre = 1,
             TituloTabelaRespostas = "Sondagem sem resposta",
             Estudantes = new List<EstudanteDto>
             {

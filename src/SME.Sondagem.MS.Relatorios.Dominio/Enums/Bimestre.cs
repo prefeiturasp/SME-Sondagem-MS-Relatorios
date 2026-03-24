@@ -7,15 +7,15 @@ public enum Bimestre
     [Display(Name = "Inicial", ShortName = "Inicial")]
     Inicial = 1,
 
-    [Display(Name = "1° bimestre", ShortName = "1° bimestre")]
+    [Display(Name = "1° Bimestre", ShortName = "1° Bimestre")]
     Primeiro = 2,
 
-    [Display(Name = "2° bimestre", ShortName = "2° bimestre")]
+    [Display(Name = "2° Bimestre", ShortName = "2° Bimestre")]
     Segundo = 3,
 
-    [Display(Name = "3° bimestre", ShortName = "3° bimestre")]
+    [Display(Name = "3° Bimestre", ShortName = "3° Bimestre")]
     Terceiro = 4,
 
-    [Display(Name = "4° bimestre", ShortName = "4° bimestre")]
+    [Display(Name = "4° Bimestre", ShortName = "4° Bimestre")]
     Quarto = 5,
 }
