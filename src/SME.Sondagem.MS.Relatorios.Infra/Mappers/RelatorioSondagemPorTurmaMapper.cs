@@ -24,7 +24,6 @@ public static class RelatorioSondagemPorTurmaMapper
             SiglaDre = escolaDto?.SiglaDRE,
             Turma = $"{modalidade.ShortName()} - {turmaDto.NomeTurma} - {turmaDto.Ano}° ANO",
             UnidadeEducacional = $"{escolaDto?.CodigoEscola} - {escolaDto?.SiglaTipoEscola} - {escolaDto?.NomeEscola}",
-            Proficiencia = source.TituloTabelaRespostas,
             Modalidade = modalidade,
             TituloTabelaRespostas = source.TituloTabelaRespostas,
             Usuario = $"{dadosUsuarioDto.Nome} ({dadosUsuarioDto.CodigoRf})",

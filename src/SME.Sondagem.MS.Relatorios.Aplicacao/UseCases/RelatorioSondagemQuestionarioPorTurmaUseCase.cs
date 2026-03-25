@@ -70,14 +70,17 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         var tarefaDreUe = _servicoEolApiClient.ObterDadosDreAsync([mensagemSondagemQuestionarioDto.FiltrosUsados.UeCodigo]);
         var tarefaTurma = _servicoEolApiClient.ObterDadosTurmaAsync(mensagemSondagemQuestionarioDto.FiltrosUsados.TurmaId);
         var tarefaUsuario = _servicoEolApiClient.ObterDadosUsuarioAsync(mensagemSondagemQuestionarioDto.UsuarioQueSolicitou);
+        var tarefaProficiencia = _servicoSondagemApiClient.ObterProficienciaPorIdAsync(mensagemSondagemQuestionarioDto.FiltrosUsados.ProficienciaId);
 
-        await Task.WhenAll(tarefaDadosRelatorio, tarefaDreUe, tarefaTurma, tarefaUsuario);
+        await Task.WhenAll(tarefaDadosRelatorio, tarefaDreUe, tarefaTurma, tarefaUsuario, tarefaProficiencia);
 
         var dadosRelatorio = tarefaDadosRelatorio.Result;
         var dreUe = tarefaDreUe.Result;
         var turma = tarefaTurma.Result;
         var usuario = tarefaUsuario.Result;
         var parametroSondagem = await _servicoSondagemApiClient.ObterParametrosSondagemPorQuestionarioId(dadosRelatorio.QuestionarioId);
+        var proficiencia = tarefaProficiencia.Result;
+
 
         usuario.CodigoRf = mensagemSondagemQuestionarioDto.UsuarioQueSolicitou;
 
@@ -98,6 +101,8 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCase : IRelatorioSondagemQu
         relatorioSondagemPorTurmaDto.CodigoCorrelacao = codigoCorrelacao;
         relatorioSondagemPorTurmaDto.Bimestre = mensagemSondagemQuestionarioDto.FiltrosUsados.BimestreId;
         relatorioSondagemPorTurmaDto.Semestre = mensagemSondagemQuestionarioDto.FiltrosUsados.SemestreId;
+        relatorioSondagemPorTurmaDto.Proficiencia = proficiencia?.Nome ?? "";
+
         return relatorioSondagemPorTurmaDto;
     }
 
