@@ -22,10 +22,10 @@ public class EnumExtensaoTeste
 
     [Theory]
     [InlineData(Bimestre.Inicial, "Inicial")]
-    [InlineData(Bimestre.Primeiro, "1° bimestre")]
-    [InlineData(Bimestre.Segundo, "2° bimestre")]
-    [InlineData(Bimestre.Terceiro, "3° bimestre")]
-    [InlineData(Bimestre.Quarto, "4° bimestre")]
+    [InlineData(Bimestre.Primeiro, "1° Bimestre")]
+    [InlineData(Bimestre.Segundo, "2° Bimestre")]
+    [InlineData(Bimestre.Terceiro, "3° Bimestre")]
+    [InlineData(Bimestre.Quarto, "4° Bimestre")]
     public void ShortName_DeveRetornarShortNameCorreto_QuandoBimestreValido(Bimestre bimestre, string shortNameEsperado)
     {
         var resultado = bimestre.ShortName();
@@ -34,8 +34,8 @@ public class EnumExtensaoTeste
     }
 
     [Theory]
-    [InlineData(Semestre.Primeiro, "1° semestre")]
-    [InlineData(Semestre.Segundo, "2° semestre")]
+    [InlineData(Semestre.Primeiro, "1° Semestre")]
+    [InlineData(Semestre.Segundo, "2° Semestre")]
     public void ShortName_DeveRetornarShortNameCorreto_QuandoSemestreValido(Semestre semestre, string shortNameEsperado)
     {
         var resultado = semestre.ShortName();

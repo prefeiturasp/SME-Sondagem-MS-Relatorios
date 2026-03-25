@@ -10,7 +10,7 @@ public class SemestreOuBimestreTeste
     [Fact]
     public void ObterFiltroSemestreOuBimestre_DeveRetornarSemestreTodos_QuandoEjaESemestreVazio()
     {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(string.Empty, string.Empty, Modalidade.EJA);
+        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, null, Modalidade.EJA);
 
         nomeFiltro.Should().Be("Semestre");
         valorFiltro.Should().Be("Todos");
@@ -19,7 +19,7 @@ public class SemestreOuBimestreTeste
     [Fact]
     public void ObterFiltroSemestreOuBimestre_DeveRetornarSemestreZero_QuandoEjaESemestreZero()
     {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(string.Empty, "0", Modalidade.EJA);
+        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, 0, Modalidade.EJA);
 
         nomeFiltro.Should().Be("Semestre");
         valorFiltro.Should().Be("Todos");
@@ -28,25 +28,25 @@ public class SemestreOuBimestreTeste
     [Fact]
     public void ObterFiltroSemestreOuBimestre_DeveRetornarPrimeiro_QuandoEjaESemestre1()
     {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(string.Empty, "1", Modalidade.EJA);
+        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, 1, Modalidade.EJA);
 
         nomeFiltro.Should().Be("Semestre");
-        valorFiltro.Should().Be("Primeiro");
+        valorFiltro.Should().Be("1° Semestre");
     }
 
     [Fact]
     public void ObterFiltroSemestreOuBimestre_DeveRetornarSegundo_QuandoEjaESemestre2()
     {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(string.Empty, "2", Modalidade.EJA);
+        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, 2, Modalidade.EJA);
 
         nomeFiltro.Should().Be("Semestre");
-        valorFiltro.Should().Be("Segundo");
+        valorFiltro.Should().Be("2° Semestre");
     }
 
     [Fact]
     public void ObterFiltroSemestreOuBimestre_DeveRetornarBimestreTodos_QuandoFundamentalEBimestreVazio()
     {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(string.Empty, string.Empty, Modalidade.Fundamental);
+        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, null, Modalidade.Fundamental);
 
         nomeFiltro.Should().Be("Bimestre");
         valorFiltro.Should().Be("Todos");
@@ -55,20 +55,20 @@ public class SemestreOuBimestreTeste
     [Fact]
     public void ObterFiltroSemestreOuBimestre_DeveRetornarBimestreZero_QuandoFundamentalEBimestreZero()
     {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre("0", string.Empty, Modalidade.Fundamental);
+        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(0, null, Modalidade.Fundamental);
 
         nomeFiltro.Should().Be("Bimestre");
         valorFiltro.Should().Be("Todos");
     }
 
     [Theory]
-    [InlineData("2", "Primeiro")]
-    [InlineData("3", "Segundo")]
-    [InlineData("4", "Terceiro")]
-    [InlineData("5", "Quarto")]
-    public void ObterFiltroSemestreOuBimestre_DeveRetornarBimestreCorreto_QuandoFundamental(string bimestreValor, string nomeBimestreEsperado)
+    [InlineData(2, "1° Bimestre")]
+    [InlineData(3, "2° Bimestre")]
+    [InlineData(4, "3° Bimestre")]
+    [InlineData(5, "4° Bimestre")]
+    public void ObterFiltroSemestreOuBimestre_DeveRetornarBimestreCorreto_QuandoFundamental(int bimestreValor, string nomeBimestreEsperado)
     {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(bimestreValor, string.Empty, Modalidade.Fundamental);
+        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(bimestreValor, null, Modalidade.Fundamental);
 
         nomeFiltro.Should().Be("Bimestre");
         valorFiltro.Should().Be(nomeBimestreEsperado);
@@ -77,7 +77,7 @@ public class SemestreOuBimestreTeste
     [Fact]
     public void ObterFiltroSemestreOuBimestre_DeveRetornarBimestreTodos_QuandoMedioEBimestreInvalido()
     {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre("invalido", string.Empty, Modalidade.Medio);
+        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(-1, null, Modalidade.Medio);
 
         nomeFiltro.Should().Be("Bimestre");
         valorFiltro.Should().Be("Todos");

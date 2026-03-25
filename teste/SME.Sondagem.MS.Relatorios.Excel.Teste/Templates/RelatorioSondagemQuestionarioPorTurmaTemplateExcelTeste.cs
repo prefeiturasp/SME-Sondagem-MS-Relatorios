@@ -78,7 +78,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplateExcelTeste
         return new RelatorioSondagemPorTurmaDto
         {
             AnoLetivo = 2024,
-            Bimestre = "1",
+            Bimestre = 1,
             CodigoCorrelacao = codigoCorrelacao,
             DataImpressao = DateTime.Now,
             Dre = "DRE - BT",
