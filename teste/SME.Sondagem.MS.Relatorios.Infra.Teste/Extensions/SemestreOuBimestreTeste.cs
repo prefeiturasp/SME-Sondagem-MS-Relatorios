@@ -31,7 +31,7 @@ public class SemestreOuBimestreTeste
         var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, 1, Modalidade.EJA);
 
         nomeFiltro.Should().Be("Semestre");
-        valorFiltro.Should().Be("1° Semestre");
+        valorFiltro.Should().Be("1Â° Semestre");
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class SemestreOuBimestreTeste
         var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, 2, Modalidade.EJA);
 
         nomeFiltro.Should().Be("Semestre");
-        valorFiltro.Should().Be("2° Semestre");
+        valorFiltro.Should().Be("2Â° Semestre");
     }
 
     [Fact]
@@ -62,10 +62,10 @@ public class SemestreOuBimestreTeste
     }
 
     [Theory]
-    [InlineData(2, "1° Bimestre")]
-    [InlineData(3, "2° Bimestre")]
-    [InlineData(4, "3° Bimestre")]
-    [InlineData(5, "4° Bimestre")]
+    [InlineData(2, "1Â° Bimestre")]
+    [InlineData(3, "2Â° Bimestre")]
+    [InlineData(4, "3Â° Bimestre")]
+    [InlineData(5, "4Â° Bimestre")]
     public void ObterFiltroSemestreOuBimestre_DeveRetornarBimestreCorreto_QuandoFundamental(int bimestreValor, string nomeBimestreEsperado)
     {
         var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(bimestreValor, null, Modalidade.Fundamental);
