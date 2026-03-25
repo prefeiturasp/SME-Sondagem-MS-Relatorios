@@ -3,15 +3,15 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using SkiaSharp;
 using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Excel.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Runtime.Intrinsics.Arm;
+using Svg.Skia;
 using Index = DocumentFormat.OpenXml.Drawing.Charts.Index;
 using NumberingFormat = DocumentFormat.OpenXml.Drawing.Charts.NumberingFormat;
 using OrientationValues = DocumentFormat.OpenXml.Drawing.Charts.OrientationValues;
@@ -131,44 +131,56 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTempl
 
         foreach (var aluno in relatorioSondagemPorTurmaDto.Estudantes)
         {
-            bool temIcone = aluno.Aee || aluno.Pap || aluno.PossuiDeficiencia;
-            sheet.Row(linha).Height = temIcone ? 65 : 45;
-
-            // 1. Campos Fixos
-            EstilarEPreencher(sheet.Cell(linha, 1), aluno.NumeroAlunoChamada);
-            EstilarEPreencher(sheet.Cell(linha, 2), aluno.NomeRelatorio);
-          
-            if (temIcone)
-                InserirIconesEstudante(sheet, aluno, linha);
-
-            EstilarEPreencher(sheet.Cell(linha, 3), aluno.Raca);
-            EstilarEPreencher(sheet.Cell(linha, 4), aluno.Genero);
-
-            int colunaAtual = 5;
-
-            if (relatorioSondagemPorTurmaDto.ExibeColunaLinguaPortuguesaSegundaLingua)
-            {
-                EscreverCelulaLP(sheet.Cell(linha, colunaAtual), aluno.LinguaPortuguesaSegundaLingua);
-                colunaAtual++;
-            }
-
-            if (aluno.Coluna != null)
-            {
-                foreach (var colunaSondagem in aluno.Coluna)
-                {
-                    var resposta = colunaSondagem.OpcaoResposta?.FirstOrDefault(o => o.Id == colunaSondagem.Resposta?.OpcaoRespostaId);
-                    var corHex = !string.IsNullOrEmpty(resposta?.CorFundo) ? resposta.CorFundo : "#333333";
-                    var corFundo = ConverterCor(corHex);
-
-                    PreencherCelulaSondagem(sheet.Cell(linha, colunaAtual), resposta?.DescricaoOpcaoResposta ?? "Vazio", corFundo);
-                    colunaAtual++;
-                }
-            }
-
+            ProcessarLinhaEstudante(sheet, linha, aluno, relatorioSondagemPorTurmaDto.ExibeColunaLinguaPortuguesaSegundaLingua);
             linha++;
         }
 
         return linha;
+    }
+
+    private static void ProcessarLinhaEstudante(IXLWorksheet sheet, int linha, EstudanteDto aluno, bool exibeLP)
+    {
+        bool temIcone = aluno.Aee || aluno.Pap || aluno.PossuiDeficiencia;
+        sheet.Row(linha).Height = temIcone ? 65 : 45;
+
+        // 1. Campos Fixos
+        EstilarEPreencher(sheet.Cell(linha, 1), aluno.NumeroAlunoChamada);
+        EstilarEPreencher(sheet.Cell(linha, 2), aluno.NomeRelatorio);
+
+        if (temIcone)
+            InserirIconesEstudante(sheet, aluno, linha);
+
+        EstilarEPreencher(sheet.Cell(linha, 3), aluno.Raca);
+        EstilarEPreencher(sheet.Cell(linha, 4), aluno.Genero);
+
+        int colunaAtual = 5;
+
+        if (exibeLP)
+        {
+            EscreverCelulaLP(sheet.Cell(linha, colunaAtual), aluno.LinguaPortuguesaSegundaLingua);
+            colunaAtual++;
+        }
+
+        ProcessarColunasSondagem(sheet, linha, aluno.Coluna, colunaAtual);
+    }
+
+    private static void ProcessarColunasSondagem(IXLWorksheet sheet, int linha, IEnumerable<ColunaQuestionarioDto> colunas, int colunaInicio)
+    {
+        if (colunas == null) return;
+
+        int colunaAtual = colunaInicio;
+        foreach (var colunaSondagem in colunas)
+        {
+            var resposta = colunaSondagem.OpcaoResposta?.FirstOrDefault(o => o.Id == colunaSondagem.Resposta?.OpcaoRespostaId);
+            var corHex = !string.IsNullOrEmpty(resposta?.CorFundo) ? resposta.CorFundo : "#333333";
+
+            PreencherCelulaSondagem(
+                sheet.Cell(linha, colunaAtual),
+                resposta?.DescricaoOpcaoResposta ?? "Vazio",
+                ConverterCor(corHex)
+            );
+            colunaAtual++;
+        }
     }
 
     private static void InserirIconesEstudante(IXLWorksheet sheet, EstudanteDto item, int linha)
@@ -193,13 +205,35 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTempl
 
     private static MemoryStream ConverterSvgBase64ParaPngStream(string base64, int w, int h)
     {
-        var bytes = Convert.FromBase64String(base64.Contains(",") ? base64.Split(',')[1] : base64);
+        if (string.IsNullOrWhiteSpace(base64)) return new MemoryStream();
+
+        var bytes = Convert.FromBase64String(base64.Contains(',') ? base64.Split(',')[1] : base64);
         using var ms = new MemoryStream(bytes);
-        var svg = Svg.SvgDocument.Open<Svg.SvgDocument>(ms);
-        svg.Width = w; svg.Height = h;
+
+        using var svg = new SKSvg();
+        svg.Load(ms);
+
+        if (svg.Picture == null) return new MemoryStream();
+
+        var info = new SKImageInfo(w, h);
+        using var surface = SKSurface.Create(info);
+        var canvas = surface.Canvas;
+        canvas.Clear(SKColors.Transparent);
+
+        float scaleX = w / svg.Picture.CullRect.Width;
+        float scaleY = h / svg.Picture.CullRect.Height;
+        var matrix = SKMatrix.CreateScale(scaleX, scaleY);
+
+        canvas.Save();
+        canvas.SetMatrix(matrix);
+        canvas.DrawPicture(svg.Picture, 0, 0);
+        canvas.Restore();
+
         var outMs = new MemoryStream();
-        using var bmp = svg.Draw(w, h);
-        bmp.Save(outMs, System.Drawing.Imaging.ImageFormat.Png);
+        using var image = surface.Snapshot();
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+
+        data?.SaveTo(outMs);
         outMs.Position = 0;
         return outMs;
     }
