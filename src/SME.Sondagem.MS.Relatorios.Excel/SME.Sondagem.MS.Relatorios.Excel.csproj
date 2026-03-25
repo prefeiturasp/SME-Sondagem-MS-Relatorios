@@ -15,4 +15,8 @@
     <ProjectReference Include="..\SME.Sondagem.MS.Relatorios.Infra\SME.Sondagem.MS.Relatorios.Infra.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.8" />
+	</ItemGroup>
+
 </Project>
