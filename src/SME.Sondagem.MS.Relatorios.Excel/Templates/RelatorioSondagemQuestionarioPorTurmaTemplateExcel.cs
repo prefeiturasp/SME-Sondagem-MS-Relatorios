@@ -11,6 +11,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.Intrinsics.Arm;
 using Index = DocumentFormat.OpenXml.Drawing.Charts.Index;
 using NumberingFormat = DocumentFormat.OpenXml.Drawing.Charts.NumberingFormat;
 using OrientationValues = DocumentFormat.OpenXml.Drawing.Charts.OrientationValues;
@@ -20,7 +21,7 @@ using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
 
 namespace SME.Sondagem.MS.Relatorios.Excel.Templates;
 
-public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemplateBase, IRelatorioSondagemQuestionarioPorTurmaTemplateExcel
+public class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemplateBase, IRelatorioSondagemQuestionarioPorTurmaTemplateExcel
 {
     public RelatorioSondagemQuestionarioPorTurmaTemplateExcel(IServicoArmazenamentoMinio servicoArmazenamentoMinio) : base(servicoArmazenamentoMinio)
     {
@@ -130,11 +131,16 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
 
         foreach (var aluno in relatorioSondagemPorTurmaDto.Estudantes)
         {
-            sheet.Row(linha).Height = 45;
+            bool temIcone = aluno.Aee || aluno.Pap || aluno.PossuiDeficiencia;
+            sheet.Row(linha).Height = temIcone ? 65 : 45;
 
             // 1. Campos Fixos
             EstilarEPreencher(sheet.Cell(linha, 1), aluno.NumeroAlunoChamada);
             EstilarEPreencher(sheet.Cell(linha, 2), aluno.NomeRelatorio);
+          
+            if (temIcone)
+                InserirIconesEstudante(sheet, aluno, linha);
+
             EstilarEPreencher(sheet.Cell(linha, 3), aluno.Raca);
             EstilarEPreencher(sheet.Cell(linha, 4), aluno.Genero);
 
@@ -163,6 +169,39 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         }
 
         return linha;
+    }
+
+    private static void InserirIconesEstudante(IXLWorksheet sheet, EstudanteDto item, int linha)
+    {
+        int xPos = 2;
+        int yPos = (int)(sheet.Row(linha).Height * 0.96);
+        var icones = new (bool Ativo, string Svg)[] {
+            (item.Aee, SmeConstants.Logo_AEE),
+            (item.Pap, SmeConstants.Logo_PAP),
+            (item.PossuiDeficiencia, SmeConstants.Logo_Acessibilidade)
+        };
+
+        foreach (var icone in icones.Where(i => i.Ativo))
+        {
+            using var ms = ConverterSvgBase64ParaPngStream(icone.Svg, 20, 20);
+            sheet.AddPicture(ms)
+                 .MoveTo(sheet.Cell(linha, 2), new System.Drawing.Point(xPos, yPos))
+                 .WithSize(20, 20);
+            xPos += 24;
+        }
+    }
+
+    private static MemoryStream ConverterSvgBase64ParaPngStream(string base64, int w, int h)
+    {
+        var bytes = Convert.FromBase64String(base64.Contains(",") ? base64.Split(',')[1] : base64);
+        using var ms = new MemoryStream(bytes);
+        var svg = Svg.SvgDocument.Open<Svg.SvgDocument>(ms);
+        svg.Width = w; svg.Height = h;
+        var outMs = new MemoryStream();
+        using var bmp = svg.Draw(w, h);
+        bmp.Save(outMs, System.Drawing.Imaging.ImageFormat.Png);
+        outMs.Position = 0;
+        return outMs;
     }
 
     private static (int Coluna, string Texto)[] ObterHeaders(RelatorioSondagemPorTurmaDto dados)
@@ -262,14 +301,14 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
         var chartText = new ChartText();
         var richText = new RichText();
         richText.AppendChild(new DocumentFormat.OpenXml.Drawing.BodyProperties());
-        richText.AppendChild( new DocumentFormat.OpenXml.Drawing.ListStyle());
+        richText.AppendChild(new DocumentFormat.OpenXml.Drawing.ListStyle());
 
-        richText.AppendChild( CriarParagrafoTitulo("Gráfico da Sondagem", 1400, true));
-        richText.AppendChild( CriarParagrafoTitulo(tituloProficiencia, 1100, true));
+        richText.AppendChild(CriarParagrafoTitulo("Gráfico da Sondagem", 1400, true));
+        richText.AppendChild(CriarParagrafoTitulo(tituloProficiencia, 1100, true));
 
-        chartText.AppendChild( richText);
-        chartTitle.AppendChild( chartText);
-        chartTitle.AppendChild( new Overlay { Val = false });
+        chartText.AppendChild(richText);
+        chartTitle.AppendChild(chartText);
+        chartTitle.AppendChild(new Overlay { Val = false });
         chart.AppendChild(chartTitle);
     }
 
@@ -277,7 +316,7 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
     {
         var paragraph = new DocumentFormat.OpenXml.Drawing.Paragraph();
         var run = new DocumentFormat.OpenXml.Drawing.Run();
-        run.AppendChild( new DocumentFormat.OpenXml.Drawing.RunProperties { Bold = isBold, FontSize = fontSize });
+        run.AppendChild(new DocumentFormat.OpenXml.Drawing.RunProperties { Bold = isBold, FontSize = fontSize });
         run.AppendChild(new DocumentFormat.OpenXml.Drawing.Text(texto));
         paragraph.AppendChild(run);
         return paragraph;
@@ -471,7 +510,7 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
             new Xdr.RowId((linhaGrafico - 1).ToString()),
             new Xdr.RowOffset("0")
         ));
-        twoCellAnchor.AppendChild( new Xdr.ToMarker(
+        twoCellAnchor.AppendChild(new Xdr.ToMarker(
             new Xdr.ColumnId("9"),
             new Xdr.ColumnOffset("0"),
             new Xdr.RowId((linhaGrafico + 19).ToString()),
@@ -483,14 +522,14 @@ public  class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTemp
             new Xdr.NonVisualDrawingProperties { Id = (uint)(partsCount + 10), Name = "GraficoSondagem" },
             new Xdr.NonVisualGraphicFrameDrawingProperties()
         ));
-        graphicFrame.AppendChild(   new Xdr.Transform(
+        graphicFrame.AppendChild(new Xdr.Transform(
             new DocumentFormat.OpenXml.Drawing.Offset { X = 0L, Y = 0L },
             new DocumentFormat.OpenXml.Drawing.Extents { Cx = 0L, Cy = 0L }
         ));
 
         var graphic = new DocumentFormat.OpenXml.Drawing.Graphic();
         var graphicData = new DocumentFormat.OpenXml.Drawing.GraphicData { Uri = ExcelConstantes.OPENXML_FORMATS_CHART };
-        graphicData.AppendChild(   new ChartReference { Id = chartRelId });
+        graphicData.AppendChild(new ChartReference { Id = chartRelId });
         graphic.AppendChild(graphicData);
         graphicFrame.AppendChild(graphic);
 
