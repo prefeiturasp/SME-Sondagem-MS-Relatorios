@@ -50,4 +50,21 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
         return JsonSerializer.Deserialize<List<ParametroSondagemDto>>(jsonString, options)
                  ?? [];
     }
+
+    public async Task<ProficienciaDto?> ObterProficienciaPorIdAsync(int proficienciaId, CancellationToken cancellationToken = default)
+    {
+        var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
+
+        string urlFinal = string.Format(ServicoSondagemConstantes.URL_PROFICIENCIA, proficienciaId);
+        var resposta = await httpClient.GetAsync(urlFinal, cancellationToken);
+
+        if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
+            return new ProficienciaDto();
+
+        var jsonString = await resposta.Content.ReadAsStringAsync(cancellationToken);
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
+
+        return JsonSerializer.Deserialize<ProficienciaDto>(jsonString, options)
+                 ?? new ProficienciaDto();
+    }
 }

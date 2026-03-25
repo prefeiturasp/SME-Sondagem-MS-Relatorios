@@ -4,7 +4,7 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Extensions;
 
 public static class SemestreOuBimestre
 {
-    public static (string NomeFiltro, string ValorFiltro) ObterFiltroSemestreOuBimestre(string bimestre, string semestre, Modalidade modalidade)
+    public static (string NomeFiltro, string ValorFiltro) ObterFiltroSemestreOuBimestre(int? bimestre, int? semestre, Modalidade modalidade)
     {
         var nomeFiltro = "";
         var valorFiltro = "Todos";
@@ -13,18 +13,18 @@ public static class SemestreOuBimestre
         {
             nomeFiltro = "Semestre";
 
-            if (!string.IsNullOrEmpty(semestre) && semestre != "0" && Enum.TryParse(semestre, out Semestre semestreEnum))
+            if (semestre != null && semestre != 0 && Enum.TryParse(semestre.ToString(), out Semestre semestreEnum))
             {
-                valorFiltro = semestreEnum.ToString();
+                valorFiltro = semestreEnum.ShortName() ?? "Todos";
             }
         }
         else
         {
             nomeFiltro = "Bimestre";
 
-            if (!string.IsNullOrEmpty(bimestre) && bimestre != "0" && Enum.TryParse(bimestre, out Bimestre bimestreEnum))
+            if (bimestre != null && bimestre != 0 && Enum.TryParse(bimestre.ToString(), out Bimestre bimestreEnum))
             {
-                valorFiltro = bimestreEnum.ToString();
+                valorFiltro = bimestreEnum.ShortName() ?? "Todos";
             }
         }
 

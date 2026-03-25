@@ -99,4 +99,79 @@ public class ServicoSondagemApiClientTeste
 
         resultado.Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task ObterProficienciaPorIdAsync_DeveRetornarDtoVazio_QuandoStatusNaoForSucesso()
+    {
+        var (factory, _) = CriarFactory(HttpStatusCode.InternalServerError, string.Empty);
+        var service = new ServicoSondagemApiClient(factory.Object);
+
+        var resultado = await service.ObterProficienciaPorIdAsync(10);
+
+        resultado.Should().NotBeNull();
+        resultado!.Nome.Should().BeEmpty();
+        resultado.ComponenteCurricularId.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ObterProficienciaPorIdAsync_DeveRetornarDtoVazio_QuandoStatusForNoContent()
+    {
+        var (factory, _) = CriarFactory(HttpStatusCode.NoContent, string.Empty);
+        var service = new ServicoSondagemApiClient(factory.Object);
+
+        var resultado = await service.ObterProficienciaPorIdAsync(10);
+
+        resultado.Should().NotBeNull();
+        resultado!.Nome.Should().BeEmpty();
+        resultado.ComponenteCurricularId.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ObterProficienciaPorIdAsync_DeveRetornarDados_QuandoRespostaForValida()
+    {
+        var dto = new ProficienciaDto
+        {
+            Nome = "Avançado",
+            ComponenteCurricularId = 3
+        };
+
+        var json = JsonSerializer.Serialize(dto);
+        var (factory, _) = CriarFactory(HttpStatusCode.OK, json);
+        var service = new ServicoSondagemApiClient(factory.Object);
+
+        var resultado = await service.ObterProficienciaPorIdAsync(5);
+
+        resultado.Should().NotBeNull();
+        resultado!.Nome.Should().Be("Avançado");
+        resultado.ComponenteCurricularId.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task ObterProficienciaPorIdAsync_DeveRetornarDtoVazio_QuandoJsonForInvalido()
+    {
+        var (factory, _) = CriarFactory(HttpStatusCode.OK, "{}");
+        var service = new ServicoSondagemApiClient(factory.Object);
+
+        var resultado = await service.ObterProficienciaPorIdAsync(5);
+
+        resultado.Should().NotBeNull();
+        resultado!.Nome.Should().BeEmpty();
+        resultado.ComponenteCurricularId.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ObterProficienciaPorIdAsync_DevePropagarCancellationToken_QuandoSolicitado()
+    {
+        var dto = new ProficienciaDto { Nome = "Teste", ComponenteCurricularId = 1 };
+        var json = JsonSerializer.Serialize(dto);
+
+        var (factory, _) = CriarFactory(HttpStatusCode.OK, json);
+        var service = new ServicoSondagemApiClient(factory.Object);
+
+        var cts = new CancellationTokenSource();
+
+        var resultado = await service.ObterProficienciaPorIdAsync(1, cts.Token);
+
+        resultado.Should().NotBeNull();
+    }
 }
