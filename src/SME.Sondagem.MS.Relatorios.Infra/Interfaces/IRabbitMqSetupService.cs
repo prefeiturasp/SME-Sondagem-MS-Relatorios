@@ -1,0 +1,10 @@
+﻿using RabbitMQ.Client;
+using SME.Sondagem.MS.Relatorios.Infra.Fila;
+
+namespace SME.Sondagem.MS.Relatorios.Infra.Interfaces;
+
+public interface IRabbitMqSetupService
+{
+    Task<IConnection> CreateConnectionAsync(CancellationToken stoppingToken);
+    Task SetupExchangesAndQueuesAsync(IChannel channel, Dictionary<string, ComandoRabbit> comandos);
+}
