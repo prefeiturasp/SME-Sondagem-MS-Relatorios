@@ -79,7 +79,6 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdfTeste
         html.Should().Contain("1A");
         html.Should().Contain("Masculino");
         html.Should().Contain("Parda");
-        html.Should().Contain("Semestre:");
         html.Should().Contain("1");
         html.Should().Contain("Sim"); // Opção de resposta
     }

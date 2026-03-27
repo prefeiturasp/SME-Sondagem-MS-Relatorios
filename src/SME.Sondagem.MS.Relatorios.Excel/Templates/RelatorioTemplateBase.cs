@@ -72,7 +72,7 @@ public abstract class RelatorioTemplateBase
         cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
 
         cell.Style.Fill.BackgroundColor = vazio ? XLColor.White : corFundo;
-        cell.Style.Font.FontColor = vazio ? XLColor.Gray : XLColor.White;
+        cell.Style.Font.FontColor = vazio ? XLColor.Gray : XLColor.Black;
     }
 
 
@@ -131,7 +131,7 @@ public abstract class RelatorioTemplateBase
 
                 return new
                 {
-                    Descricao = opcao?.DescricaoOpcaoResposta ?? "Sem Preenchimento",
+                    Descricao = opcao?.DescricaoOpcaoResposta ?? "Vazio",
                     Cor = opcao?.CorFundo ?? "#F2F2F2",
                     Ordem = opcao?.Ordem ?? 999
                 };
@@ -145,7 +145,7 @@ public abstract class RelatorioTemplateBase
                 Quantidade = g.Count(),
                 Cor = g.Key.Cor
             })
-            .OrderBy(x => x.Descricao == "Sem Preenchimento")
+            .OrderBy(x => x.Descricao == "Vazio")
             .ThenBy(x => x.Descricao)
             .ToList();
     }
