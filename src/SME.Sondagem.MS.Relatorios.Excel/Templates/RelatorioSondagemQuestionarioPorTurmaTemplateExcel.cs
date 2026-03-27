@@ -44,7 +44,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTempl
 
         linha = EscreverInformacoesCabecalhoRelatorio(sheet, relatorioSondagemPorTurmaDto, relatorioSondagemPorTurmaDto.Modalidade);
 
-        linha = EscreverTitulo(sheet, "Relatório Sondagem", relatorioSondagemPorTurmaDto.Proficiencia, linha);
+        linha = EscreverTitulo(sheet, "Relatório Sondagem", relatorioSondagemPorTurmaDto.TituloTabelaRespostas, linha);
 
         linha = EscreverCabecalhoTabela(sheet, linha, relatorioSondagemPorTurmaDto);
 
@@ -620,7 +620,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplateExcel : RelatorioTempl
         EscreverCelula(sheet, linha, 1, $"Usuário: {relatorioSondagemPorTurmaDto.Usuario}");
         sheet.Range(linha, 1, linha, 5).Merge();
 
-        EscreverCelula(sheet, linha, 6, $"Data de impressão: {relatorioSondagemPorTurmaDto.DataImpressao}");
+        EscreverCelula(sheet, linha, 6, $"Data de impressão: {relatorioSondagemPorTurmaDto.DataImpressao:d}");
         sheet.Range(linha, 6, linha, 10).Merge();
 
         AplicarBordaExterna(sheet.Range(linha, 1, linha, 10));
