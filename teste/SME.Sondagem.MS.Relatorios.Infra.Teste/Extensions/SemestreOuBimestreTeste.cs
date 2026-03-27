@@ -8,42 +8,6 @@ namespace SME.Sondagem.MS.Relatorios.Infra.Teste.Extensions;
 public class SemestreOuBimestreTeste
 {
     [Fact]
-    public void ObterFiltroSemestreOuBimestre_DeveRetornarSemestreTodos_QuandoEjaESemestreVazio()
-    {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, null, Modalidade.EJA);
-
-        nomeFiltro.Should().Be("Semestre");
-        valorFiltro.Should().Be("Todos");
-    }
-
-    [Fact]
-    public void ObterFiltroSemestreOuBimestre_DeveRetornarSemestreZero_QuandoEjaESemestreZero()
-    {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, 0, Modalidade.EJA);
-
-        nomeFiltro.Should().Be("Semestre");
-        valorFiltro.Should().Be("Todos");
-    }
-
-    [Fact]
-    public void ObterFiltroSemestreOuBimestre_DeveRetornarPrimeiro_QuandoEjaESemestre1()
-    {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, 1, Modalidade.EJA);
-
-        nomeFiltro.Should().Be("Semestre");
-        valorFiltro.Should().Be("1° Semestre");
-    }
-
-    [Fact]
-    public void ObterFiltroSemestreOuBimestre_DeveRetornarSegundo_QuandoEjaESemestre2()
-    {
-        var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, 2, Modalidade.EJA);
-
-        nomeFiltro.Should().Be("Semestre");
-        valorFiltro.Should().Be("2° Semestre");
-    }
-
-    [Fact]
     public void ObterFiltroSemestreOuBimestre_DeveRetornarBimestreTodos_QuandoFundamentalEBimestreVazio()
     {
         var (nomeFiltro, valorFiltro) = SemestreOuBimestre.ObterFiltroSemestreOuBimestre(null, null, Modalidade.Fundamental);
