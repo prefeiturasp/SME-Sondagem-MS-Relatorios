@@ -28,7 +28,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
                                             font-family: 'Roboto', 'DejaVu Sans', Arial, sans-serif;
                                             font-size: 10px;
                                             color: #42474A;
-                                            padding: 10px 16px 4px 16px;
+                                            padding: 10px 10px 4px 10px;
                                             background: #fff;
                                             /* FIX: espaçamento correto entre letras e palavras */
                                             letter-spacing: 0.02em;
