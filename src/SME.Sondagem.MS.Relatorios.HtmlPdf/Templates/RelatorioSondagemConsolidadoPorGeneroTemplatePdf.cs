@@ -159,15 +159,23 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : IRelatorioSondag
                        .col-nivel { width: 12%; }
                        .col-genero { width: 12.5%; }
 
-                       .nivel-badge {
-                           display: inline-block;
-                           min-width: 60px;
-                           padding: 4px 8px;
-                           border-radius: 4px;
-                           font-size: 10px;
+                       .main-table td.cell-nivel-badge {
+                           border: 2px solid #FFFFFF;
                            font-weight: 700;
-                           line-height: 12px;
+                           font-size: 10px;
+                           line-height: 14px;
+                           border-radius: 10px;
+                           vertical-align: middle;
                            text-align: center;
+                           background-clip: padding-box;
+                       }
+
+                       .main-table td.cell-nivel-texto {
+                           padding: 16px 12px;
+                           font-weight: 400;
+                           line-height: 16px;
+                           vertical-align: middle;
+                           box-sizing: border-box;
                        }
 
                        .cell-valor { font-weight: 700; }
@@ -277,7 +285,6 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : IRelatorioSondag
         return sb.ToString();
     }
 
-    /// <summary>Coluna textual usada nas células: prioriza descrição, senão sigla da API.</summary>
     private static string ObterRotuloColuna(RelatorioConsolidadoGeneroDto dto)
     {
         if (!string.IsNullOrWhiteSpace(dto.Genero))
@@ -388,7 +395,7 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : IRelatorioSondag
         var classeLinha = isSemPreenchimento ? "row-sem-preenchimento" : string.Empty;
         sb.AppendLine($"            <tr class=\"{classeLinha}\">");
 
-        sb.AppendLine($"                <td>{GerarBadgeNivel(resposta)}</td>");
+        sb.AppendLine(GerarBadgeNivel(resposta));
 
         var dicGeneros = (resposta.Generos ?? [])
             .Select(g => new { Chave = ObterRotuloColuna(g), Valor = g })
@@ -432,17 +439,18 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : IRelatorioSondag
         return sb.ToString();
     }
 
+    /// <summary>Gera a célula da coluna Nível: com cor, o fundo preenche toda a &lt;td&gt; (como no layout oficial).</summary>
     private static string GerarBadgeNivel(RelatorioConsolidadoRespostaDto resposta)
     {
         var texto = HttpUtility.HtmlEncode(resposta.Resposta ?? string.Empty);
 
         if (string.IsNullOrWhiteSpace(resposta.CorFundo))
-            return texto;
+            return $"                <td class=\"cell-nivel-texto\">{texto}</td>";
 
-        var corFundo = resposta.CorFundo;
-        var corTexto = string.IsNullOrWhiteSpace(resposta.CorTexto) ? "#fff" : resposta.CorTexto;
+        var corFundo = resposta.CorFundo.Trim();
+        var corTexto = string.IsNullOrWhiteSpace(resposta.CorTexto) ? "#ffffff" : resposta.CorTexto.Trim();
 
-        return $"<span class=\"nivel-badge\" style=\"background-color: {corFundo}; color: {corTexto};\">{texto}</span>";
+        return $"                <td class=\"cell-nivel-badge\" style=\"background-color: {corFundo}; color: {corTexto};\">{texto}</td>";
     }
 
     private static string GerarCelulaValor(int quantidade, double percentual)
