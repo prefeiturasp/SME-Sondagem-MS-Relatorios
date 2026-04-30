@@ -51,12 +51,14 @@ public static class RegistraDependencias
 
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaPdf, RelatorioSondagemQuestionarioPorTurmaPdf>();
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaExcel, RelatorioSondagemQuestionarioPorTurmaExcel>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoRacaPdf, RelatorioSondagemConsolidadoRacaPdf>();
 
         services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
         services.TryAddScoped<IReportConverter, ReportConverter>();
         services.TryAddScoped<IServicoArmazenamentoMinio, ServicoArmazenamentoMinio>();
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaTemplatePdf, RelatorioSondagemQuestionarioPorTurmaTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaTemplateExcel, RelatorioSondagemQuestionarioPorTurmaTemplateExcel>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorRacaTemplatePdf, RelatorioSondagemConsolidadoPorRacaTemplatePdf>();
 
     }
 
@@ -70,6 +72,7 @@ public static class RegistraDependencias
     private static void RegistrarCasosDeUso(IServiceCollection services)
     {
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaUseCase, RelatorioSondagemQuestionarioPorTurmaUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoRacaUseCase, RelatorioSondagemConsolidadoRacaUseCase>();
     }
 
     private static void ConfigurarRabbitmq(IServiceCollection services, IConfiguration configuration)

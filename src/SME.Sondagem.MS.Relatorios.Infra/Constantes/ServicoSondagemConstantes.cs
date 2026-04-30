@@ -8,6 +8,7 @@ public static class ServicoSondagemConstantes
     public const string SERVICO = "servicoSondagem";
     public const string URL_REGISTRAR_SOLICITACAO_RELATORIO = "v1/solicitacao-relatorio/salvar";
     public const string URL_SOLICITACAO_RELATORIO = "relatorio-integracao/sondagem-por-turma";
+    public const string URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_RACA = "relatorio-integracao/consolidado/raca";
     public const string URL_PARAMETROS_SONDAGEM = "ParametroSondagemIntegracao/questionario/{0}";
     public const string URL_PROFICIENCIA = "relatorio-integracao/proficiencia/{0}";
 }

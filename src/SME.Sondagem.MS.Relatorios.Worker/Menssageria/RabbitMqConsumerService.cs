@@ -48,6 +48,7 @@ public class RabbitMqConsumerService : BackgroundService
     private void RegistrarUseCases()
     {
         _comandos.Add(RotasRabbit.RelatorioSondagemPorTurma, new ComandoRabbit("Relatorio Sondagem Por Turma", typeof(IRelatorioSondagemQuestionarioPorTurmaUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorRaca, new ComandoRabbit("Relatorio Sondagem Consolidado Por Raca", typeof(IRelatorioSondagemConsolidadoRacaUseCase)));
     }
 
     private async Task InicializaConsumerAsync(IChannel channel, CancellationToken stoppingToken)
