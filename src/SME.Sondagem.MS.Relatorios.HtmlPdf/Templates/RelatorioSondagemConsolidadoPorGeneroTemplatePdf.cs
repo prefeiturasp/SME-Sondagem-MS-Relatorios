@@ -235,17 +235,7 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : IRelatorioSondag
                     <td><strong>Data de impressão:</strong> {dto.DataImpressao:dd/MM/yyyy}</td>
                 </tr>
             </table>
-            <div class=""clearfix"">
-                <span class=""badge-consolidacao"">Data da última consolidação: {FormatarDataConsolidacao(dto.DataUltimaConsolidacao)}</span>
-            </div>
         ";
-    }
-
-    private static string FormatarDataConsolidacao(DateTime? data)
-    {
-        return data.HasValue
-            ? data.Value.ToString("dd/MM/yyyy 'às' HH:mm", PtBr)
-            : "00/00/0000 às 00:00";
     }
 
     private static string GerarTabelas(RelatorioConsolidadoSondagemDto dto)
@@ -439,7 +429,6 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : IRelatorioSondag
         return sb.ToString();
     }
 
-    /// <summary>Gera a célula da coluna Nível: com cor, o fundo preenche toda a &lt;td&gt; (como no layout oficial).</summary>
     private static string GerarBadgeNivel(RelatorioConsolidadoRespostaDto resposta)
     {
         var texto = HttpUtility.HtmlEncode(resposta.Resposta ?? string.Empty);
