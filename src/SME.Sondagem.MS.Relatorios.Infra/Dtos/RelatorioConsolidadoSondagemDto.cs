@@ -18,6 +18,7 @@ public class RelatorioConsolidadoSondagemDto
     public string ComponenteCurricular { get; set; } = string.Empty;
     public string Proficiencia { get; set; } = string.Empty;
     public string Bimestre { get; set; } = string.Empty;
+    public string Genero { get; set; } = string.Empty;
     public string Raca { get; set; } = string.Empty;
     public string Usuario { get; set; } = string.Empty;
     public string UsuarioQueSolicitou { get; set; } = string.Empty;
