@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
@@ -41,6 +42,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
 
     protected abstract Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio);
 
+    protected abstract Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio);
+
     protected abstract void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio);
 
     public async Task<bool> Executar(MensagemRabbit mensagemRabbit)
@@ -51,8 +54,22 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
 
         try
         {
+            var linkRelatorio = string.Empty;
+
             var dadosRelatorio = await MontarDadosRelatorioAsync(mensagem, mensagemRabbit.CodigoCorrelacao);
-            var linkRelatorio = await GerarPdfAsync(dadosRelatorio);
+
+            switch (mensagem.FiltrosUsados.ExtensaoRelatorio)
+            {
+                case (int)ExtensaoRelatorio.Pdf:
+                    linkRelatorio = await GerarPdfAsync(dadosRelatorio);
+                    break;
+                case (int)ExtensaoRelatorio.Xlsx:
+                    linkRelatorio = await GerarExcelAsync(dadosRelatorio);
+                    break;
+                default:
+                    break;
+            }
+
             await FinalizarRelatorioAsync(dadosRelatorio, mensagem.SolicitacaoRelatorioId, linkRelatorio, mensagemRabbit.CodigoCorrelacao);
         }
         catch (Exception ex)
@@ -90,6 +107,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
         dadosRelatorio.CodigoCorrelacao = codigoCorrelacao;
         dadosRelatorio.SolicitacaoRelatorioId = mensagem.SolicitacaoRelatorioId;
         dadosRelatorio.UsuarioQueSolicitou = mensagem.UsuarioQueSolicitou;
+        dadosRelatorio.ProficienciaId = filtros.ProficienciaId;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Agrupamento))
             dadosRelatorio.Agrupamento = AgrupamentoPadrao;

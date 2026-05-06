@@ -8,6 +8,7 @@ public interface IServicoSondagemApiClient
     Task<RetornoApiSondagemQuestionarioDto> ObterDadosQuestionarioAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
     Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
     Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorGeneroAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
+    Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorBimestreAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
     Task<List<ParametroSondagemDto>?> ObterParametrosSondagemPorQuestionarioId(long questionoarioId, CancellationToken cancellationToken = default);
     Task<ProficienciaDto?> ObterProficienciaPorIdAsync(int proficienciaId, CancellationToken cancellationToken = default);
 }

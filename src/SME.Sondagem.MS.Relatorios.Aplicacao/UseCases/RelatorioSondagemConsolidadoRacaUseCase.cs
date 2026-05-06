@@ -30,6 +30,11 @@ public class RelatorioSondagemConsolidadoRacaUseCase : RelatorioSondagemConsolid
     protected override Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
         _pdf.Executar(dadosRelatorio);
 
+    protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio)
+    {
+        throw new NotImplementedException();
+    }
+
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Raca))

@@ -53,6 +53,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaExcel, RelatorioSondagemQuestionarioPorTurmaExcel>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoRacaPdf, RelatorioSondagemConsolidadoRacaPdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoGeneroPdf, RelatorioSondagemConsolidadoGeneroPdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreExcel, RelatorioSondagemConsolidadoPorBimestreExcel>();
 
         services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
         services.TryAddScoped<IReportConverter, ReportConverter>();
@@ -61,6 +62,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaTemplateExcel, RelatorioSondagemQuestionarioPorTurmaTemplateExcel>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorRacaTemplatePdf, RelatorioSondagemConsolidadoPorRacaTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorGeneroTemplatePdf, RelatorioSondagemConsolidadoPorGeneroTemplatePdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreTemplateExcel, RelatorioSondagemConsolidadoPorBimestreTemplateExcel>();
 
     }
 
@@ -76,6 +78,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaUseCase, RelatorioSondagemQuestionarioPorTurmaUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoRacaUseCase, RelatorioSondagemConsolidadoRacaUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoGeneroUseCase, RelatorioSondagemConsolidadoGeneroUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreUseCase, RelatorioSondagemConsolidadoPorBimestreUseCase>();
     }
 
     private static void ConfigurarRabbitmq(IServiceCollection services, IConfiguration configuration)
