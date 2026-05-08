@@ -5,7 +5,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
 public class RelatorioSondagemConsolidadoPorBimestreUseCase
-    : RelatorioSondagemConsolidadoUseCaseBase<RelatorioSondagemConsolidadoPorBimestreUseCase>,
+    : RelatorioSondagemConsolidadoUseCaseBase,
       IRelatorioSondagemConsolidadoPorBimestreUseCase
 {
     private readonly IRelatorioSondagemConsolidadoPorBimestreExcel _excel;

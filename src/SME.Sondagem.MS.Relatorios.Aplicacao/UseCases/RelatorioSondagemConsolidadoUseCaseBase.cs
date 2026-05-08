@@ -8,7 +8,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where TConcrete : class
+public abstract class RelatorioSondagemConsolidadoUseCaseBase
 {
     protected const string ValorTodas = "Todas";
     protected const string ValorTodos = "Todos";
