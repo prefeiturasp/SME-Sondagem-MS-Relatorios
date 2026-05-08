@@ -31,6 +31,9 @@ public class RelatorioConsolidadoSondagemDto
 
     [JsonIgnore]
     public IEnumerable<GeneroSexo>? GenerosDisponiveis { get; set; }
+
+    [JsonIgnore]
+    public IEnumerable<Dominio.Entidades.Bimestre>? BimestresDisponiveis { get; set; }
 }
 
 public class RelatorioConsolidadoQuestaoDto

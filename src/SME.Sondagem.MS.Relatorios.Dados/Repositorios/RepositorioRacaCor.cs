@@ -19,7 +19,7 @@ public class RepositorioRacaCor : IRepositorioRacaCor
     {
         const string sql = @"SELECT id AS Id,
                                     descricao AS Descricao,
-                                    codigo_eol_raca_cor AS CodigoEolRacaCor,
+                                    codigo_eol_racacor AS CodigoEolRacaCor,
                                     criado_em AS CriadoEm,
                                     criado_por AS CriadoPor,
                                     criado_rf AS CriadoRF,
@@ -31,7 +31,7 @@ public class RepositorioRacaCor : IRepositorioRacaCor
                               WHERE NOT excluido
                               ORDER BY descricao";
 
-        await using var conexao = new NpgsqlConnection(_connectionStringOptions.SGP_PostgresConsultas);
+        await using var conexao = new NpgsqlConnection(_connectionStringOptions.SondagemConnection);
         return await conexao.QueryAsync<RacaCor>(sql);
     }
 }

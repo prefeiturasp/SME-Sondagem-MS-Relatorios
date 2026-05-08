@@ -1,4 +1,4 @@
-﻿namespace SME.Sondagem.MS.Relatorios.Infra.Fila;
+namespace SME.Sondagem.MS.Relatorios.Infra.Fila;
 
 public static class RotasRabbit
 {
@@ -10,7 +10,7 @@ public static class RotasRabbit
     public const string RelatorioSondagemConsolidadoPorGenero = "sr.sondagem.relatorios.solicitados.consolidado.por.genero";
     public const string RelatorioSondagemConsolidadoPorRacaGenero = "sr.sondagem.relatorios.solicitados.consolidado.por.raca.genero";
     public const string RelatorioSondagemConsolidadoPorAno = "sr.sondagem.relatorios.solicitados.consolidado.por.ano";
-    public const string RelatorioSondagemConsolidadoPorBimestre = "sr.sondagem.relatorios.solicitados.consolidado.por.bimestre";
+    public const string RelatorioSondagemConsolidadoPorQuestao = "sr.sondagem.relatorios.solicitados.consolidado.por.questao";
 
     public const string RotaRelatoriosProntosSgp = "sgp.relatorios.prontos.notificar";
 }

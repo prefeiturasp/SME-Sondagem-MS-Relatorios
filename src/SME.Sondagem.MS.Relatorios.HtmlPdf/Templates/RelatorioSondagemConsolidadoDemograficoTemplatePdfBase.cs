@@ -31,7 +31,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
     protected virtual string CssExtraSecaoTabelaH3 => string.Empty;
 
-    protected abstract string GerarLinhaMetadadoDemografico(RelatorioConsolidadoSondagemDto dto);
+    protected virtual string GerarLinhaMetadadoDemografico(RelatorioConsolidadoSondagemDto dto) => string.Empty;
 
     protected abstract List<string> ObterOrdemColunas(RelatorioConsolidadoSondagemDto dto);
 
@@ -46,6 +46,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         RelatorioConsolidadoQuestaoDto questao);
 
     protected abstract bool PossuiTotais(RelatorioConsolidadoQuestaoDto questao);
+
+    protected virtual bool ExibirLinhaFiltroDemografico => true;
 
     private string GerarBlocosRelatorio(RelatorioConsolidadoSondagemDto dto)
     {
@@ -67,17 +69,19 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
-    private string GerarTabelaPorQuestao(RelatorioConsolidadoQuestaoDto questao, List<string> ordemColunas)
+    protected virtual string GerarTabelaPorQuestao(RelatorioConsolidadoQuestaoDto questao, List<string> ordemColunas)
     {
         var colunas = ObterColunasOrdenadas(questao, ordemColunas);
 
         var sb = new StringBuilder();
         sb.AppendLine("<div class=\"secao-tabela\">");
-        sb.AppendLine($"    <h3>{HttpUtility.HtmlEncode(questao.QuestaoNome)}</h3>");
+        if (ExibirTituloQuestao)
+            sb.AppendLine($"    <h3>{HttpUtility.HtmlEncode(questao.QuestaoNome)}</h3>");
+
         sb.AppendLine("    <table class=\"main-table\">");
 
         sb.AppendLine(GerarColgroup(colunas.Count));
-        sb.AppendLine(GerarCabecalhoTabela(colunas));
+        sb.AppendLine(GerarCabecalhoTabela(questao, colunas));
         sb.AppendLine(GerarCorpoTabela(questao, colunas));
 
         sb.AppendLine("    </table>");
@@ -85,6 +89,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
         return sb.ToString();
     }
+
+    protected virtual bool ExibirTituloQuestao => true;
 
     private List<string> ObterColunasOrdenadas(RelatorioConsolidadoQuestaoDto questao, List<string> ordemPreferida)
     {
@@ -103,7 +109,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return ordenadas;
     }
 
-    private string GerarColgroup(int totalColunas)
+    protected virtual string GerarColgroup(int totalColunas)
     {
         var sb = new StringBuilder();
         sb.AppendLine("        <colgroup>");
@@ -114,12 +120,12 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
-    private string GerarCabecalhoTabela(List<string> colunas)
+    protected virtual string GerarCabecalhoTabela(RelatorioConsolidadoQuestaoDto questao, List<string> colunas)
     {
         var sb = new StringBuilder();
         sb.AppendLine("        <thead>");
         sb.AppendLine("            <tr>");
-        sb.AppendLine("                <th>Nível</th>");
+        sb.AppendLine($"                <th>{HttpUtility.HtmlEncode(ObterRotuloColunaNivel(questao))}</th>");
 
         foreach (var coluna in colunas)
             sb.AppendLine($"                <th>{HttpUtility.HtmlEncode(FormatarCabecalhoColuna(coluna))}</th>");
@@ -129,7 +135,9 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
-    private string GerarCorpoTabela(RelatorioConsolidadoQuestaoDto questao, List<string> colunas)
+    protected virtual string ObterRotuloColunaNivel(RelatorioConsolidadoQuestaoDto questao) => "Nível";
+
+    protected virtual string GerarCorpoTabela(RelatorioConsolidadoQuestaoDto questao, List<string> colunas)
     {
         var sb = new StringBuilder();
         sb.AppendLine("        <tbody>");
@@ -147,7 +155,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
-    private string GerarLinhaResposta(RelatorioConsolidadoRespostaDto resposta, List<string> colunas)
+    protected virtual string GerarLinhaResposta(RelatorioConsolidadoRespostaDto resposta, List<string> colunas)
     {
         var sb = new StringBuilder();
         bool isSemPreenchimento = resposta.Resposta?.Trim()
@@ -164,7 +172,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
-    private string GerarLinhaTotal(RelatorioConsolidadoQuestaoDto questao, List<string> colunas)
+    protected virtual string GerarLinhaTotal(RelatorioConsolidadoQuestaoDto questao, List<string> colunas)
     {
         var sb = new StringBuilder();
         sb.AppendLine("            <tr class=\"row-total\">");
@@ -177,7 +185,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
-    private static void AppendCelulasValor(
+    protected virtual void AppendCelulasValor(
         StringBuilder sb,
         List<string> colunas,
         Dictionary<string, (int Quantidade, double Percentual)> dic,
@@ -219,9 +227,10 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return $"                <td class=\"cell-nivel-badge\" style=\"background-color: {corFundo}; color: {corTexto};\">{texto}</td>";
     }
 
-    private string GerarCabecalho(RelatorioConsolidadoSondagemDto dto)
+    protected virtual string GerarCabecalho(RelatorioConsolidadoSondagemDto dto)
     {
-        return $@"
+        var sb = new StringBuilder();
+        sb.Append($@"
             <div class=""header-logo"">
                 <img src=""{SmeConstants.Logo_PrefSP_Horizontal}"" alt=""Prefeitura de São Paulo"" />
             </div>
@@ -243,17 +252,25 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                 <tr>
                     <td><strong>Componente Curricular:</strong> {HttpUtility.HtmlEncode(dto.ComponenteCurricular)}</td>
                     <td colspan=""2""><strong>Proficiência:</strong> {HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
-                </tr>
+                </tr>");
+
+        if (ExibirLinhaFiltroDemografico)
+        {
+            sb.Append($@"
                 <tr>
                     <td><strong>Bimestre:</strong> {HttpUtility.HtmlEncode(dto.Bimestre)}</td>
                     {GerarLinhaMetadadoDemografico(dto)}
-                </tr>
+                </tr>");
+        }
+
+        sb.Append($@"
                 <tr>
                     <td colspan=""2""><strong>Usuário:</strong> {HttpUtility.HtmlEncode(dto.Usuario)}</td>
                     <td><strong>Data de impressão:</strong> {dto.DataImpressao:dd/MM/yyyy}</td>
                 </tr>
-            </table>
-        ";
+            </table>");
+
+        return sb.ToString();
     }
 
     private string GerarEstilos()

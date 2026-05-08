@@ -6,20 +6,20 @@ using SME.Sondagem.MS.Relatorios.Infra.EnvironmentVariables;
 
 namespace SME.Sondagem.MS.Relatorios.Dados.Repositorios;
 
-public class RepositorioGeneroSexo : IRepositorioGeneroSexo
+public class RepositorioBimestre : IRepositorioBimestre
 {
     private readonly ConnectionStringOptions _connectionStringOptions;
 
-    public RepositorioGeneroSexo(ConnectionStringOptions connectionStringOptions)
+    public RepositorioBimestre(ConnectionStringOptions connectionStringOptions)
     {
         _connectionStringOptions = connectionStringOptions;
     }
 
-    public async Task<IEnumerable<GeneroSexo>> ObterTodosAsync()
+    public async Task<IEnumerable<Bimestre>> ObterTodosAsync()
     {
         const string sql = @"SELECT id AS Id,
+                                    cod_bimestre_ensino_eol AS CodBimestreEnsinoEol,
                                     descricao AS Descricao,
-                                    sigla AS Sigla,
                                     criado_em AS CriadoEm,
                                     criado_por AS CriadoPor,
                                     criado_rf AS CriadoRF,
@@ -27,11 +27,11 @@ public class RepositorioGeneroSexo : IRepositorioGeneroSexo
                                     alterado_por AS AlteradoPor,
                                     alterado_rf AS AlteradoRF,
                                     excluido AS Excluido
-                               FROM genero_sexo
+                               FROM bimestre
                               WHERE NOT excluido
-                              ORDER BY descricao";
+                              ORDER BY id";
 
         await using var conexao = new NpgsqlConnection(_connectionStringOptions.SondagemConnection);
-        return await conexao.QueryAsync<GeneroSexo>(sql);
+        return await conexao.QueryAsync<Bimestre>(sql);
     }
 }
