@@ -90,8 +90,10 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         var cell = sheet.Cell(row1, col1);
         var effectiveValue = string.IsNullOrWhiteSpace(value) ? "-" : value;
 
-        cell.Value = $"{label}{effectiveValue}";
-        cell.Style.Font.Bold = true;
+        var rt = cell.GetRichText();
+        rt.AddText(label).Bold = true;
+        rt.AddText(effectiveValue).Bold = false;
+
         cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         cell.Style.Alignment.WrapText = true;
     }

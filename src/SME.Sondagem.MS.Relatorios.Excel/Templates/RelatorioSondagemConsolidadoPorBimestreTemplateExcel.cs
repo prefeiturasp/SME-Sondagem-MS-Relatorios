@@ -31,7 +31,9 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
         EscreverCabecalhoConsolidado(sheet, dto);
 
         int ultimaLinha;
-        if (dto.ProficienciaId == 1 || dto.ProficienciaId == 3 || dto.ProficienciaId == 5 || dto.ProficienciaId == 2)
+        ultimaLinha = EscreverDadosProficiencia3(sheet, 8, dto);
+        
+        /*if (dto.ProficienciaId == 1 || dto.ProficienciaId == 3 || dto.ProficienciaId == 5 || dto.ProficienciaId == 2)
         {
             ultimaLinha = EscreverDadosProficiencia3(sheet, 8, dto);
         }
@@ -40,7 +42,7 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
             var bimestres = ObterBimestres(dto);
             int linha = EscreverCabecalhoTabela(sheet, 7, bimestres);
             ultimaLinha = EscreverDadosExcel(sheet, linha, dto, bimestres);
-        }
+        }*/
 
         const int dataColStart = 100;
         var graficos = ObterGraficosDasQuestoes(dto);
@@ -74,6 +76,17 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
         cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
         cell.Style.Border.OutsideBorderColor = XLColor.DarkGray;
         if (negrito) cell.Style.Font.Bold = true;
+    }
+
+    private static void AjustarAlturaLinha(IXLWorksheet sheet, int linha, string? texto, double larguraColuna = 30.0)
+    {
+        const double alturaLinha = 15.0;
+        const double charsPerUnit = 0.9;
+        int charsPerLine = Math.Max(1, (int)(larguraColuna * charsPerUnit));
+        int linhas = string.IsNullOrEmpty(texto)
+            ? 1
+            : Math.Max(1, (int)Math.Ceiling((double)texto.Length / charsPerLine));
+        sheet.Row(linha).Height = linhas * alturaLinha + 3;
     }
 
     private static int EscreverCabecalhoTabela(IXLWorksheet sheet, int linha, List<string> bimestres)
@@ -126,12 +139,14 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
                 {
                     var dadoBimestre = resposta.Bimestres?.FirstOrDefault(b => b.Bimestre == bimestre);
                     var cell = sheet.Cell(linha, col);
-                    cell.Value = dadoBimestre != null ? $"{dadoBimestre.Quantidade} ({dadoBimestre.Percentual:F1}%)" : "-";
+                    cell.Value = dadoBimestre != null ? $"{dadoBimestre.Quantidade} ({dadoBimestre.Percentual:F1}%)" : "Vazio";
                     cell.Style.Fill.BackgroundColor = cor;
                     EstilarCelulaDadosConsolidado(cell);
+                    if (dadoBimestre == null) cell.Style.Font.FontColor = XLColor.Gray;
                     col++;
                 }
 
+                AjustarAlturaLinha(sheet, linha, resposta.Resposta);
                 linha++;
             }
         }
@@ -243,12 +258,14 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
             {
                 var dado = resposta.Bimestres?.FirstOrDefault(b => b.Bimestre == key);
                 var cell = sheet.Cell(linha, col);
-                cell.Value = dado != null ? $"{dado.Quantidade} ({dado.Percentual:F1}%)" : "-";
+                cell.Value = dado != null ? $"{dado.Quantidade} ({dado.Percentual:F1}%)" : "Vazio";
                 cell.Style.Fill.BackgroundColor = corBimestre;
                 EstilarCelulaDadosConsolidado(cell);
+                if (dado == null) cell.Style.Font.FontColor = XLColor.Gray;
                 col++;
             }
 
+            AjustarAlturaLinha(sheet, linha, resposta.Resposta);
             linha++;
             idx++;
         }
@@ -266,9 +283,10 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
         {
             var total = questao.TotaisPorBimestre?.FirstOrDefault(b => b.Bimestre == key);
             var cell  = sheet.Cell(linha, col);
-            cell.Value = total != null ? $"{total.Quantidade} ({total.Percentual:F1}%)" : "-";
+            cell.Value = total != null ? $"{total.Quantidade} ({total.Percentual:F1}%)" : "Vazio";
             cell.Style.Fill.BackgroundColor = corTotal;
             EstilarCelulaDadosConsolidado(cell, negrito: true);
+            if (total == null) cell.Style.Font.FontColor = XLColor.Gray;
             col++;
         }
     }
