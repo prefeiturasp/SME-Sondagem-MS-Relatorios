@@ -5,7 +5,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public class RelatorioSondagemConsolidadoRacaUseCase : RelatorioSondagemConsolidadoUseCaseBase<RelatorioSondagemConsolidadoRacaUseCase>, IRelatorioSondagemConsolidadoRacaUseCase
+public class RelatorioSondagemConsolidadoRacaUseCase : RelatorioSondagemConsolidadoUseCaseBase, IRelatorioSondagemConsolidadoRacaUseCase
 {
     private readonly IRelatorioSondagemConsolidadoRacaPdf _pdf;
     private readonly IRepositorioRacaCor _repositorioRacaCor;
@@ -35,6 +35,11 @@ public class RelatorioSondagemConsolidadoRacaUseCase : RelatorioSondagemConsolid
     {
         dadosRelatorio.RacasDisponiveis = await _repositorioRacaCor.ObterTodosAsync();
         return await _pdf.Executar(dadosRelatorio);
+    }
+
+    protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio)
+    {
+        throw new NotImplementedException();
     }
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)

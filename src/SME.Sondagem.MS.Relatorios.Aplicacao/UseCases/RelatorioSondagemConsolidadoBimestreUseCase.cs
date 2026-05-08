@@ -5,7 +5,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public class RelatorioSondagemConsolidadoBimestreUseCase : RelatorioSondagemConsolidadoUseCaseBase<RelatorioSondagemConsolidadoBimestreUseCase>, IRelatorioSondagemConsolidadoBimestreUseCase
+public class RelatorioSondagemConsolidadoBimestreUseCase : RelatorioSondagemConsolidadoUseCaseBase, IRelatorioSondagemConsolidadoBimestreUseCase
 {
     private readonly IRelatorioSondagemConsolidadoBimestrePdf _pdf;
     private readonly IRepositorioBimestre _repositorioBimestre;
@@ -36,6 +36,8 @@ public class RelatorioSondagemConsolidadoBimestreUseCase : RelatorioSondagemCons
         dadosRelatorio.BimestresDisponiveis = await _repositorioBimestre.ObterTodosAsync();
         return await _pdf.Executar(dadosRelatorio);
     }
+
+    protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) => throw new NotImplementedException();
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {

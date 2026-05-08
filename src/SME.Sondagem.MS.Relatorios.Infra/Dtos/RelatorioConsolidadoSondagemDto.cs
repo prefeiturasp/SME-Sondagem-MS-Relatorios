@@ -8,6 +8,7 @@ public class RelatorioConsolidadoSondagemDto
     public string Titulo { get; set; } = string.Empty;
     public IEnumerable<RelatorioConsolidadoQuestaoDto> Questoes { get; set; } = [];
     public Guid CodigoCorrelacao { get; set; }
+    public int ProficienciaId { get; set; }
 
     public int SolicitacaoRelatorioId { get; set; }
     public string Agrupamento { get; set; } = string.Empty;

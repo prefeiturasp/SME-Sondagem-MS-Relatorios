@@ -60,6 +60,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemConsolidadoGeneroPdf, RelatorioSondagemConsolidadoGeneroPdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoBimestrePdf, RelatorioSondagemConsolidadoBimestrePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoQuestaoPdf, RelatorioSondagemConsolidadoQuestaoPdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreExcel, RelatorioSondagemConsolidadoPorBimestreExcel>();
 
         services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
         services.TryAddScoped<IReportConverter, ReportConverter>();
@@ -70,6 +71,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorGeneroTemplatePdf, RelatorioSondagemConsolidadoPorGeneroTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreTemplatePdf, RelatorioSondagemConsolidadoPorBimestreTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorQuestaoTemplatePdf, RelatorioSondagemConsolidadoPorQuestaoTemplatePdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreTemplateExcel, RelatorioSondagemConsolidadoPorBimestreTemplateExcel>();
 
     }
 

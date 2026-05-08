@@ -7,7 +7,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where TConcrete : class
+public abstract class RelatorioSondagemConsolidadoUseCaseBase
 {
     protected const string ValorTodas = "Todas";
     protected const string ValorTodos = "Todos";
@@ -16,14 +16,14 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
     private readonly IServicoSgpApiClient _servicoSgpApiClient;
     private readonly IServicoEolApiClient _servicoEolApiClient;
     private readonly IServicoMensageria _servicoMensageria;
-    private readonly ILogger<TConcrete> _logger;
+    private readonly ILogger _logger;
 
     protected RelatorioSondagemConsolidadoUseCaseBase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger<TConcrete> logger)
+        ILogger logger)
     {
         ServicoSondagemApiClient = servicoSondagemApiClient;
         _servicoSgpApiClient = servicoSgpApiClient;
@@ -36,10 +36,11 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
 
     protected abstract string ContextoRelatorioParaLog { get; }
 
-    protected abstract Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(
-        FiltroRelatorioSondagemPorTurmaDto filtros);
+    protected abstract Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemPorTurmaDto filtros);
 
     protected abstract Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio);
+
+    protected abstract Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio);
 
     protected abstract void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio);
 
@@ -51,13 +52,28 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
 
         try
         {
+            var linkRelatorio = string.Empty;
+
             var dadosRelatorio = await MontarDadosRelatorioAsync(mensagem, mensagemRabbit.CodigoCorrelacao);
-            var linkRelatorio = await GerarPdfAsync(dadosRelatorio);
+
+            switch (mensagem.FiltrosUsados.ExtensaoRelatorio)
+            {
+                case (int)ExtensaoRelatorio.Pdf:
+                    linkRelatorio = await GerarPdfAsync(dadosRelatorio);
+                    break;
+                case (int)ExtensaoRelatorio.Xlsx:
+                    linkRelatorio = await GerarExcelAsync(dadosRelatorio);
+                    break;
+                default:
+                    break;
+            }
+
             await FinalizarRelatorioAsync(dadosRelatorio, mensagem.SolicitacaoRelatorioId, linkRelatorio, mensagemRabbit.CodigoCorrelacao);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao gerar relatório consolidado {Contexto}", ContextoRelatorioParaLog);
+            if (_logger.IsEnabled(LogLevel.Error))
+                _logger.LogError(ex, "Erro ao gerar relatório consolidado {Contexto}", ContextoRelatorioParaLog);
             return false;
         }
 
@@ -90,6 +106,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
         dadosRelatorio.CodigoCorrelacao = codigoCorrelacao;
         dadosRelatorio.SolicitacaoRelatorioId = mensagem.SolicitacaoRelatorioId;
         dadosRelatorio.UsuarioQueSolicitou = mensagem.UsuarioQueSolicitou;
+        dadosRelatorio.ProficienciaId = filtros.ProficienciaId;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Agrupamento))
             dadosRelatorio.Agrupamento = AgrupamentoPadrao;
