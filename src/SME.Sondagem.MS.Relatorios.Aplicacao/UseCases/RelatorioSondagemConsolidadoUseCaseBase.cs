@@ -17,14 +17,14 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
     private readonly IServicoSgpApiClient _servicoSgpApiClient;
     private readonly IServicoEolApiClient _servicoEolApiClient;
     private readonly IServicoMensageria _servicoMensageria;
-    private readonly ILogger<TConcrete> _logger;
+    private readonly ILogger<RelatorioSondagemConsolidadoUseCaseBase<TConcrete>> _logger;
 
     protected RelatorioSondagemConsolidadoUseCaseBase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger<TConcrete> logger)
+        ILogger<RelatorioSondagemConsolidadoUseCaseBase<TConcrete>> logger)
     {
         ServicoSondagemApiClient = servicoSondagemApiClient;
         _servicoSgpApiClient = servicoSgpApiClient;
@@ -74,7 +74,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao gerar relatório consolidado {Contexto}", ContextoRelatorioParaLog);
+            if (_logger.IsEnabled(LogLevel.Error))
+                _logger.LogError(ex, "Erro ao gerar relatório consolidado {Contexto}", ContextoRelatorioParaLog);
             return false;
         }
 

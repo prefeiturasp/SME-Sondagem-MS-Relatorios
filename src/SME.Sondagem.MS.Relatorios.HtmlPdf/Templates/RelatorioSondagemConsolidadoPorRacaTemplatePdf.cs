@@ -10,32 +10,8 @@ namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : IRelatorioSondagemConsolidadoPorRacaTemplatePdf
 {
     private static readonly CultureInfo PtBr = new("pt-BR");
-    private static readonly string[] OrdemRacas =
-    [
-        "Preta",
-        "Branca",
-        "Parda",
-        "Amarela",
-        "Indígena",
-        "Preferiu não informar",
-        "Não informada"
-    ];
 
-    public string GerarHtml(RelatorioConsolidadoSondagemDto dto)
-    {
-        var html = new StringBuilder();
-
-        html.Append(GerarEstilos());
-        html.Append("<body>");
-        html.Append(GerarTabelas(dto));
-        html.Append("</body></html>");
-
-        return html.ToString();
-    }
-
-    private static string GerarEstilos()
-    {
-        return """
+    private const string Estilos = """
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -197,7 +173,29 @@ public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : IRelatorioSondagem
                     </style>
                 </head>
                 """;
+    private static readonly string[] OrdemRacas =
+    [
+        "Preta",
+        "Branca",
+        "Parda",
+        "Amarela",
+        "Indígena",
+        "Preferiu não informar",
+        "Não informada"
+    ];
+
+    public string GerarHtml(RelatorioConsolidadoSondagemDto dto)
+    {
+        var html = new StringBuilder();
+
+        html.Append(Estilos);
+        html.Append("<body>");
+        html.Append(GerarTabelas(dto));
+        html.Append("</body></html>");
+
+        return html.ToString();
     }
+
 
     private static string GerarCabecalho(RelatorioConsolidadoSondagemDto dto)
     {
@@ -236,12 +234,6 @@ public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : IRelatorioSondagem
         ";
     }
 
-    private static string FormatarDataConsolidacao(DateTime? data)
-    {
-        return data.HasValue
-            ? data.Value.ToString("dd/MM/yyyy 'às' HH:mm", PtBr)
-            : "00/00/0000 às 00:00";
-    }
 
     private static string GerarTabelas(RelatorioConsolidadoSondagemDto dto)
     {

@@ -281,15 +281,9 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : IRelatorioSondag
         return string.Empty;
     }
 
-    private static string NormalizarNomeGenero(string texto)
-    {
-        foreach (var padrao in OrdemGenerosPreferida)
-        {
-            if (string.Equals(padrao, texto, StringComparison.OrdinalIgnoreCase))
-                return padrao;
-        }
-        return texto;
-    }
+    private static string NormalizarNomeGenero(string texto) =>
+        OrdemGenerosPreferida.FirstOrDefault(p => string.Equals(p, texto, StringComparison.OrdinalIgnoreCase))
+        ?? texto;
 
     private static List<string> ObterGenerosOrdenados(RelatorioConsolidadoQuestaoDto questao)
     {
