@@ -1,4 +1,4 @@
-﻿using SME.Sondagem.MS.Relatorios.Infra.Constantes;
+using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
@@ -73,6 +73,23 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
         string urlFinal = filtroRelatorio.ObjetoParaQueryStringExtensions(ServicoSondagemConstantes.URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_BIMESTRE);
+        var resposta = await httpClient.GetAsync(urlFinal);
+
+        if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
+            return new RelatorioConsolidadoSondagemDto();
+
+        var jsonString = await resposta.Content.ReadAsStringAsync();
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
+
+        return JsonSerializer.Deserialize<RelatorioConsolidadoSondagemDto>(jsonString, options)
+                 ?? new RelatorioConsolidadoSondagemDto();
+    }
+
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorQuestaoAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    {
+        var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
+
+        string urlFinal = filtroRelatorio.ObjetoParaQueryStringExtensions(ServicoSondagemConstantes.URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_QUESTAO);
         var resposta = await httpClient.GetAsync(urlFinal);
 
         if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)

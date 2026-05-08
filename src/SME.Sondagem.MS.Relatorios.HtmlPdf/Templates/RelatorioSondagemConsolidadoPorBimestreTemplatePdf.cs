@@ -4,16 +4,18 @@ using System.Web;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
-public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : RelatorioSondagemConsolidadoDemograficoTemplatePdfBase, IRelatorioSondagemConsolidadoPorRacaTemplatePdf
+public class RelatorioSondagemConsolidadoPorBimestreTemplatePdf
+    : RelatorioSondagemConsolidadoDemograficoTemplatePdfBase,
+      IRelatorioSondagemConsolidadoPorBimestreTemplatePdf
 {
-    protected override string CssClasseColuna => "col-raca";
+    protected override string CssClasseColuna => "col-bimestre";
 
     protected override string GerarLinhaMetadadoDemografico(RelatorioConsolidadoSondagemDto dto) =>
-        $"<td colspan=\"2\"><strong>Raça:</strong> {HttpUtility.HtmlEncode(dto.Raca)}</td>";
+        $"<td colspan=\"2\"><strong>Bimestre:</strong> {HttpUtility.HtmlEncode(dto.Bimestre)}</td>";
 
     protected override List<string> ObterOrdemColunas(RelatorioConsolidadoSondagemDto dto) =>
-        dto.RacasDisponiveis?
-            .Select(r => r.Descricao)
+        dto.BimestresDisponiveis?
+            .Select(b => b.Descricao)
             .ToList() ?? [];
 
     protected override string FormatarCabecalhoColuna(string nomeColuna) => nomeColuna;
@@ -26,21 +28,21 @@ public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : RelatorioSondagemC
         {
             foreach (var resposta in questao.Respostas)
             {
-                if (resposta.Racas == null) continue;
-                foreach (var raca in resposta.Racas)
+                if (resposta.Bimestres == null) continue;
+                foreach (var bimestre in resposta.Bimestres)
                 {
-                    if (!string.IsNullOrWhiteSpace(raca.Raca))
-                        encontradas.Add(raca.Raca);
+                    if (!string.IsNullOrWhiteSpace(bimestre.Bimestre))
+                        encontradas.Add(bimestre.Bimestre);
                 }
             }
         }
 
-        if (questao.TotaisPorRaca != null)
+        if (questao.TotaisPorBimestre != null)
         {
-            foreach (var raca in questao.TotaisPorRaca)
+            foreach (var bimestre in questao.TotaisPorBimestre)
             {
-                if (!string.IsNullOrWhiteSpace(raca.Raca))
-                    encontradas.Add(raca.Raca);
+                if (!string.IsNullOrWhiteSpace(bimestre.Bimestre))
+                    encontradas.Add(bimestre.Bimestre);
             }
         }
 
@@ -49,9 +51,9 @@ public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : RelatorioSondagemC
 
     protected override Dictionary<string, (int Quantidade, double Percentual)> MontarDicionarioResposta(
         RelatorioConsolidadoRespostaDto resposta) =>
-        (resposta.Racas ?? [])
-            .Where(r => !string.IsNullOrWhiteSpace(r.Raca))
-            .GroupBy(r => r.Raca, StringComparer.OrdinalIgnoreCase)
+        (resposta.Bimestres ?? [])
+            .Where(b => !string.IsNullOrWhiteSpace(b.Bimestre))
+            .GroupBy(b => b.Bimestre, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 g => g.Key,
                 g => (g.First().Quantidade, g.First().Percentual),
@@ -59,13 +61,14 @@ public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : RelatorioSondagemC
 
     protected override Dictionary<string, (int Quantidade, double Percentual)> MontarDicionarioTotais(
         RelatorioConsolidadoQuestaoDto questao) =>
-        (questao.TotaisPorRaca ?? [])
-            .Where(r => !string.IsNullOrWhiteSpace(r.Raca))
-            .GroupBy(r => r.Raca, StringComparer.OrdinalIgnoreCase)
+        (questao.TotaisPorBimestre ?? [])
+            .Where(b => !string.IsNullOrWhiteSpace(b.Bimestre))
+            .GroupBy(b => b.Bimestre, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 g => g.Key,
                 g => (g.First().Quantidade, g.First().Percentual),
                 StringComparer.OrdinalIgnoreCase);
 
-    protected override bool PossuiTotais(RelatorioConsolidadoQuestaoDto questao) => questao.TotaisPorRaca != null && questao.TotaisPorRaca.Any();
+    protected override bool PossuiTotais(RelatorioConsolidadoQuestaoDto questao) =>
+        questao.TotaisPorBimestre != null && questao.TotaisPorBimestre.Any();
 }
