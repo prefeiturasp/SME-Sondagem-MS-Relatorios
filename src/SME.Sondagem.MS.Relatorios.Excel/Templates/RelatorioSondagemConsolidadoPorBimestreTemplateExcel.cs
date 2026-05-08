@@ -31,7 +31,7 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
         EscreverCabecalhoConsolidado(sheet, dto);
 
         int ultimaLinha;
-        if (dto.ProficienciaId == 3)
+        if (dto.ProficienciaId == 1 || dto.ProficienciaId == 3 || dto.ProficienciaId == 5 || dto.ProficienciaId == 2)
         {
             ultimaLinha = EscreverDadosProficiencia3(sheet, 8, dto);
         }
