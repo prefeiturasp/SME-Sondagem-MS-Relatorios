@@ -1,18 +1,19 @@
 using Microsoft.Extensions.Logging;
+using SME.Sondagem.MS.Relatorios.Dominio.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public class RelatorioSondagemConsolidadoGeneroUseCase
-    : RelatorioSondagemConsolidadoUseCaseBase<RelatorioSondagemConsolidadoGeneroUseCase>,
-      IRelatorioSondagemConsolidadoGeneroUseCase
+public class RelatorioSondagemConsolidadoGeneroUseCase : RelatorioSondagemConsolidadoUseCaseBase<RelatorioSondagemConsolidadoGeneroUseCase>, IRelatorioSondagemConsolidadoGeneroUseCase
 {
     private readonly IRelatorioSondagemConsolidadoGeneroPdf _pdf;
+    private readonly IRepositorioGeneroSexo _repositorioGeneroSexo;
 
     public RelatorioSondagemConsolidadoGeneroUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IRelatorioSondagemConsolidadoGeneroPdf relatorioSondagemConsolidadoGeneroPdf,
+        IRepositorioGeneroSexo repositorioGeneroSexo,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
@@ -20,6 +21,7 @@ public class RelatorioSondagemConsolidadoGeneroUseCase
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger)
     {
         _pdf = relatorioSondagemConsolidadoGeneroPdf;
+        _repositorioGeneroSexo = repositorioGeneroSexo;
     }
 
     protected override string AgrupamentoPadrao => "Por gênero";
@@ -29,8 +31,11 @@ public class RelatorioSondagemConsolidadoGeneroUseCase
     protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemPorTurmaDto filtros) =>
         ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorGeneroAsync(filtros);
 
-    protected override Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
-        _pdf.Executar(dadosRelatorio);
+    protected override async Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio)
+    {
+        dadosRelatorio.GenerosDisponiveis = await _repositorioGeneroSexo.ObterTodosAsync();
+        return await _pdf.Executar(dadosRelatorio);
+    }
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {

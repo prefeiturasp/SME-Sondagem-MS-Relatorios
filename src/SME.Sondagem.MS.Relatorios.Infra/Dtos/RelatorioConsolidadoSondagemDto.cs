@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
+using SME.Sondagem.MS.Relatorios.Dominio.Entidades;
 
 namespace SME.Sondagem.MS.Relatorios.Infra.Dtos;
 
@@ -24,6 +25,12 @@ public class RelatorioConsolidadoSondagemDto
     public string UsuarioQueSolicitou { get; set; } = string.Empty;
     public DateTime DataImpressao { get; set; } = DateTime.Now;
     public DateTime? DataUltimaConsolidacao { get; set; }
+
+    [JsonIgnore]
+    public IEnumerable<RacaCor>? RacasDisponiveis { get; set; }
+
+    [JsonIgnore]
+    public IEnumerable<GeneroSexo>? GenerosDisponiveis { get; set; }
 }
 
 public class RelatorioConsolidadoQuestaoDto

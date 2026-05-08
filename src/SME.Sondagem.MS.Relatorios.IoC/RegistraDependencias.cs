@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 using SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
+using SME.Sondagem.MS.Relatorios.Dados.Repositorios;
+using SME.Sondagem.MS.Relatorios.Dominio.Interfaces;
 using SME.Sondagem.MS.Relatorios.Excel.Interfaces;
 using SME.Sondagem.MS.Relatorios.Excel.Templates;
 using SME.Sondagem.MS.Relatorios.HtmlPdf;
@@ -44,6 +46,8 @@ public static class RegistraDependencias
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<TelemetriaOptions>>().Value);
 
         services.TryAddScoped<IServicoTelemetria, ServicoTelemetria>();
+        services.TryAddScoped<IRepositorioRacaCor, RepositorioRacaCor>();
+        services.TryAddScoped<IRepositorioGeneroSexo, RepositorioGeneroSexo>();
         services.TryAddScoped<IServicoLog, ServicoLog>();
         services.TryAddSingleton<IServicoMensageria, ServicoMensageria>();
         services.AddHttpClient();
