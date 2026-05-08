@@ -16,7 +16,7 @@ public class RelatorioSondagemConsolidadoPorBimestreUseCase
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger<RelatorioSondagemConsolidadoUseCaseBase<RelatorioSondagemConsolidadoPorBimestreUseCase>> logger)
+        ILogger<RelatorioSondagemConsolidadoPorBimestreUseCase> logger)
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger)
     {
         _excel = relatorioSondagemConsolidadoPorBimestreExcel;

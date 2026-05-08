@@ -17,14 +17,14 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase<TConcrete> where T
     private readonly IServicoSgpApiClient _servicoSgpApiClient;
     private readonly IServicoEolApiClient _servicoEolApiClient;
     private readonly IServicoMensageria _servicoMensageria;
-    private readonly ILogger<RelatorioSondagemConsolidadoUseCaseBase<TConcrete>> _logger;
+    private readonly ILogger _logger;
 
     protected RelatorioSondagemConsolidadoUseCaseBase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger<RelatorioSondagemConsolidadoUseCaseBase<TConcrete>> logger)
+        ILogger logger)
     {
         ServicoSondagemApiClient = servicoSondagemApiClient;
         _servicoSgpApiClient = servicoSgpApiClient;
