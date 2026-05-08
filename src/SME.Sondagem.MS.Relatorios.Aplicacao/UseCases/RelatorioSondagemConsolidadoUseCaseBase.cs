@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
@@ -37,8 +36,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
     protected abstract string ContextoRelatorioParaLog { get; }
 
-    protected abstract Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(
-        FiltroRelatorioSondagemPorTurmaDto filtros);
+    protected abstract Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemPorTurmaDto filtros);
 
     protected abstract Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio);
 
