@@ -23,29 +23,18 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
     public RelatorioSondagemConsolidadoPorBimestreTemplateExcel(IServicoArmazenamentoMinio servicoArmazenamentoMinio)
         : base(servicoArmazenamentoMinio) { }
 
-    public async Task<string> GerarExcelEF(RelatorioConsolidadoSondagemDto dto)
+    public async Task<string> GerarExcelEF(RelatorioConsolidadoSondagemDto relatorioConsolidadoSondagemDto)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Sondagem");
 
-        EscreverCabecalhoConsolidado(sheet, dto);
+        EscreverCabecalhoConsolidado(sheet, relatorioConsolidadoSondagemDto);
 
         int ultimaLinha;
-        ultimaLinha = EscreverDadosProficiencia3(sheet, 8, dto);
-        
-        /*if (dto.ProficienciaId == 1 || dto.ProficienciaId == 3 || dto.ProficienciaId == 5 || dto.ProficienciaId == 2)
-        {
-            ultimaLinha = EscreverDadosProficiencia3(sheet, 8, dto);
-        }
-        else
-        {
-            var bimestres = ObterBimestres(dto);
-            int linha = EscreverCabecalhoTabela(sheet, 7, bimestres);
-            ultimaLinha = EscreverDadosExcel(sheet, linha, dto, bimestres);
-        }*/
+        ultimaLinha = EscreverDadosProficiencia3(sheet, 8, relatorioConsolidadoSondagemDto);
 
         const int dataColStart = 100;
-        var graficos = ObterGraficosDasQuestoes(dto);
+        var graficos = ObterGraficosDasQuestoes(relatorioConsolidadoSondagemDto);
         EscreverDadosGraficos(sheet, graficos, ultimaLinha + 2, dataColStart);
 
         using var stream = new MemoryStream();
@@ -55,19 +44,9 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
         InjetarGraficosOpenXml(stream, graficos, ultimaLinha + 2, "Sondagem", ultimaLinha + 2, dataColStart);
         stream.Position = 0;
 
-        return await EnviarExcelParaMinio(stream, dto.CodigoCorrelacao);
+        return await EnviarExcelParaMinio(stream, relatorioConsolidadoSondagemDto.CodigoCorrelacao);
     }
 
-
-    private static List<string> ObterBimestres(RelatorioConsolidadoSondagemDto dto)
-    {
-        return dto.Questoes
-            .SelectMany(q => q.TotaisPorBimestre ?? [])
-            .Select(b => b.Bimestre)
-            .Distinct()
-            .OrderBy(b => b)
-            .ToList();
-    }
 
     private static void EstilarCelulaDadosConsolidado(IXLCell cell, bool negrito = false)
     {
@@ -88,72 +67,6 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplateExcel : RelatorioCon
             : Math.Max(1, (int)Math.Ceiling((double)texto.Length / charsPerLine));
         sheet.Row(linha).Height = linhas * alturaLinha + 3;
     }
-
-    private static int EscreverCabecalhoTabela(IXLWorksheet sheet, int linha, List<string> bimestres)
-    {
-        sheet.Column(1).Width = 40;
-        EstilizarHeader(sheet.Cell(linha, 1), "Questão / Resposta");
-
-        int col = 2;
-        foreach (var bimestre in bimestres)
-        {
-            sheet.Column(col).Width = 20;
-            EstilizarHeader(sheet.Cell(linha, col), bimestre);
-            col++;
-        }
-
-        sheet.Row(linha).Height = 40;
-        return linha + 1;
-    }
-
-    private static int EscreverDadosExcel(IXLWorksheet sheet, int linha, RelatorioConsolidadoSondagemDto dto, List<string> bimestres)
-    {
-        int totalColunas = 1 + bimestres.Count;
-
-        foreach (var questao in dto.Questoes)
-        {
-            var celulaQuestao = sheet.Cell(linha, 1);
-            celulaQuestao.Value = questao.QuestaoNome;
-            celulaQuestao.Style.Font.Bold = true;
-            celulaQuestao.Style.Fill.BackgroundColor = XLColor.LightGray;
-
-            if (totalColunas > 1)
-                sheet.Range(linha, 1, linha, totalColunas).Merge();
-
-            AplicarBordaExterna(sheet.Range(linha, 1, linha, totalColunas));
-            linha++;
-
-            if (questao.Respostas == null) continue;
-
-            foreach (var resposta in questao.Respostas)
-            {
-                var cor = !string.IsNullOrEmpty(resposta.CorFundo) ? ConverterCor(resposta.CorFundo) : XLColor.White;
-
-                var celulaResposta = sheet.Cell(linha, 1);
-                celulaResposta.Value = resposta.Resposta;
-                celulaResposta.Style.Fill.BackgroundColor = cor;
-                EstilarCelulaDadosConsolidado(celulaResposta, negrito: true);
-
-                int col = 2;
-                foreach (var bimestre in bimestres)
-                {
-                    var dadoBimestre = resposta.Bimestres?.FirstOrDefault(b => b.Bimestre == bimestre);
-                    var cell = sheet.Cell(linha, col);
-                    cell.Value = dadoBimestre != null ? $"{dadoBimestre.Quantidade} ({dadoBimestre.Percentual:F1}%)" : "Vazio";
-                    cell.Style.Fill.BackgroundColor = cor;
-                    EstilarCelulaDadosConsolidado(cell);
-                    if (dadoBimestre == null) cell.Style.Font.FontColor = XLColor.Gray;
-                    col++;
-                }
-
-                AjustarAlturaLinha(sheet, linha, resposta.Resposta);
-                linha++;
-            }
-        }
-
-        return linha;
-    }
-
 
     private static int EscreverDadosProficiencia3(IXLWorksheet sheet, int startRow, RelatorioConsolidadoSondagemDto dto)
     {

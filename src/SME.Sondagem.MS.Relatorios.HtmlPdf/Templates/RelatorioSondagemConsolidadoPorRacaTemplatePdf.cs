@@ -282,39 +282,39 @@ public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : IRelatorioSondagem
 
     private static List<string> ObterRacasOrdenadas(RelatorioConsolidadoQuestaoDto questao)
     {
-        var racasEncontradas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        if (questao.Respostas != null)
-        {
-            foreach (var resposta in questao.Respostas)
-            {
-                if (resposta.Racas == null) continue;
-                foreach (var raca in resposta.Racas)
-                {
-                    if (!string.IsNullOrWhiteSpace(raca.Raca))
-                        racasEncontradas.Add(raca.Raca);
-                }
-            }
-        }
-
-        if (questao.TotaisPorRaca != null)
-        {
-            foreach (var raca in questao.TotaisPorRaca)
-            {
-                if (!string.IsNullOrWhiteSpace(raca.Raca))
-                    racasEncontradas.Add(raca.Raca);
-            }
-        }
-
+        var racasEncontradas = ColetarRacasEncontradas(questao);
         var ordenadas = OrdemRacas.Where(r => racasEncontradas.Contains(r)).ToList();
-
-        foreach (var raca in racasEncontradas)
-        {
-            if (!ordenadas.Contains(raca, StringComparer.OrdinalIgnoreCase))
-                ordenadas.Add(raca);
-        }
-
+        ordenadas.AddRange(racasEncontradas.Where(r => !ordenadas.Contains(r, StringComparer.OrdinalIgnoreCase)));
         return ordenadas;
+    }
+
+    private static HashSet<string> ColetarRacasEncontradas(RelatorioConsolidadoQuestaoDto questao)
+    {
+        var racas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        AdicionarRacasDasRespostas(racas, questao.Respostas);
+        AdicionarRacasDosTotais(racas, questao.TotaisPorRaca);
+        return racas;
+    }
+
+    private static void AdicionarRacasDasRespostas(HashSet<string> racas, IEnumerable<RelatorioConsolidadoRespostaDto>? respostas)
+    {
+        var validas = (respostas ?? [])
+            .SelectMany(r => r.Racas ?? [])
+            .Select(r => r.Raca)
+            .Where(r => !string.IsNullOrWhiteSpace(r));
+
+        foreach (var raca in validas)
+            racas.Add(raca!);
+    }
+
+    private static void AdicionarRacasDosTotais(HashSet<string> racas, IEnumerable<RelatorioConsolidadoRacaDto>? totais)
+    {
+        var validas = (totais ?? [])
+            .Select(raca => raca.Raca)
+            .Where(r => !string.IsNullOrWhiteSpace(r));
+
+        foreach (var raca in validas)
+            racas.Add(raca!);
     }
 
     private static string GerarColgroup(int totalRacas)

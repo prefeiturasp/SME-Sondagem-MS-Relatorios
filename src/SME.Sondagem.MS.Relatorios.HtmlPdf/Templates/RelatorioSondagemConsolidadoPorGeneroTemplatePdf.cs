@@ -11,29 +11,7 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : IRelatorioSondag
 {
     private static readonly CultureInfo PtBr = new("pt-BR");
 
-    private static readonly string[] OrdemGenerosPreferida =
-    [
-        "Feminino",
-        "Masculino",
-        "Mulher trans",
-        "Homem trans"
-    ];
-
-    public string GerarHtml(RelatorioConsolidadoSondagemDto dto)
-    {
-        var html = new StringBuilder();
-
-        html.Append(GerarEstilos());
-        html.Append("<body>");
-        html.Append(GerarTabelas(dto));
-        html.Append("</body></html>");
-
-        return html.ToString();
-    }
-
-    private static string GerarEstilos()
-    {
-        return """
+    private const string Estilos = """
                <!DOCTYPE html>
                <html>
                <head>
@@ -199,6 +177,25 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : IRelatorioSondag
                    </style>
                </head>
                """;
+
+    private static readonly string[] OrdemGenerosPreferida =
+    [
+        "Feminino",
+        "Masculino",
+        "Mulher trans",
+        "Homem trans"
+    ];
+
+    public string GerarHtml(RelatorioConsolidadoSondagemDto dto)
+    {
+        var html = new StringBuilder();
+
+        html.Append(Estilos);
+        html.Append("<body>");
+        html.Append(GerarTabelas(dto));
+        html.Append("</body></html>");
+
+        return html.ToString();
     }
 
     private static string GerarCabecalho(RelatorioConsolidadoSondagemDto dto)

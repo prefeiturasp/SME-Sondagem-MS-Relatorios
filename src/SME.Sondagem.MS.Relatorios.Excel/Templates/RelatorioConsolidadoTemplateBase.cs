@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using ClosedXML.Excel;
 using DocumentFormat.OpenXml;
@@ -167,14 +168,14 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
 
     private static string ColNumToLetter(int col)
     {
-        var result = string.Empty;
+        var sb = new StringBuilder();
         while (col > 0)
         {
             col--;
-            result = (char)('A' + col % 26) + result;
+            sb.Insert(0, (char)('A' + col % 26));
             col /= 26;
         }
-        return result;
+        return sb.ToString();
     }
 
     private static void ConfigurarChartPartGrafico(ChartPart chartPart, List<GraficoDto> dados, string titulo, string catFormula, string valFormula)
