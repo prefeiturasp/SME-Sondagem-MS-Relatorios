@@ -10,6 +10,10 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
       IRelatorioSondagemConsolidadoGenericoTemplateExcel
 {
     private const int ColGap = 1;
+    private const string FormatoValor = "{0} ({1:F1}%)";
+
+    private static readonly Func<RelatorioConsolidadoRacaDto, int> OrdemRaca =
+        r => r.Raca.Trim().Contains(' ') ? 1 : 0;
 
     private sealed record ColDefinition(string Header, string Key, string? Grupo = null);
 
@@ -58,7 +62,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         {
             var source = questao.TotaisPorRaca ?? firstResposta.Racas;
             return source
-                .OrderBy(r => r.Raca.Trim().Contains(' ') ? 1 : 0)
+                .OrderBy(OrdemRaca)
                 .Select(r => new ColDefinition(r.Raca, r.Raca))
                 .ToList();
         }
@@ -79,7 +83,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         var source = questao.TotaisPorGeneroComRacas ?? firstResposta.GenerosComRacas!;
         return source
             .SelectMany(genero => (genero.Racas ?? [])
-                .OrderBy(r => r.Raca.Trim().Contains(' ') ? 1 : 0)
+                .OrderBy(OrdemRaca)
                 .Select(r => new ColDefinition(r.Raca, $"{genero.Genero}|{r.Raca}", genero.Genero)))
             .ToList();
     }
@@ -123,6 +127,35 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
             return b != null ? (b.Quantidade, b.Percentual) : null;
         }
         return null;
+    }
+
+    private static void AplicarEstiloCelulaHeader(IXLCell cell, XLColor corHeader)
+    {
+        cell.Style.Font.Bold = true;
+        cell.Style.Fill.BackgroundColor = corHeader;
+        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        cell.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
+        cell.Style.Alignment.WrapText   = true;
+        cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+    }
+
+    private static void EscreverColunaValores(
+        IXLWorksheet sheet, int linha, int colStart,
+        List<ColDefinition> colunas,
+        Func<ColDefinition, (int Quantidade, double Percentual)?> obterValor,
+        XLColor corFundo, bool negrito = false)
+    {
+        int col = colStart + 1;
+        foreach (var colDef in colunas)
+        {
+            var valor = obterValor(colDef);
+            var cell  = sheet.Cell(linha, col);
+            cell.Value = valor != null ? string.Format(FormatoValor, valor.Value.Quantidade, valor.Value.Percentual) : "Vazio";
+            cell.Style.Fill.BackgroundColor = corFundo;
+            EstilarCelulaDadosConsolidado(cell, negrito);
+            if (valor == null) cell.Style.Font.FontColor = XLColor.Gray;
+            col++;
+        }
     }
 
     private static void EstilarCelulaDadosConsolidado(IXLCell cell, bool negrito = false)
@@ -209,12 +242,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
 
         var celulaLabel = sheet.Cell(linha, colStart);
         celulaLabel.Value = questaoNome;
-        celulaLabel.Style.Font.Bold = true;
-        celulaLabel.Style.Fill.BackgroundColor = corHeader;
-        celulaLabel.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-        celulaLabel.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
-        celulaLabel.Style.Alignment.WrapText    = true;
-        celulaLabel.Style.Border.OutsideBorder  = XLBorderStyleValues.Thin;
+        AplicarEstiloCelulaHeader(celulaLabel, corHeader);
 
         if (hasGroups)
         {
@@ -228,11 +256,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
                 if (count > 1) range.Merge();
                 var cell = sheet.Cell(linha, col);
                 cell.Value = grupo.Key ?? string.Empty;
-                cell.Style.Font.Bold = true;
-                cell.Style.Fill.BackgroundColor = corHeader;
-                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-                cell.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
-                cell.Style.Alignment.WrapText   = true;
+                AplicarEstiloCelulaHeader(cell, corHeader);
                 range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
                 range.Style.Border.OutsideBorderColor = XLColor.Black;
                 col += count;
@@ -246,12 +270,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         {
             var cell = sheet.Cell(linha, colIdx);
             cell.Value = colDef.Header;
-            cell.Style.Font.Bold = true;
-            cell.Style.Fill.BackgroundColor = corHeader;
-            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            cell.Style.Alignment.Vertical   = XLAlignmentVerticalValues.Center;
-            cell.Style.Alignment.WrapText   = true;
-            cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            AplicarEstiloCelulaHeader(cell, corHeader);
             colIdx++;
         }
 
@@ -276,17 +295,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
             celulaResposta.Style.Font.FontColor       = corTexto;
             EstilarCelulaDadosConsolidado(celulaResposta, negrito: true);
 
-            int col = colStart + 1;
-            foreach (var colDef in colunas)
-            {
-                var valor = GetValorCelula(resposta, colDef.Key);
-                var cell  = sheet.Cell(linha, col);
-                cell.Value = valor != null ? $"{valor.Value.Quantidade} ({valor.Value.Percentual:F1}%)" : "Vazio";
-                cell.Style.Fill.BackgroundColor = corLinha;
-                EstilarCelulaDadosConsolidado(cell);
-                if (valor == null) cell.Style.Font.FontColor = XLColor.Gray;
-                col++;
-            }
+            EscreverColunaValores(sheet, linha, colStart, colunas, colDef => GetValorCelula(resposta, colDef.Key), corLinha);
 
             AjustarAlturaLinha(sheet, linha, resposta.Resposta);
             linha++;
@@ -301,17 +310,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         celulaTotal.Style.Fill.BackgroundColor = corTotal;
         EstilarCelulaDadosConsolidado(celulaTotal, negrito: true);
 
-        int col = colStart + 1;
-        foreach (var colDef in colunas)
-        {
-            var total = GetValorTotal(questao, colDef.Key);
-            var cell  = sheet.Cell(linha, col);
-            cell.Value = total != null ? $"{total.Value.Quantidade} ({total.Value.Percentual:F1}%)" : "Vazio";
-            cell.Style.Fill.BackgroundColor = corTotal;
-            EstilarCelulaDadosConsolidado(cell, negrito: true);
-            if (total == null) cell.Style.Font.FontColor = XLColor.Gray;
-            col++;
-        }
+        EscreverColunaValores(sheet, linha, colStart, colunas, colDef => GetValorTotal(questao, colDef.Key), corTotal, negrito: true);
     }
 
     private static void EscreverDadosGraficos(IXLWorksheet sheet, List<(string Titulo, List<GraficoDto> Dados)> graficos, int dataRowBase, int dataColStart)
