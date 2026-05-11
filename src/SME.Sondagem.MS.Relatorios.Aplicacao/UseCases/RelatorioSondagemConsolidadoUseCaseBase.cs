@@ -149,7 +149,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
             dadosRelatorio.DataImpressao = DateTime.Now;
 
         if (string.IsNullOrWhiteSpace(componenteCurricular.Nome))
-            dadosRelatorio.ComponenteCurricular = componenteCurricular.Nome;
+            dadosRelatorio.ComponenteCurricular = componenteCurricular.Nome ?? "";
 
         dadosRelatorio.Titulo = $"{proficienciaNome} consolidado";
     }
