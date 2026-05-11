@@ -13,7 +13,7 @@ public static class ServicoSondagemConstantes
     public const string URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_ANO = "relatorio-integracao/consolidado/ano";
     public const string URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_BIMESTRE = "relatorio-integracao/consolidado/bimestre";
     public const string URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_RACA_GENERO = "relatorio-integracao/consolidado/raca-genero";
-    public const string URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_QUESTAO = "relatorio-integracao/consolidado/questao";
+    public const string URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_QUESTAO = "relatorio-integracao/consolidado/ano";
     public const string URL_PARAMETROS_SONDAGEM = "ParametroSondagemIntegracao/questionario/{0}";
     public const string URL_PROFICIENCIA = "relatorio-integracao/proficiencia/{0}";
 }

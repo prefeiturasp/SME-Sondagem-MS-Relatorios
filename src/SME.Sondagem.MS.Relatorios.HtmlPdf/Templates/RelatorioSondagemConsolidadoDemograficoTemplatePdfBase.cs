@@ -15,6 +15,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 {
     protected static readonly CultureInfo PtBr = new("pt-BR");
 
+    private static readonly string FechaDiv = "</div>";
+
     public string GerarHtml(RelatorioConsolidadoSondagemDto dto)
     {
         var html = new StringBuilder();
@@ -63,7 +65,20 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             sb.Append("<div class=\"bloco-relatorio\">");
             sb.Append(GerarCabecalho(dto));
             sb.Append(GerarTabelaPorQuestao(questao, ordemColunas));
-            sb.Append("</div>");
+            sb.AppendLine(FechaDiv);
+        }
+
+        foreach (var questao in dto.Questoes)
+        {
+            var grafico = MontarGraficoConsolidado(questao);
+            var htmlGrafico = GerarGrafico(grafico, quebrarPaginaAntes: false);
+            if (string.IsNullOrEmpty(htmlGrafico))
+                continue;
+
+            sb.Append("<div class=\"bloco-relatorio\">");
+            sb.Append(GerarCabecalho(dto));
+            sb.Append(htmlGrafico);
+            sb.AppendLine(FechaDiv);
         }
 
         return sb.ToString();
@@ -85,9 +100,36 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         sb.AppendLine(GerarCorpoTabela(questao, colunas));
 
         sb.AppendLine("    </table>");
-        sb.AppendLine("</div>");
+        sb.AppendLine(FechaDiv);
 
         return sb.ToString();
+    }
+
+    protected virtual GraficoSondagemDto? MontarGraficoConsolidado(RelatorioConsolidadoQuestaoDto questao)
+    {
+        if (questao.Respostas == null)
+            return null;
+
+        var barras = questao.Respostas
+            .Where(r => r.Total > 0)
+            .OrderBy(r => r.Ordem)
+            .Select(r => new GraficoBarraDto
+            {
+                Legenda = string.IsNullOrWhiteSpace(r.Resposta) ? "—" : r.Resposta,
+                CorFundo = string.IsNullOrWhiteSpace(r.CorFundo) ? "#BFBFC2" : r.CorFundo,
+                CorTexto = string.IsNullOrWhiteSpace(r.CorTexto) ? "#ffffff" : r.CorTexto,
+                Quantidade = r.Total
+            })
+            .ToList();
+
+        return barras.Count == 0
+            ? null
+            : new GraficoSondagemDto
+            {
+                Titulo = "Gráfico da Sondagem",
+                Subtitulo = questao.QuestaoNome,
+                Barras = barras
+            };
     }
 
     protected virtual bool ExibirTituloQuestao => true;
@@ -99,13 +141,9 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         var ordenadas = ordemPreferida
             .Where(c => encontradas.Contains(c))
             .ToList();
-
-        foreach (var coluna in encontradas.OrderBy(c => c, StringComparer.OrdinalIgnoreCase))
-        {
-            if (!ordenadas.Contains(coluna, StringComparer.OrdinalIgnoreCase))
-                ordenadas.Add(coluna);
-        }
-
+        ordenadas.AddRange(from coluna in encontradas.OrderBy(c => c)
+                           where !ordenadas.Contains(coluna, StringComparer.OrdinalIgnoreCase)
+                           select coluna);
         return ordenadas;
     }
 
@@ -144,7 +182,9 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
         if (questao.Respostas != null)
         {
-            foreach (var resposta in questao.Respostas.OrderBy(r => r.Ordem))
+            foreach (var resposta in questao.Respostas
+                .Where(r => r != null)
+                .OrderBy(r => r.Ordem))
                 sb.AppendLine(GerarLinhaResposta(resposta, colunas));
         }
 
@@ -272,6 +312,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
         return sb.ToString();
     }
+
+    private const string FechaDivConsolidado = "</div>";
 
     private string GerarEstilos()
     {
@@ -439,5 +481,142 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                     </style>
                 </head>
                 """;
+    }
+
+    public static string GerarGrafico(GraficoSondagemDto? model, bool quebrarPaginaAntes = true)
+    {
+        if (model?.Barras == null || model.Barras.Count == 0)
+            return string.Empty;
+
+        var sb = new StringBuilder();
+        var ptBr = PtBr;
+
+        var barras = model.Barras;
+        int maxValor = barras.Max(b => b.Quantidade);
+        if (maxValor == 0) maxValor = 1;
+
+        int stepCount = 7;
+        double rawStep = (double)maxValor / (stepCount - 1);
+        double rawStepParaLog = rawStep > 0 ? rawStep : 1d;
+        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(rawStepParaLog)));
+        double niceStep = Math.Ceiling(rawStep / magnitude) * magnitude;
+
+        int yMax = (int)(niceStep * (stepCount - 1));
+        int yStep = (int)niceStep;
+
+        int chartHeight = 260;
+        int rowHeight = chartHeight / (stepCount - 1);
+        int areaWidth = 694;
+        int barMargin = 12;
+        int barPadLeft = 8;
+        int barPadRight = 8;
+        int barWidth = (areaWidth - barPadLeft - barPadRight - (barras.Count * barMargin)) / barras.Count;
+        if (barWidth < 1) barWidth = 70;
+
+        string svgYLabel = "data:image/svg+xml;charset=utf-8,"
+            + "%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'16'%20height%3D'"
+            + chartHeight.ToString()
+            + "'%3E%3Ctext%20x%3D'-"
+            + (chartHeight / 2).ToString()
+            + "'%20y%3D'12'%20transform%3D'rotate(-90)'%20font-family%3D'Arial%2Csans-serif'"
+            + "%20font-size%3D'9'%20fill%3D'%2342474A'%20text-anchor%3D'middle'%3E"
+            + "Quantidade%20de%20estudantes%3C/text%3E%3C/svg%3E";
+
+        var aberturaBlocoTopo = quebrarPaginaAntes
+            ? "<div style=\"page-break-before: always; padding-top: 16px;\">"
+            : "<div style=\"padding-top: 16px;\">";
+        sb.AppendLine(aberturaBlocoTopo);
+        sb.AppendLine("    <div style=\"text-align:center; margin-bottom:20px;\">");
+        sb.AppendLine($"        <h1 style=\"font-size:14px; font-weight:700; color:#42474A; margin-bottom:4px;\">{model.Titulo}</h1>");
+        sb.AppendLine($"        <h2 style=\"font-size:10px; font-weight:400; color:#42474A;\">{model.Subtitulo}</h2>");
+        sb.AppendLine("    </div>");
+        sb.AppendLine("    <table style=\"width:auto; border-collapse:collapse; border:none;\">");
+        sb.AppendLine("        <tr>");
+        sb.AppendLine("            <td style=\"width:16px; padding:0; border:none; vertical-align:middle; text-align:center;\">");
+        sb.AppendLine($"                <img src=\"{svgYLabel}\" style=\"width:16px; height:{chartHeight}px; display:block;\" />");
+        sb.AppendLine("            </td>");
+        sb.AppendLine("            <td style=\"width:38px; padding:0; border:none; vertical-align:top;\">");
+
+        GraficoAppendYLabels(sb, stepCount, yStep, rowHeight, ptBr);
+
+        sb.AppendLine("            </td>");
+        sb.AppendLine($"            <td style=\"width:{areaWidth}px; padding:0; border:none; vertical-align:top;\">");
+
+        GraficoAppendChartRows(sb, stepCount, rowHeight, areaWidth);
+
+        sb.AppendLine($"                <div style=\"margin-top:-{chartHeight}px; white-space:nowrap; padding-left:{barPadLeft}px;\">");
+        GraficoAppendBarDivs(sb, barras, yMax, chartHeight, barWidth, barMargin);
+        sb.AppendLine("                </div>");
+
+        sb.AppendLine($"                <div style=\"white-space:nowrap; padding-left:{barPadLeft}px; margin-top:4px;\">");
+        GraficoAppendBarLegendas(sb, barras, barWidth, barMargin);
+        sb.AppendLine("                </div>");
+
+        sb.AppendLine("                <div style=\"text-align:center; font-size:9px; font-weight:700; color:#42474A; margin-top:6px;\">");
+        sb.AppendLine("                    Opções de respostas");
+        sb.AppendLine("                </div>");
+        sb.AppendLine("            </td>");
+        sb.AppendLine("        </tr>");
+        sb.AppendLine("    </table>");
+        sb.AppendLine(FechaDivConsolidado);
+
+        return sb.ToString();
+    }
+
+    private static void GraficoAppendYLabels(StringBuilder sb, int stepCount, int yStep, int rowHeight, CultureInfo ptBr)
+    {
+        for (int i = stepCount - 1; i >= 0; i--)
+        {
+            var nivelValor = yStep * i;
+            sb.AppendLine($"                <div style=\"height:{rowHeight}px; width:100%;\">");
+            sb.AppendLine($"                    <table style=\"width:100%; height:{rowHeight}px; border-collapse:collapse;\">");
+            sb.AppendLine("                        <tr>");
+            sb.AppendLine($"                            <td style=\"vertical-align:bottom; text-align:right; padding:0 4px 1px 0; font-size:8px; color:#42474A; white-space:nowrap; border:none;\">");
+            sb.AppendLine($"                                {nivelValor.ToString("N0", ptBr)}");
+            sb.AppendLine("                            </td>");
+            sb.AppendLine("                        </tr>");
+            sb.AppendLine("                    </table>");
+            sb.AppendLine(FechaDivConsolidado);
+        }
+    }
+
+    private static void GraficoAppendChartRows(StringBuilder sb, int stepCount, int rowHeight, int areaWidth)
+    {
+        for (int i = stepCount - 1; i >= 0; i--)
+        {
+            var border = (i == 0) ? "border-bottom:2px solid #9E9E9E;" : "border-bottom:1px solid #E0E0E0;";
+            sb.AppendLine($"                <div style=\"height:{rowHeight}px; width:{areaWidth}px; {border}\"></div>");
+        }
+    }
+
+    private static void GraficoAppendBarDivs(StringBuilder sb, List<GraficoBarraDto> barras, int yMax, int chartHeight, int barWidth, int barMargin)
+    {
+        foreach (var barra in barras)
+        {
+            int altPx = yMax > 0 ? (int)((double)barra.Quantidade / yMax * chartHeight) : 0;
+            if (barra.Quantidade > 0 && altPx < 15) altPx = 15;
+            int paddingTop = chartHeight - altPx;
+
+            sb.AppendLine($"                    <div style=\"display:inline-block; width:{barWidth}px; margin-right:{barMargin}px; vertical-align:top; padding-top:{paddingTop}px;\">");
+            if (barra.Quantidade > 0)
+            {
+                sb.AppendLine($"                        <div style=\"height:{altPx}px; background-color:{barra.CorFundo}; border-radius:4px 4px 0 0; text-align:center; overflow:hidden;\">");
+                sb.AppendLine($"                            <span style=\"display:block; font-size:8px; font-weight:700; color:{barra.CorTexto}; padding-top:3px; line-height:12px;\">");
+                sb.AppendLine($"                                {barra.Quantidade}");
+                sb.AppendLine("                            </span>");
+                sb.AppendLine("                        </div>");
+            }
+            sb.AppendLine(FechaDivConsolidado);
+        }
+    }
+
+    private static void GraficoAppendBarLegendas(StringBuilder sb, List<GraficoBarraDto> barras, int barWidth, int barMargin)
+    {
+        foreach (var barra in barras)
+        {
+            sb.AppendLine($"                    <div style=\"display:inline-block; width:{barWidth}px; margin-right:{barMargin}px; text-align:center; font-size:8px; color:#42474A; white-space:normal; vertical-align:top;\">");
+            sb.AppendLine($"                        {barra.Legenda}");
+            sb.AppendLine($"                    </div>");
+        }
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using SME.Sondagem.MS.Relatorios.Dominio.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
@@ -16,8 +17,9 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCase
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger<RelatorioSondagemConsolidadoRacaGeneroUseCase> logger)
-        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger)
+        ILogger<RelatorioSondagemConsolidadoRacaGeneroUseCase> logger,
+        IRepositorioComponenteCurricular repositorioComponenteCurricular)
+        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
         _excel = relatorioSondagemConsolidadoGenericoExcel;
     }

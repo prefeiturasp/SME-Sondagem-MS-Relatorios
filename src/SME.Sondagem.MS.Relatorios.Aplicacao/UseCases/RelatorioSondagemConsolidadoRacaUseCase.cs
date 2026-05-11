@@ -19,8 +19,9 @@ public class RelatorioSondagemConsolidadoRacaUseCase : RelatorioSondagemConsolid
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger<RelatorioSondagemConsolidadoRacaUseCase> logger)
-        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger)
+        ILogger<RelatorioSondagemConsolidadoRacaUseCase> logger,
+        IRepositorioComponenteCurricular repositorioComponenteCurricular)
+        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
         _pdf = relatorioSondagemConsolidadoRacaPdf;
         _excel = relatorioSondagemConsolidadoGenericoExcel;

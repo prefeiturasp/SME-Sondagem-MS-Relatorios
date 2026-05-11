@@ -121,6 +121,22 @@ public class RelatorioSondagemQuestionarioPorTurmaUseCaseTeste
         _servicoMensageriaMock.Verify(x => x.Publicar(It.IsAny<MensagemRabbit>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }
 
+    [Fact]
+    public async Task Executar_DeveFinalizarSemGerarRelatorio_QuandoExtensaoNaoForPdfOuXlsx()
+    {
+        var mensagemSondagem = SetupValidMensagemSondagem((int)ExtensaoRelatorio.Html);
+        var mensagemRabbit = SetupMensagemRabbit(mensagemSondagem);
+        SetupMocksHappyPath();
+
+        var result = await _useCase.Executar(mensagemRabbit);
+
+        result.Should().BeTrue();
+        _relatorioPdfMock.Verify(x => x.GerarRelatorioSondagemQuestionarioPorTurmaPdfAsync(It.IsAny<RelatorioSondagemPorTurmaDto>()), Times.Never);
+        _relatorioExcelMock.Verify(x => x.GerarRelatorioSondagemQuestionarioPorTurmaExcelAsync(It.IsAny<RelatorioSondagemPorTurmaDto>()), Times.Never);
+        _servicoSgpApiClientMock.Verify(x => x.FinalizarSolicitacaoRelatorioAsync(
+            It.Is<FinalizarSolicitacaoRelatorioDto>(f => f.UrlRelatorio == string.Empty)), Times.Once);
+    }
+
     private void SetupMocksHappyPath()
     {
         var retornoApi = new RetornoApiSondagemQuestionarioDto(

@@ -49,6 +49,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRepositorioRacaCor, RepositorioRacaCor>();
         services.TryAddScoped<IRepositorioGeneroSexo, RepositorioGeneroSexo>();
         services.TryAddScoped<IRepositorioBimestre, RepositorioBimestre>();
+        services.TryAddScoped<IRepositorioComponenteCurricular, RepositorioComponenteCurricular>();
         services.TryAddScoped<IServicoLog, ServicoLog>();
         services.TryAddSingleton<IServicoMensageria, ServicoMensageria>();
         services.AddHttpClient();

@@ -13,7 +13,7 @@ public enum Modalidade
     [Display(Name = "CIEJA", ShortName = "CIEJA")]
     CIEJA = 4,
 
-    [Display(Name = "Fundamental", ShortName = "EF")]
+    [Display(Name = "Fundamental", ShortName = "Ensino Fundamental")]
     Fundamental = 5,
 
     [Display(Name = "Médio", ShortName = "EM")]

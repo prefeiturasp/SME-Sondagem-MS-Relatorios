@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
+using SME.Sondagem.MS.Relatorios.Dominio.Entidades;
 using SME.Sondagem.MS.Relatorios.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.Dominio.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Fila;
@@ -17,19 +19,22 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     private readonly IServicoEolApiClient _servicoEolApiClient;
     private readonly IServicoMensageria _servicoMensageria;
     private readonly ILogger _logger;
+    private readonly IRepositorioComponenteCurricular _repositorioComponenteCurricular;
 
     protected RelatorioSondagemConsolidadoUseCaseBase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger logger)
+        ILogger logger,
+        IRepositorioComponenteCurricular repositorioComponenteCurricular)
     {
         ServicoSondagemApiClient = servicoSondagemApiClient;
         _servicoSgpApiClient = servicoSgpApiClient;
         _servicoEolApiClient = servicoEolApiClient;
         _servicoMensageria = servicoMensageria;
         _logger = logger;
+        _repositorioComponenteCurricular = repositorioComponenteCurricular;
     }
 
     protected abstract string AgrupamentoPadrao { get; }
@@ -85,11 +90,12 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         var dadosTask = ObterRelatorioConsolidadoAsync(mensagem.FiltrosUsados);
         var usuarioTask = _servicoEolApiClient.ObterDadosUsuarioAsync(mensagem.UsuarioQueSolicitou);
         var profTask = ServicoSondagemApiClient.ObterProficienciaPorIdAsync(mensagem.FiltrosUsados.ProficienciaId);
+        var componentesCurricularTask = _repositorioComponenteCurricular.ObterPorIdAsync(mensagem.FiltrosUsados.ComponenteCurricularId);
 
-        await Task.WhenAll(dadosTask, usuarioTask, profTask);
+        await Task.WhenAll(dadosTask, usuarioTask, profTask, componentesCurricularTask);
 
         var dadosRelatorio = await dadosTask ?? new RelatorioConsolidadoSondagemDto();
-        PreencherCabecalho(dadosRelatorio, mensagem, await usuarioTask, await profTask, codigoCorrelacao);
+        PreencherCabecalho(dadosRelatorio, mensagem, await usuarioTask, await profTask, await componentesCurricularTask, codigoCorrelacao);
 
         return dadosRelatorio;
     }
@@ -99,15 +105,35 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         MensagemSondagemPorTurmaDto mensagem,
         DadosUsuarioDto? usuario,
         ProficienciaDto? proficiencia,
+        ComponenteCurricular componenteCurricular,
         Guid codigoCorrelacao)
     {
         var filtros = mensagem.FiltrosUsados;
+        var proficienciaNome = proficiencia?.Nome ?? string.Empty;
 
+        AtribuirIdentificacaoCabecalho(dadosRelatorio, mensagem, filtros, codigoCorrelacao);
+        AplicarFallbacksCabecalhoApartirDosFiltros(dadosRelatorio, filtros, proficienciaNome);
+        GarantirMetadadoDemograficoPadrao(dadosRelatorio);
+        FinalizarCabecalhoUsuarioTituloComponente(dadosRelatorio, mensagem, usuario, proficienciaNome, componenteCurricular);
+    }
+
+    private static void AtribuirIdentificacaoCabecalho(
+        RelatorioConsolidadoSondagemDto dadosRelatorio,
+        MensagemSondagemPorTurmaDto mensagem,
+        FiltroRelatorioSondagemPorTurmaDto filtros,
+        Guid codigoCorrelacao)
+    {
         dadosRelatorio.CodigoCorrelacao = codigoCorrelacao;
         dadosRelatorio.SolicitacaoRelatorioId = mensagem.SolicitacaoRelatorioId;
         dadosRelatorio.UsuarioQueSolicitou = mensagem.UsuarioQueSolicitou;
         dadosRelatorio.ProficienciaId = filtros.ProficienciaId;
+    }
 
+    private void AplicarFallbacksCabecalhoApartirDosFiltros(
+        RelatorioConsolidadoSondagemDto dadosRelatorio,
+        FiltroRelatorioSondagemPorTurmaDto filtros,
+        string proficienciaNome)
+    {
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Agrupamento))
             dadosRelatorio.Agrupamento = AgrupamentoPadrao;
 
@@ -127,18 +153,29 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
             dadosRelatorio.AnoTurma = filtros.Ano > 0 ? $"{filtros.Ano}° ANO" : ValorTodos;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Proficiencia))
-            dadosRelatorio.Proficiencia = proficiencia?.Nome ?? string.Empty;
+            dadosRelatorio.Proficiencia = proficienciaNome;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Bimestre))
             dadosRelatorio.Bimestre = DescricaoBimestre(filtros.BimestreId);
+    }
 
-        GarantirMetadadoDemograficoPadrao(dadosRelatorio);
-
+    private static void FinalizarCabecalhoUsuarioTituloComponente(
+        RelatorioConsolidadoSondagemDto dadosRelatorio,
+        MensagemSondagemPorTurmaDto mensagem,
+        DadosUsuarioDto? usuario,
+        string proficienciaNome,
+        ComponenteCurricular componenteCurricular)
+    {
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Usuario) && usuario != null)
             dadosRelatorio.Usuario = $"{usuario.Nome} ({mensagem.UsuarioQueSolicitou})";
 
         if (dadosRelatorio.DataImpressao == default)
             dadosRelatorio.DataImpressao = DateTime.Now;
+
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.ComponenteCurricular))
+            dadosRelatorio.ComponenteCurricular = componenteCurricular.Nome ?? string.Empty;
+
+        dadosRelatorio.Titulo = $"{proficienciaNome} consolidado";
     }
 
     protected static string DescricaoBimestre(int? bimestreId)
@@ -146,7 +183,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         if (bimestreId is null or 0)
             return ValorTodos;
 
-        return Enum.TryParse(bimestreId.ToString(), out Bimestre bimestre)
+        return Enum.TryParse(bimestreId.ToString(), out Dominio.Enums.Bimestre bimestre)
             ? bimestre.ShortName() ?? ValorTodos
             : ValorTodos;
     }
