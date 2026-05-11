@@ -17,8 +17,9 @@ public class RelatorioSondagemConsolidadoBimestreUseCase : RelatorioSondagemCons
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger<RelatorioSondagemConsolidadoBimestreUseCase> logger)
-        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger)
+        ILogger<RelatorioSondagemConsolidadoBimestreUseCase> logger,
+        IRepositorioComponenteCurricular repositorioComponenteCurricular)
+        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
         _pdf = relatorioSondagemConsolidadoBimestrePdf;
         _repositorioBimestre = repositorioBimestre;

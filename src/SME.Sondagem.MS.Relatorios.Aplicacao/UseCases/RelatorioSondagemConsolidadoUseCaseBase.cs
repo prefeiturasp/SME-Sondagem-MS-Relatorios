@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
+using SME.Sondagem.MS.Relatorios.Dominio.Entidades;
 using SME.Sondagem.MS.Relatorios.Dominio.Enums;
+using SME.Sondagem.MS.Relatorios.Dominio.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Fila;
@@ -17,19 +19,22 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     private readonly IServicoEolApiClient _servicoEolApiClient;
     private readonly IServicoMensageria _servicoMensageria;
     private readonly ILogger _logger;
+    private readonly IRepositorioComponenteCurricular _repositorioComponenteCurricular;
 
     protected RelatorioSondagemConsolidadoUseCaseBase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger logger)
+        ILogger logger,
+        IRepositorioComponenteCurricular repositorioComponenteCurricular)
     {
         ServicoSondagemApiClient = servicoSondagemApiClient;
         _servicoSgpApiClient = servicoSgpApiClient;
         _servicoEolApiClient = servicoEolApiClient;
         _servicoMensageria = servicoMensageria;
         _logger = logger;
+        _repositorioComponenteCurricular = repositorioComponenteCurricular;
     }
 
     protected abstract string AgrupamentoPadrao { get; }
@@ -85,11 +90,12 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         var dadosTask = ObterRelatorioConsolidadoAsync(mensagem.FiltrosUsados);
         var usuarioTask = _servicoEolApiClient.ObterDadosUsuarioAsync(mensagem.UsuarioQueSolicitou);
         var profTask = ServicoSondagemApiClient.ObterProficienciaPorIdAsync(mensagem.FiltrosUsados.ProficienciaId);
+        var componentesCurricularTask = _repositorioComponenteCurricular.ObterPorIdAsync(mensagem.FiltrosUsados.ComponenteCurricularId);
 
-        await Task.WhenAll(dadosTask, usuarioTask, profTask);
+        await Task.WhenAll(dadosTask, usuarioTask, profTask, componentesCurricularTask);
 
         var dadosRelatorio = await dadosTask ?? new RelatorioConsolidadoSondagemDto();
-        PreencherCabecalho(dadosRelatorio, mensagem, await usuarioTask, await profTask, codigoCorrelacao);
+        PreencherCabecalho(dadosRelatorio, mensagem, await usuarioTask, await profTask, await componentesCurricularTask, codigoCorrelacao);
 
         return dadosRelatorio;
     }
@@ -99,6 +105,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         MensagemSondagemPorTurmaDto mensagem,
         DadosUsuarioDto? usuario,
         ProficienciaDto? proficiencia,
+        ComponenteCurricular componenteCurricular,
         Guid codigoCorrelacao)
     {
         var filtros = mensagem.FiltrosUsados;
@@ -141,6 +148,9 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         if (dadosRelatorio.DataImpressao == default)
             dadosRelatorio.DataImpressao = DateTime.Now;
 
+        if (string.IsNullOrWhiteSpace(componenteCurricular.Nome))
+            dadosRelatorio.ComponenteCurricular = componenteCurricular.Nome;
+
         dadosRelatorio.Titulo = $"{proficienciaNome} consolidado";
     }
 
@@ -149,7 +159,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         if (bimestreId is null or 0)
             return ValorTodos;
 
-        return Enum.TryParse(bimestreId.ToString(), out Bimestre bimestre)
+        return Enum.TryParse(bimestreId.ToString(), out Dominio.Enums.Bimestre bimestre)
             ? bimestre.ShortName() ?? ValorTodos
             : ValorTodos;
     }
