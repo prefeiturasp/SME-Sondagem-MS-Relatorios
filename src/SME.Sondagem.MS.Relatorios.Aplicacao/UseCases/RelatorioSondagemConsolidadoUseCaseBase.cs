@@ -109,13 +109,31 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         Guid codigoCorrelacao)
     {
         var filtros = mensagem.FiltrosUsados;
+        var proficienciaNome = proficiencia?.Nome ?? string.Empty;
 
+        AtribuirIdentificacaoCabecalho(dadosRelatorio, mensagem, filtros, codigoCorrelacao);
+        AplicarFallbacksCabecalhoApartirDosFiltros(dadosRelatorio, filtros, proficienciaNome);
+        GarantirMetadadoDemograficoPadrao(dadosRelatorio);
+        FinalizarCabecalhoUsuarioTituloComponente(dadosRelatorio, mensagem, usuario, proficienciaNome, componenteCurricular);
+    }
+
+    private static void AtribuirIdentificacaoCabecalho(
+        RelatorioConsolidadoSondagemDto dadosRelatorio,
+        MensagemSondagemPorTurmaDto mensagem,
+        FiltroRelatorioSondagemPorTurmaDto filtros,
+        Guid codigoCorrelacao)
+    {
         dadosRelatorio.CodigoCorrelacao = codigoCorrelacao;
         dadosRelatorio.SolicitacaoRelatorioId = mensagem.SolicitacaoRelatorioId;
         dadosRelatorio.UsuarioQueSolicitou = mensagem.UsuarioQueSolicitou;
         dadosRelatorio.ProficienciaId = filtros.ProficienciaId;
-        var proficienciaNome = proficiencia?.Nome ?? string.Empty;
+    }
 
+    private void AplicarFallbacksCabecalhoApartirDosFiltros(
+        RelatorioConsolidadoSondagemDto dadosRelatorio,
+        FiltroRelatorioSondagemPorTurmaDto filtros,
+        string proficienciaNome)
+    {
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Agrupamento))
             dadosRelatorio.Agrupamento = AgrupamentoPadrao;
 
@@ -139,17 +157,23 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Bimestre))
             dadosRelatorio.Bimestre = DescricaoBimestre(filtros.BimestreId);
+    }
 
-        GarantirMetadadoDemograficoPadrao(dadosRelatorio);
-
+    private static void FinalizarCabecalhoUsuarioTituloComponente(
+        RelatorioConsolidadoSondagemDto dadosRelatorio,
+        MensagemSondagemPorTurmaDto mensagem,
+        DadosUsuarioDto? usuario,
+        string proficienciaNome,
+        ComponenteCurricular componenteCurricular)
+    {
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Usuario) && usuario != null)
             dadosRelatorio.Usuario = $"{usuario.Nome} ({mensagem.UsuarioQueSolicitou})";
 
         if (dadosRelatorio.DataImpressao == default)
             dadosRelatorio.DataImpressao = DateTime.Now;
 
-        if (string.IsNullOrWhiteSpace(componenteCurricular.Nome))
-            dadosRelatorio.ComponenteCurricular = componenteCurricular.Nome ?? "";
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.ComponenteCurricular))
+            dadosRelatorio.ComponenteCurricular = componenteCurricular.Nome ?? string.Empty;
 
         dadosRelatorio.Titulo = $"{proficienciaNome} consolidado";
     }

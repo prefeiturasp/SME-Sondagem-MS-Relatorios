@@ -495,7 +495,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
         int stepCount = 7;
         double rawStep = (double)maxValor / (stepCount - 1);
-        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(rawStep == 0 ? 1 : rawStep)));
+        double rawStepParaLog = rawStep > 0 ? rawStep : 1d;
+        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(rawStepParaLog)));
         double niceStep = Math.Ceiling(rawStep / magnitude) * magnitude;
 
         int yMax = (int)(niceStep * (stepCount - 1));

@@ -10,7 +10,7 @@ public class EnumExtensaoTeste
     [Theory]
     [InlineData(Modalidade.Infantil, "EI")]
     [InlineData(Modalidade.EJA, "EJA")]
-    [InlineData(Modalidade.Fundamental, "EF")]
+    [InlineData(Modalidade.Fundamental, "Ensino Fundamental")]
     [InlineData(Modalidade.Medio, "EM")]
     [InlineData(Modalidade.CELP, "CELP")]
     public void ShortName_DeveRetornarShortNameCorreto_QuandoModalidadeValida(Modalidade modalidade, string shortNameEsperado)
@@ -46,7 +46,7 @@ public class EnumExtensaoTeste
     [Fact]
     public void GetEnumByShortName_DeveRetornarModalidade_QuandoShortNameValido()
     {
-        var resultado = EnumExtensao.GetEnumByShortName<Modalidade>("EF");
+        var resultado = EnumExtensao.GetEnumByShortName<Modalidade>("Ensino Fundamental");
 
         resultado.Should().Be(Modalidade.Fundamental);
     }
@@ -62,7 +62,7 @@ public class EnumExtensaoTeste
     [Theory]
     [InlineData("EI", Modalidade.Infantil)]
     [InlineData("EJA", Modalidade.EJA)]
-    [InlineData("EF", Modalidade.Fundamental)]
+    [InlineData("Ensino Fundamental", Modalidade.Fundamental)]
     [InlineData("EM", Modalidade.Medio)]
     [InlineData("CELP", Modalidade.CELP)]
     public void TryObterModalidadePorShortName_DeveRetornarVerdadeiro_EPreencherModalidade_QuandoShortNameValido(string shortName, Modalidade modalidadeEsperada)
