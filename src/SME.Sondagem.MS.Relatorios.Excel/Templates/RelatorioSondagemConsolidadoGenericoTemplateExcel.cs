@@ -11,7 +11,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
 {
     private const int ColGap = 1;
 
-    private record ColDefinition(string Header, string Key, string? Grupo = null);
+    private sealed record ColDefinition(string Header, string Key, string? Grupo = null);
 
     public RelatorioSondagemConsolidadoGenericoTemplateExcel(IServicoArmazenamentoMinio servicoArmazenamentoMinio)
         : base(servicoArmazenamentoMinio) { }
@@ -44,18 +44,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         var firstResposta = questao.Respostas?.FirstOrDefault();
 
         if (firstResposta?.GenerosComRacas?.Any() == true)
-        {
-            var source = questao.TotaisPorGeneroComRacas ?? firstResposta.GenerosComRacas;
-            var cols = new List<ColDefinition>();
-            foreach (var genero in source)
-            {
-                var racas = (genero.Racas ?? [])
-                    .OrderBy(r => r.Raca.Trim().Contains(' ') ? 1 : 0);
-                foreach (var r in racas)
-                    cols.Add(new ColDefinition(r.Raca, $"{genero.Genero}|{r.Raca}", genero.Genero));
-            }
-            return cols;
-        }
+            return ExtrairColunasGenerosComRacas(questao, firstResposta);
 
         if (firstResposta?.Generos?.Any() == true)
         {
@@ -83,6 +72,16 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         }
 
         return [];
+    }
+
+    private static List<ColDefinition> ExtrairColunasGenerosComRacas(RelatorioConsolidadoQuestaoDto questao, RelatorioConsolidadoRespostaDto firstResposta)
+    {
+        var source = questao.TotaisPorGeneroComRacas ?? firstResposta.GenerosComRacas!;
+        return source
+            .SelectMany(genero => (genero.Racas ?? [])
+                .OrderBy(r => r.Raca.Trim().Contains(' ') ? 1 : 0)
+                .Select(r => new ColDefinition(r.Raca, $"{genero.Genero}|{r.Raca}", genero.Genero)))
+            .ToList();
     }
 
     private static (int Quantidade, double Percentual)? GetValorCelula(RelatorioConsolidadoRespostaDto resposta, string key)
@@ -281,12 +280,10 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
 
     private static void EscreverDadosBloco(IXLWorksheet sheet, int startLinha, int colStart, RelatorioConsolidadoQuestaoDto questao, List<ColDefinition> colunas, XLColor corAlternada)
     {
-        if (questao.Respostas == null) return;
-
         int idx   = 0;
         int linha = startLinha;
 
-        foreach (var resposta in questao.Respostas)
+        foreach (var resposta in questao.Respostas ?? [])
         {
             var corFundo = !string.IsNullOrEmpty(resposta.CorFundo) ? ConverterCor(resposta.CorFundo) : XLColor.White;
             var corTexto = !string.IsNullOrEmpty(resposta.CorTexto) ? ConverterCor(resposta.CorTexto) : XLColor.Black;
