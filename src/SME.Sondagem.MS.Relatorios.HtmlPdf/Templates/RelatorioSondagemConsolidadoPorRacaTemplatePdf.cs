@@ -1,6 +1,7 @@
 using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using System.Web;
+using System.Linq;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
@@ -21,30 +22,36 @@ public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : RelatorioSondagemC
     protected override HashSet<string> ColetarColunasEncontradas(RelatorioConsolidadoQuestaoDto questao)
     {
         var encontradas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        if (questao.Respostas != null)
-        {
-            foreach (var resposta in questao.Respostas)
-            {
-                if (resposta.Racas == null) continue;
-                foreach (var raca in resposta.Racas)
-                {
-                    if (!string.IsNullOrWhiteSpace(raca.Raca))
-                        encontradas.Add(raca.Raca);
-                }
-            }
-        }
-
-        if (questao.TotaisPorRaca != null)
-        {
-            foreach (var raca in questao.TotaisPorRaca)
-            {
-                if (!string.IsNullOrWhiteSpace(raca.Raca))
-                    encontradas.Add(raca.Raca);
-            }
-        }
-
+        AdicionarRacasDasRespostas(questao.Respostas, encontradas);
+        AdicionarRacasDosTotais(questao.TotaisPorRaca, encontradas);
         return encontradas;
+    }
+
+    private static void AdicionarRacasDasRespostas(
+        IEnumerable<RelatorioConsolidadoRespostaDto>? respostas,
+        HashSet<string> encontradas)
+    {
+        if (respostas == null) return;
+
+        foreach (var raca in respostas
+            .SelectMany(resposta => resposta.Racas ?? Enumerable.Empty<RelatorioConsolidadoRacaDto>())
+            .Where(raca => !string.IsNullOrWhiteSpace(raca.Raca)))
+        {
+            encontradas.Add(raca.Raca);
+        }
+    }
+
+    private static void AdicionarRacasDosTotais(
+        IEnumerable<RelatorioConsolidadoRacaDto>? totaisPorRaca,
+        HashSet<string> encontradas)
+    {
+        if (totaisPorRaca == null) return;
+        foreach (var raca in from raca in totaisPorRaca
+                             where !string.IsNullOrWhiteSpace(raca.Raca)
+                             select raca)
+        {
+            encontradas.Add(raca.Raca);
+        }
     }
 
     protected override Dictionary<string, (int Quantidade, double Percentual)> MontarDicionarioResposta(

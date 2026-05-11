@@ -1,6 +1,7 @@
 using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using System.Web;
+using System.Linq;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
@@ -23,30 +24,36 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplatePdf
     protected override HashSet<string> ColetarColunasEncontradas(RelatorioConsolidadoQuestaoDto questao)
     {
         var encontradas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        if (questao.Respostas != null)
-        {
-            foreach (var resposta in questao.Respostas)
-            {
-                if (resposta.Bimestres == null) continue;
-                foreach (var bimestre in resposta.Bimestres)
-                {
-                    if (!string.IsNullOrWhiteSpace(bimestre.Bimestre))
-                        encontradas.Add(bimestre.Bimestre);
-                }
-            }
-        }
-
-        if (questao.TotaisPorBimestre != null)
-        {
-            foreach (var bimestre in questao.TotaisPorBimestre)
-            {
-                if (!string.IsNullOrWhiteSpace(bimestre.Bimestre))
-                    encontradas.Add(bimestre.Bimestre);
-            }
-        }
-
+        AdicionarBimestresDasRespostas(questao.Respostas, encontradas);
+        AdicionarBimestresDosTotais(questao.TotaisPorBimestre, encontradas);
         return encontradas;
+    }
+
+    private static void AdicionarBimestresDasRespostas(
+        IEnumerable<RelatorioConsolidadoRespostaDto>? respostas,
+        HashSet<string> encontradas)
+    {
+        if (respostas == null) return;
+
+        foreach (var bimestre in respostas
+            .SelectMany(resposta => resposta.Bimestres ?? Enumerable.Empty<RelatorioConsolidadoBimestreDto>())
+            .Where(b => !string.IsNullOrWhiteSpace(b.Bimestre)))
+        {
+            encontradas.Add(bimestre.Bimestre);
+        }
+    }
+
+    private static void AdicionarBimestresDosTotais(
+        IEnumerable<RelatorioConsolidadoBimestreDto>? totaisPorBimestre,
+        HashSet<string> encontradas)
+    {
+        if (totaisPorBimestre == null) return;
+        foreach (var bimestre in from bimestre in totaisPorBimestre
+                                 where !string.IsNullOrWhiteSpace(bimestre.Bimestre)
+                                 select bimestre)
+        {
+            encontradas.Add(bimestre.Bimestre);
+        }
     }
 
     protected override Dictionary<string, (int Quantidade, double Percentual)> MontarDicionarioResposta(

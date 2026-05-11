@@ -111,8 +111,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             return null;
 
         var barras = questao.Respostas
-            .OrderBy(r => r.Ordem)
             .Where(r => r.Total > 0)
+            .OrderBy(r => r.Ordem)
             .Select(r => new GraficoBarraDto
             {
                 Legenda = string.IsNullOrWhiteSpace(r.Resposta) ? "—" : r.Resposta,
@@ -182,7 +182,9 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
         if (questao.Respostas != null)
         {
-            foreach (var resposta in questao.Respostas.OrderBy(r => r.Ordem))
+            foreach (var resposta in questao.Respostas
+                .Where(r => r != null)
+                .OrderBy(r => r.Ordem))
                 sb.AppendLine(GerarLinhaResposta(resposta, colunas));
         }
 
