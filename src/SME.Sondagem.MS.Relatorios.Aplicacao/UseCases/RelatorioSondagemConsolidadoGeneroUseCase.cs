@@ -5,14 +5,18 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public class RelatorioSondagemConsolidadoGeneroUseCase : RelatorioSondagemConsolidadoUseCaseBase, IRelatorioSondagemConsolidadoGeneroUseCase
+public class RelatorioSondagemConsolidadoGeneroUseCase
+    : RelatorioSondagemConsolidadoUseCaseBase,
+      IRelatorioSondagemConsolidadoGeneroUseCase
 {
     private readonly IRelatorioSondagemConsolidadoGeneroPdf _pdf;
+    private readonly IRelatorioSondagemConsolidadoGenericoExcel _excel;
     private readonly IRepositorioGeneroSexo _repositorioGeneroSexo;
 
     public RelatorioSondagemConsolidadoGeneroUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IRelatorioSondagemConsolidadoGeneroPdf relatorioSondagemConsolidadoGeneroPdf,
+        IRelatorioSondagemConsolidadoGenericoExcel relatorioSondagemConsolidadoGenericoExcel,
         IRepositorioGeneroSexo repositorioGeneroSexo,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
@@ -22,6 +26,7 @@ public class RelatorioSondagemConsolidadoGeneroUseCase : RelatorioSondagemConsol
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
         _pdf = relatorioSondagemConsolidadoGeneroPdf;
+        _excel = relatorioSondagemConsolidadoGenericoExcel;
         _repositorioGeneroSexo = repositorioGeneroSexo;
     }
 
@@ -38,7 +43,8 @@ public class RelatorioSondagemConsolidadoGeneroUseCase : RelatorioSondagemConsol
         return await _pdf.Executar(dadosRelatorio);
     }
 
-    protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) => throw new NotImplementedException();
+    protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
+        _excel.GerarRelatorioExcelAsync(dadosRelatorio);
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {

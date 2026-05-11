@@ -48,6 +48,7 @@ public class RelatorioSondagemConsolidadoRacaUseCaseTeste
 {
     private readonly Mock<IServicoSondagemApiClient> _api = new();
     private readonly Mock<IRelatorioSondagemConsolidadoRacaPdf> _pdf = new();
+    private readonly Mock<IRelatorioSondagemConsolidadoGenericoExcel> _excel = new();
     private readonly Mock<IRepositorioRacaCor> _racas = new();
     private readonly Mock<IServicoSgpApiClient> _sgp = new();
     private readonly Mock<IServicoEolApiClient> _eol = new();
@@ -61,6 +62,7 @@ public class RelatorioSondagemConsolidadoRacaUseCaseTeste
         _sut = new RelatorioSondagemConsolidadoRacaUseCase(
             _api.Object,
             _pdf.Object,
+            _excel.Object,
             _racas.Object,
             _sgp.Object,
             _eol.Object,
@@ -91,14 +93,14 @@ public class RelatorioSondagemConsolidadoRacaUseCaseTeste
     }
 
     [Fact]
-    public async Task Executar_DeveRetornarFalso_QuandoExtensaoForXlsx()
+    public async Task Executar_DeveRetornarVerdadeiro_QuandoExtensaoForXlsx()
     {
         ConfigurarFluxoSucessoApi(new RelatorioConsolidadoSondagemDto());
         var msg = ConsolidadoRelatorioTesteHelper.MensagemPadrao((int)ExtensaoRelatorio.Xlsx);
 
         var resultado = await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(msg));
 
-        resultado.Should().BeFalse();
+        resultado.Should().BeTrue();
     }
 
     [Fact]
@@ -225,6 +227,7 @@ public class RelatorioSondagemConsolidadoGeneroUseCaseTeste
 {
     private readonly Mock<IServicoSondagemApiClient> _api = new();
     private readonly Mock<IRelatorioSondagemConsolidadoGeneroPdf> _pdf = new();
+    private readonly Mock<IRelatorioSondagemConsolidadoGenericoExcel> _excel = new();
     private readonly Mock<IRepositorioGeneroSexo> _generos = new();
     private readonly Mock<IServicoSgpApiClient> _sgp = new();
     private readonly Mock<IServicoEolApiClient> _eol = new();
@@ -238,6 +241,7 @@ public class RelatorioSondagemConsolidadoGeneroUseCaseTeste
         _sut = new RelatorioSondagemConsolidadoGeneroUseCase(
             _api.Object,
             _pdf.Object,
+            _excel.Object,
             _generos.Object,
             _sgp.Object,
             _eol.Object,
@@ -254,12 +258,12 @@ public class RelatorioSondagemConsolidadoGeneroUseCaseTeste
     }
 
     [Fact]
-    public async Task Executar_DeveRetornarFalso_QuandoExtensaoForXlsx()
+    public async Task Executar_DeveRetornarVerdadeiro_QuandoExtensaoForXlsx()
     {
         ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
         var resultado = await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(
             ConsolidadoRelatorioTesteHelper.MensagemPadrao((int)ExtensaoRelatorio.Xlsx)));
-        resultado.Should().BeFalse();
+        resultado.Should().BeTrue();
     }
 
     [Fact]
@@ -340,6 +344,7 @@ public class RelatorioSondagemConsolidadoQuestaoUseCaseTeste
 {
     private readonly Mock<IServicoSondagemApiClient> _api = new();
     private readonly Mock<IRelatorioSondagemConsolidadoQuestaoPdf> _pdf = new();
+    private readonly Mock<IRelatorioSondagemConsolidadoGenericoExcel> _excel = new();
     private readonly Mock<IServicoSgpApiClient> _sgp = new();
     private readonly Mock<IServicoEolApiClient> _eol = new();
     private readonly Mock<IServicoMensageria> _mensageria = new();
@@ -352,6 +357,7 @@ public class RelatorioSondagemConsolidadoQuestaoUseCaseTeste
         _sut = new RelatorioSondagemConsolidadoQuestaoUseCase(
             _api.Object,
             _pdf.Object,
+            _excel.Object,
             _sgp.Object,
             _eol.Object,
             _mensageria.Object,
@@ -367,12 +373,12 @@ public class RelatorioSondagemConsolidadoQuestaoUseCaseTeste
     }
 
     [Fact]
-    public async Task Executar_DeveRetornarFalso_QuandoExtensaoForXlsx()
+    public async Task Executar_DeveRetornarVerdadeiro_QuandoExtensaoForXlsx()
     {
         ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
         var resultado = await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(
             ConsolidadoRelatorioTesteHelper.MensagemPadrao((int)ExtensaoRelatorio.Xlsx)));
-        resultado.Should().BeFalse();
+        resultado.Should().BeTrue();
     }
 
     [Fact]

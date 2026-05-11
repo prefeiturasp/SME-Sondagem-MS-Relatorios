@@ -62,6 +62,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemConsolidadoBimestrePdf, RelatorioSondagemConsolidadoBimestrePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoQuestaoPdf, RelatorioSondagemConsolidadoQuestaoPdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreExcel, RelatorioSondagemConsolidadoPorBimestreExcel>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoGenericoExcel, RelatorioSondagemConsolidadoGenericoExcel>();
 
         services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
         services.TryAddScoped<IReportConverter, ReportConverter>();
@@ -73,6 +74,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreTemplatePdf, RelatorioSondagemConsolidadoPorBimestreTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorQuestaoTemplatePdf, RelatorioSondagemConsolidadoPorQuestaoTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreTemplateExcel, RelatorioSondagemConsolidadoPorBimestreTemplateExcel>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoGenericoTemplateExcel, RelatorioSondagemConsolidadoGenericoTemplateExcel>();
 
     }
 
@@ -90,6 +92,8 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemConsolidadoGeneroUseCase, RelatorioSondagemConsolidadoGeneroUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoBimestreUseCase, RelatorioSondagemConsolidadoBimestreUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoQuestaoUseCase, RelatorioSondagemConsolidadoQuestaoUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoRacaGeneroUseCase, RelatorioSondagemConsolidadoRacaGeneroUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoAnoUseCase, RelatorioSondagemConsolidadoAnoUseCase>();
     }
 
     private static void ConfigurarRabbitmq(IServiceCollection services, IConfiguration configuration)
