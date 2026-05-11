@@ -75,7 +75,7 @@ public class RelatorioSondagemPorTurmaMapperTeste
 
         var resultado = source.ParaDto(null, turma, CriarDadosUsuarioDto(), Modalidade.Fundamental, false);
 
-        resultado.Turma.Should().Contain("EF");
+        resultado.Turma.Should().Contain("Ensino Fundamental");
         resultado.Turma.Should().Contain("Turma C");
         resultado.Turma.Should().Contain("4° ANO");
     }
