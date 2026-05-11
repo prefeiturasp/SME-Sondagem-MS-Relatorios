@@ -99,13 +99,9 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         var ordenadas = ordemPreferida
             .Where(c => encontradas.Contains(c))
             .ToList();
-
-        foreach (var coluna in encontradas.OrderBy(c => c, StringComparer.OrdinalIgnoreCase))
-        {
-            if (!ordenadas.Contains(coluna, StringComparer.OrdinalIgnoreCase))
-                ordenadas.Add(coluna);
-        }
-
+        ordenadas.AddRange(from coluna in encontradas.OrderBy(c => c)
+                           where !ordenadas.Contains(coluna, StringComparer.OrdinalIgnoreCase)
+                           select coluna);
         return ordenadas;
     }
 

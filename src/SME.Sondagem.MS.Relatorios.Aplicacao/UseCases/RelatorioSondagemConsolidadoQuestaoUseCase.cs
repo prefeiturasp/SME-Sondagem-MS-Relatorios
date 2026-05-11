@@ -4,9 +4,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public class RelatorioSondagemConsolidadoQuestaoUseCase
-    : RelatorioSondagemConsolidadoUseCaseBase,
-      IRelatorioSondagemConsolidadoQuestaoUseCase
+public class RelatorioSondagemConsolidadoQuestaoUseCase : RelatorioSondagemConsolidadoUseCaseBase, IRelatorioSondagemConsolidadoQuestaoUseCase
 {
     private readonly IRelatorioSondagemConsolidadoQuestaoPdf _pdf;
 

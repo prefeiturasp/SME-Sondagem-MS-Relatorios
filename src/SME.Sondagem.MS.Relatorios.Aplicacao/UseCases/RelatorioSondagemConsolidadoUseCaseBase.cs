@@ -107,6 +107,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         dadosRelatorio.SolicitacaoRelatorioId = mensagem.SolicitacaoRelatorioId;
         dadosRelatorio.UsuarioQueSolicitou = mensagem.UsuarioQueSolicitou;
         dadosRelatorio.ProficienciaId = filtros.ProficienciaId;
+        var proficienciaNome = proficiencia?.Nome ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Agrupamento))
             dadosRelatorio.Agrupamento = AgrupamentoPadrao;
@@ -127,7 +128,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
             dadosRelatorio.AnoTurma = filtros.Ano > 0 ? $"{filtros.Ano}° ANO" : ValorTodos;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Proficiencia))
-            dadosRelatorio.Proficiencia = proficiencia?.Nome ?? string.Empty;
+            dadosRelatorio.Proficiencia = proficienciaNome;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Bimestre))
             dadosRelatorio.Bimestre = DescricaoBimestre(filtros.BimestreId);
@@ -139,6 +140,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
         if (dadosRelatorio.DataImpressao == default)
             dadosRelatorio.DataImpressao = DateTime.Now;
+
+        dadosRelatorio.Titulo = $"{proficienciaNome} consolidado";
     }
 
     protected static string DescricaoBimestre(int? bimestreId)
