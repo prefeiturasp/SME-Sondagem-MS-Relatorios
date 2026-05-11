@@ -102,6 +102,23 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    {
+        var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
+
+        string urlFinal = filtroRelatorio.ObjetoParaQueryStringExtensions(ServicoSondagemConstantes.URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_RACA_GENERO);
+        var resposta = await httpClient.GetAsync(urlFinal);
+
+        if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
+            return new RelatorioConsolidadoSondagemDto();
+
+        var jsonString = await resposta.Content.ReadAsStringAsync();
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
+
+        return JsonSerializer.Deserialize<RelatorioConsolidadoSondagemDto>(jsonString, options)
+                 ?? new RelatorioConsolidadoSondagemDto();
+    }
+
     public async Task<List<ParametroSondagemDto>?> ObterParametrosSondagemPorQuestionarioId(long questionoarioId, CancellationToken cancellationToken = default)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);

@@ -4,36 +4,33 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public class RelatorioSondagemConsolidadoQuestaoUseCase
+public class RelatorioSondagemConsolidadoRacaGeneroUseCase
     : RelatorioSondagemConsolidadoUseCaseBase,
-      IRelatorioSondagemConsolidadoQuestaoUseCase
+      IRelatorioSondagemConsolidadoRacaGeneroUseCase
 {
-    private readonly IRelatorioSondagemConsolidadoQuestaoPdf _pdf;
     private readonly IRelatorioSondagemConsolidadoGenericoExcel _excel;
 
-    public RelatorioSondagemConsolidadoQuestaoUseCase(
+    public RelatorioSondagemConsolidadoRacaGeneroUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
-        IRelatorioSondagemConsolidadoQuestaoPdf relatorioSondagemConsolidadoQuestaoPdf,
         IRelatorioSondagemConsolidadoGenericoExcel relatorioSondagemConsolidadoGenericoExcel,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger<RelatorioSondagemConsolidadoQuestaoUseCase> logger)
+        ILogger<RelatorioSondagemConsolidadoRacaGeneroUseCase> logger)
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger)
     {
-        _pdf = relatorioSondagemConsolidadoQuestaoPdf;
         _excel = relatorioSondagemConsolidadoGenericoExcel;
     }
 
-    protected override string AgrupamentoPadrao => "Por questão";
+    protected override string AgrupamentoPadrao => "Por raça e gênero";
 
-    protected override string ContextoRelatorioParaLog => "por questão";
+    protected override string ContextoRelatorioParaLog => "por raça e gênero";
 
     protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemPorTurmaDto filtros) =>
-        ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorQuestaoAsync(filtros);
+        ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(filtros);
 
     protected override Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
-        _pdf.Executar(dadosRelatorio);
+        throw new NotImplementedException();
 
     protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
         _excel.GerarRelatorioExcelAsync(dadosRelatorio);

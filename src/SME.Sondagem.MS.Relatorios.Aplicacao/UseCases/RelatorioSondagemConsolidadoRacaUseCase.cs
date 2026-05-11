@@ -8,11 +8,13 @@ namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 public class RelatorioSondagemConsolidadoRacaUseCase : RelatorioSondagemConsolidadoUseCaseBase, IRelatorioSondagemConsolidadoRacaUseCase
 {
     private readonly IRelatorioSondagemConsolidadoRacaPdf _pdf;
+    private readonly IRelatorioSondagemConsolidadoGenericoExcel _excel;
     private readonly IRepositorioRacaCor _repositorioRacaCor;
 
     public RelatorioSondagemConsolidadoRacaUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IRelatorioSondagemConsolidadoRacaPdf relatorioSondagemConsolidadoRacaPdf,
+        IRelatorioSondagemConsolidadoGenericoExcel relatorioSondagemConsolidadoGenericoExcel,
         IRepositorioRacaCor repositorioRacaCor,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
@@ -21,6 +23,7 @@ public class RelatorioSondagemConsolidadoRacaUseCase : RelatorioSondagemConsolid
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger)
     {
         _pdf = relatorioSondagemConsolidadoRacaPdf;
+        _excel = relatorioSondagemConsolidadoGenericoExcel;
         _repositorioRacaCor = repositorioRacaCor;
     }
 
@@ -37,10 +40,8 @@ public class RelatorioSondagemConsolidadoRacaUseCase : RelatorioSondagemConsolid
         return await _pdf.Executar(dadosRelatorio);
     }
 
-    protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio)
-    {
-        throw new NotImplementedException();
-    }
+    protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
+        _excel.GerarRelatorioExcelAsync(dadosRelatorio);
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {
