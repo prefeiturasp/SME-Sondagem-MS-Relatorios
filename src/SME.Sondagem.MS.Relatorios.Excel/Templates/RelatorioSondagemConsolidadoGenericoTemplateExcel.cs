@@ -84,61 +84,42 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
             .ToList();
     }
 
-    private static (int Quantidade, double Percentual)? GetValorCelula(RelatorioConsolidadoRespostaDto resposta, string key)
-    {
-        if (resposta.GenerosComRacas != null)
-        {
-            var parts = key.Split('|');
-            if (parts.Length == 2)
-            {
-                var genero = resposta.GenerosComRacas.FirstOrDefault(g => g.Genero == parts[0]);
-                var r = genero?.Racas?.FirstOrDefault(r => r.Raca == parts[1]);
-                return r != null ? (r.Quantidade, r.Percentual) : null;
-            }
-        }
-        if (resposta.Generos != null)
-        {
-            var g = resposta.Generos.FirstOrDefault(g => g.Genero == key);
-            return g != null ? (g.Quantidade, g.Percentual) : null;
-        }
-        if (resposta.Racas != null)
-        {
-            var r = resposta.Racas.FirstOrDefault(r => r.Raca == key);
-            return r != null ? (r.Quantidade, r.Percentual) : null;
-        }
-        if (resposta.Bimestres != null)
-        {
-            var b = resposta.Bimestres.FirstOrDefault(b => b.Bimestre == key);
-            return b != null ? (b.Quantidade, b.Percentual) : null;
-        }
-        return null;
-    }
+    private static (int Quantidade, double Percentual)? GetValorCelula(RelatorioConsolidadoRespostaDto resposta, string key) =>
+        ResolverValor(resposta.GenerosComRacas, resposta.Generos, resposta.Racas, resposta.Bimestres, key);
 
-    private static (int Quantidade, double Percentual)? GetValorTotal(RelatorioConsolidadoQuestaoDto questao, string key)
+    private static (int Quantidade, double Percentual)? GetValorTotal(RelatorioConsolidadoQuestaoDto questao, string key) =>
+        ResolverValor(questao.TotaisPorGeneroComRacas, questao.TotaisPorGenero, questao.TotaisPorRaca, questao.TotaisPorBimestre, key);
+
+    private static (int Quantidade, double Percentual)? ResolverValor(
+        IEnumerable<RelatorioConsolidadoGeneroRacaDto>? generosComRacas,
+        IEnumerable<RelatorioConsolidadoGeneroDto>? generos,
+        IEnumerable<RelatorioConsolidadoRacaDto>? racas,
+        IEnumerable<RelatorioConsolidadoBimestreDto>? bimestres,
+        string key)
     {
-        if (questao.TotaisPorGeneroComRacas != null)
+        if (generosComRacas != null)
         {
             var parts = key.Split('|');
             if (parts.Length == 2)
             {
-                var genero = questao.TotaisPorGeneroComRacas.FirstOrDefault(g => g.Genero == parts[0]);
+                var genero = generosComRacas.FirstOrDefault(g => g.Genero == parts[0]);
                 var r = genero?.Racas?.FirstOrDefault(r => r.Raca == parts[1]);
                 return r != null ? (r.Quantidade, r.Percentual) : null;
             }
         }
-        if (questao.TotaisPorGenero != null)
+        if (generos != null)
         {
-            var g = questao.TotaisPorGenero.FirstOrDefault(g => g.Genero == key);
+            var g = generos.FirstOrDefault(g => g.Genero == key);
             return g != null ? (g.Quantidade, g.Percentual) : null;
         }
-        if (questao.TotaisPorRaca != null)
+        if (racas != null)
         {
-            var r = questao.TotaisPorRaca.FirstOrDefault(r => r.Raca == key);
+            var r = racas.FirstOrDefault(r => r.Raca == key);
             return r != null ? (r.Quantidade, r.Percentual) : null;
         }
-        if (questao.TotaisPorBimestre != null)
+        if (bimestres != null)
         {
-            var b = questao.TotaisPorBimestre.FirstOrDefault(b => b.Bimestre == key);
+            var b = bimestres.FirstOrDefault(b => b.Bimestre == key);
             return b != null ? (b.Quantidade, b.Percentual) : null;
         }
         return null;
