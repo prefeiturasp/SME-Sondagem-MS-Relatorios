@@ -9,11 +9,11 @@ public class RelatorioSondagemConsolidadoPorBimestreUseCase
     : RelatorioSondagemConsolidadoUseCaseBase,
       IRelatorioSondagemConsolidadoPorBimestreUseCase
 {
-    private readonly IRelatorioSondagemConsolidadoPorBimestreExcel _excel;
+    private readonly IRelatorioSondagemConsolidadoGenericoExcel _excel;
 
     public RelatorioSondagemConsolidadoPorBimestreUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
-        IRelatorioSondagemConsolidadoPorBimestreExcel relatorioSondagemConsolidadoPorBimestreExcel,
+        IRelatorioSondagemConsolidadoGenericoExcel relatorioSondagemConsolidadoGenericoExcel,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
@@ -21,7 +21,7 @@ public class RelatorioSondagemConsolidadoPorBimestreUseCase
         IRepositorioComponenteCurricular repositorioComponenteCurricular)
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
-        _excel = relatorioSondagemConsolidadoPorBimestreExcel;
+        _excel = relatorioSondagemConsolidadoGenericoExcel;
     }
 
     protected override string AgrupamentoPadrao => "Por bimestre";
@@ -35,7 +35,7 @@ public class RelatorioSondagemConsolidadoPorBimestreUseCase
         Task.FromResult(string.Empty);
 
     protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
-        _excel.GerarRelatorioSondagemConsolidadoPorBimestreExcelAsync(dadosRelatorio);
+        _excel.GerarRelatorioExcelAsync(dadosRelatorio);
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {
