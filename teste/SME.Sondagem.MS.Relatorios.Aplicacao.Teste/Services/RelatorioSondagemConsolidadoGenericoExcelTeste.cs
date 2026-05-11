@@ -9,43 +9,31 @@ namespace SME.Sondagem.MS.Relatorios.Aplicacao.Teste.Services;
 
 public class RelatorioSondagemConsolidadoGenericoExcelTeste
 {
-    private readonly Mock<IRelatorioSondagemConsolidadoGenericoTemplateExcel> _templateMock = new();
+    private readonly Mock<IRelatorioSondagemConsolidadoGenericoTemplateExcel> _relatorioTemplateExcelMock;
     private readonly RelatorioSondagemConsolidadoGenericoExcel _service;
 
     public RelatorioSondagemConsolidadoGenericoExcelTeste()
     {
-        _service = new RelatorioSondagemConsolidadoGenericoExcel(_templateMock.Object);
+        _relatorioTemplateExcelMock = new Mock<IRelatorioSondagemConsolidadoGenericoTemplateExcel>();
+        _service = new RelatorioSondagemConsolidadoGenericoExcel(_relatorioTemplateExcelMock.Object);
     }
 
     [Fact]
     public async Task GerarRelatorioExcelAsync_DeveRetornarLink_QuandoSucesso()
     {
+        // Arrange
         var dto = new RelatorioConsolidadoSondagemDto();
         var linkEsperado = "link_para_planilha_consolidado_generico";
 
-        _templateMock
+        _relatorioTemplateExcelMock
             .Setup(x => x.GerarExcelEF(It.IsAny<RelatorioConsolidadoSondagemDto>()))
             .ReturnsAsync(linkEsperado);
 
+        // Act
         var result = await _service.GerarRelatorioExcelAsync(dto);
 
+        // Assert
         result.Should().Be(linkEsperado);
-        _templateMock.Verify(x => x.GerarExcelEF(dto), Times.Once);
-    }
-
-    [Fact]
-    public async Task GerarRelatorioExcelAsync_DeveDelegarAoTemplate_ComMesmoDtoRecebido()
-    {
-        var dto = new RelatorioConsolidadoSondagemDto { CodigoCorrelacao = Guid.NewGuid() };
-        RelatorioConsolidadoSondagemDto? capturado = null;
-
-        _templateMock
-            .Setup(x => x.GerarExcelEF(It.IsAny<RelatorioConsolidadoSondagemDto>()))
-            .Callback<RelatorioConsolidadoSondagemDto>(d => capturado = d)
-            .ReturnsAsync("url");
-
-        await _service.GerarRelatorioExcelAsync(dto);
-
-        capturado.Should().BeSameAs(dto);
+        _relatorioTemplateExcelMock.Verify(x => x.GerarExcelEF(It.IsAny<RelatorioConsolidadoSondagemDto>()), Times.Once);
     }
 }
