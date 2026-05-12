@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -48,6 +48,11 @@ public class RabbitMqConsumerService : BackgroundService
     private void RegistrarUseCases()
     {
         _comandos.Add(RotasRabbit.RelatorioSondagemPorTurma, new ComandoRabbit("Relatorio Sondagem Por Turma", typeof(IRelatorioSondagemQuestionarioPorTurmaUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorRaca, new ComandoRabbit("Relatorio Sondagem Consolidado Por Raca", typeof(IRelatorioSondagemConsolidadoRacaUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorGenero, new ComandoRabbit("Relatorio Sondagem Consolidado Por Genero", typeof(IRelatorioSondagemConsolidadoGeneroUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorRacaGenero, new ComandoRabbit("Relatorio Sondagem Consolidado Por Raca e Genero", typeof(IRelatorioSondagemConsolidadoRacaGeneroUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorQuestao, new ComandoRabbit("Relatorio Sondagem Consolidado Por Questao", typeof(IRelatorioSondagemConsolidadoQuestaoUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorBimestre, new ComandoRabbit("Relatorio Sondagem Consolidado Por Questao", typeof(IRelatorioSondagemConsolidadoBimestreUseCase)));
     }
 
     private async Task InicializaConsumerAsync(IChannel channel, CancellationToken stoppingToken)

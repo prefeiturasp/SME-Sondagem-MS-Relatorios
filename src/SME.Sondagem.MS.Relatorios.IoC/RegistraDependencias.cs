@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using SME.Sondagem.MS.Relatorios.Aplicacao.Services;
 using SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
+using SME.Sondagem.MS.Relatorios.Dados.Repositorios;
+using SME.Sondagem.MS.Relatorios.Dominio.Interfaces;
 using SME.Sondagem.MS.Relatorios.Excel.Interfaces;
 using SME.Sondagem.MS.Relatorios.Excel.Templates;
 using SME.Sondagem.MS.Relatorios.HtmlPdf;
@@ -44,6 +46,10 @@ public static class RegistraDependencias
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<TelemetriaOptions>>().Value);
 
         services.TryAddScoped<IServicoTelemetria, ServicoTelemetria>();
+        services.TryAddScoped<IRepositorioRacaCor, RepositorioRacaCor>();
+        services.TryAddScoped<IRepositorioGeneroSexo, RepositorioGeneroSexo>();
+        services.TryAddScoped<IRepositorioBimestre, RepositorioBimestre>();
+        services.TryAddScoped<IRepositorioComponenteCurricular, RepositorioComponenteCurricular>();
         services.TryAddScoped<IServicoLog, ServicoLog>();
         services.TryAddSingleton<IServicoMensageria, ServicoMensageria>();
         services.AddHttpClient();
@@ -51,12 +57,24 @@ public static class RegistraDependencias
 
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaPdf, RelatorioSondagemQuestionarioPorTurmaPdf>();
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaExcel, RelatorioSondagemQuestionarioPorTurmaExcel>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoRacaPdf, RelatorioSondagemConsolidadoRacaPdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoGeneroPdf, RelatorioSondagemConsolidadoGeneroPdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoRacaGeneroPdf, RelatorioSondagemConsolidadoRacaGeneroPdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoBimestrePdf, RelatorioSondagemConsolidadoBimestrePdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoQuestaoPdf, RelatorioSondagemConsolidadoQuestaoPdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreExcel, RelatorioSondagemConsolidadoPorBimestreExcel>();
 
         services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
         services.TryAddScoped<IReportConverter, ReportConverter>();
         services.TryAddScoped<IServicoArmazenamentoMinio, ServicoArmazenamentoMinio>();
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaTemplatePdf, RelatorioSondagemQuestionarioPorTurmaTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaTemplateExcel, RelatorioSondagemQuestionarioPorTurmaTemplateExcel>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorRacaTemplatePdf, RelatorioSondagemConsolidadoPorRacaTemplatePdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorGeneroTemplatePdf, RelatorioSondagemConsolidadoPorGeneroTemplatePdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf, RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreTemplatePdf, RelatorioSondagemConsolidadoPorBimestreTemplatePdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorQuestaoTemplatePdf, RelatorioSondagemConsolidadoPorQuestaoTemplatePdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreTemplateExcel, RelatorioSondagemConsolidadoPorBimestreTemplateExcel>();
 
     }
 
@@ -70,6 +88,11 @@ public static class RegistraDependencias
     private static void RegistrarCasosDeUso(IServiceCollection services)
     {
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaUseCase, RelatorioSondagemQuestionarioPorTurmaUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoRacaUseCase, RelatorioSondagemConsolidadoRacaUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoGeneroUseCase, RelatorioSondagemConsolidadoGeneroUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoRacaGeneroUseCase, RelatorioSondagemConsolidadoRacaGeneroUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoBimestreUseCase, RelatorioSondagemConsolidadoBimestreUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoQuestaoUseCase, RelatorioSondagemConsolidadoQuestaoUseCase>();
     }
 
     private static void ConfigurarRabbitmq(IServiceCollection services, IConfiguration configuration)

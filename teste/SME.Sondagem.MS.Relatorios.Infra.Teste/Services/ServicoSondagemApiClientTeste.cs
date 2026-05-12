@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Records;
 using SME.Sondagem.MS.Relatorios.Infra.Services;
 using System.Net;
@@ -173,5 +174,44 @@ public class ServicoSondagemApiClientTeste
         var resultado = await service.ObterProficienciaPorIdAsync(1, cts.Token);
 
         resultado.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ObterDadosRelatorioConsolidadoPorRacaGeneroAsync_DeveChamarUrlRacaGenero_QuandoSucesso()
+    {
+        var dto = new RelatorioConsolidadoSondagemDto { Titulo = "Escrita consolidado", AnoLetivo = 2026 };
+        var json = JsonSerializer.Serialize(dto, JsonSerializerExtensions.ObterConfigSerializer());
+        var (factory, handler) = CriarFactory(HttpStatusCode.OK, json);
+        var service = new ServicoSondagemApiClient(factory.Object);
+
+        var resultado = await service.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(CriarFiltro());
+
+        handler.UltimaRequisicaoUri.Should().NotBeNull();
+        handler.UltimaRequisicaoUri!.AbsoluteUri.Should().Contain("raca-genero");
+        resultado.Titulo.Should().Be("Escrita consolidado");
+        resultado.AnoLetivo.Should().Be(2026);
+    }
+
+    [Fact]
+    public async Task ObterDadosRelatorioConsolidadoPorRacaGeneroAsync_DeveRetornarDtoVazio_QuandoNoContent()
+    {
+        var (factory, _) = CriarFactory(HttpStatusCode.NoContent, string.Empty);
+        var service = new ServicoSondagemApiClient(factory.Object);
+
+        var resultado = await service.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(CriarFiltro());
+
+        resultado.Titulo.Should().BeEmpty();
+        resultado.Questoes.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ObterDadosRelatorioConsolidadoPorRacaGeneroAsync_DeveRetornarDtoVazio_QuandoStatusDeErro()
+    {
+        var (factory, _) = CriarFactory(HttpStatusCode.InternalServerError, string.Empty);
+        var service = new ServicoSondagemApiClient(factory.Object);
+
+        var resultado = await service.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(CriarFiltro());
+
+        resultado.Titulo.Should().BeEmpty();
     }
 }
