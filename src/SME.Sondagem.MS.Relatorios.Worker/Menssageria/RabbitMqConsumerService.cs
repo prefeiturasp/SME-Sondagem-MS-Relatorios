@@ -52,7 +52,7 @@ public class RabbitMqConsumerService : BackgroundService
         _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorGenero, new ComandoRabbit("Relatorio Sondagem Consolidado Por Genero", typeof(IRelatorioSondagemConsolidadoGeneroUseCase)));
         _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorRacaGenero, new ComandoRabbit("Relatorio Sondagem Consolidado Por Raca e Genero", typeof(IRelatorioSondagemConsolidadoRacaGeneroUseCase)));
         _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorQuestao, new ComandoRabbit("Relatorio Sondagem Consolidado Por Questao", typeof(IRelatorioSondagemConsolidadoQuestaoUseCase)));
-        _comandos.Add(RotasRabbit., new ComandoRabbit("Relatorio Sondagem Consolidado Por Questao", typeof(IRelatorioSondagemConsolidadoBimestreUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorBimestre, new ComandoRabbit("Relatorio Sondagem Consolidado Por Questao", typeof(IRelatorioSondagemConsolidadoBimestreUseCase)));
     }
 
     private async Task InicializaConsumerAsync(IChannel channel, CancellationToken stoppingToken)

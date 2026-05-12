@@ -90,8 +90,6 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
         var sb = new StringBuilder();
         sb.AppendLine("<div class=\"secao-tabela\">");
-        //if (ExibirTituloQuestao)
-        //    sb.AppendLine($"    <h3>{HttpUtility.HtmlEncode(questao.QuestaoNome)}</h3>");
 
         sb.AppendLine("    <table class=\"main-table\">");
 

@@ -639,7 +639,7 @@ public class RelatorioSondagemConsolidadoBimestreUseCaseTeste
     [Fact]
     public async Task Executar_DeveCarregarBimestresDisponiveis_QuandoPdf()
     {
-        var lista = new List<BimestreEntidade> { new BimestreEntidade(1, "1º") };
+        var lista = new List<BimestreEntidade> { new BimestreEntidade() };
         ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
         _bimestres.Setup(x => x.ObterTodosAsync()).ReturnsAsync(lista);
 
