@@ -59,6 +59,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaExcel, RelatorioSondagemQuestionarioPorTurmaExcel>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoRacaPdf, RelatorioSondagemConsolidadoRacaPdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoGeneroPdf, RelatorioSondagemConsolidadoGeneroPdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoRacaGeneroPdf, RelatorioSondagemConsolidadoRacaGeneroPdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoBimestrePdf, RelatorioSondagemConsolidadoBimestrePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoQuestaoPdf, RelatorioSondagemConsolidadoQuestaoPdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoGenericoExcel, RelatorioSondagemConsolidadoGenericoExcel>();
@@ -70,6 +71,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaTemplateExcel, RelatorioSondagemQuestionarioPorTurmaTemplateExcel>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorRacaTemplatePdf, RelatorioSondagemConsolidadoPorRacaTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorGeneroTemplatePdf, RelatorioSondagemConsolidadoPorGeneroTemplatePdf>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf, RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreTemplatePdf, RelatorioSondagemConsolidadoPorBimestreTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorQuestaoTemplatePdf, RelatorioSondagemConsolidadoPorQuestaoTemplatePdf>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoGenericoTemplateExcel, RelatorioSondagemConsolidadoGenericoTemplateExcel>();
@@ -88,6 +90,7 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemQuestionarioPorTurmaUseCase, RelatorioSondagemQuestionarioPorTurmaUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoRacaUseCase, RelatorioSondagemConsolidadoRacaUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoGeneroUseCase, RelatorioSondagemConsolidadoGeneroUseCase>();
+        services.TryAddScoped<IRelatorioSondagemConsolidadoRacaGeneroUseCase, RelatorioSondagemConsolidadoRacaGeneroUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoBimestreUseCase, RelatorioSondagemConsolidadoBimestreUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreUseCase, RelatorioSondagemConsolidadoPorBimestreUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoQuestaoUseCase, RelatorioSondagemConsolidadoQuestaoUseCase>();

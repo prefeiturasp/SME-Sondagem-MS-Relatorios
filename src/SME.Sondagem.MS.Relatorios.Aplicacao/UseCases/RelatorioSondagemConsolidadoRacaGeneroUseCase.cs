@@ -9,11 +9,17 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCase
     : RelatorioSondagemConsolidadoUseCaseBase,
       IRelatorioSondagemConsolidadoRacaGeneroUseCase
 {
+    private readonly IRelatorioSondagemConsolidadoRacaGeneroPdf _pdf;
     private readonly IRelatorioSondagemConsolidadoGenericoExcel _excel;
+    private readonly IRepositorioRacaCor _repositorioRacaCor;
+    private readonly IRepositorioGeneroSexo _repositorioGeneroSexo;
 
     public RelatorioSondagemConsolidadoRacaGeneroUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
+        IRelatorioSondagemConsolidadoRacaGeneroPdf relatorioSondagemConsolidadoRacaGeneroPdf,
         IRelatorioSondagemConsolidadoGenericoExcel relatorioSondagemConsolidadoGenericoExcel,
+        IRepositorioRacaCor repositorioRacaCor,
+        IRepositorioGeneroSexo repositorioGeneroSexo,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
@@ -21,7 +27,10 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCase
         IRepositorioComponenteCurricular repositorioComponenteCurricular)
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
+        _pdf = relatorioSondagemConsolidadoRacaGeneroPdf;
         _excel = relatorioSondagemConsolidadoGenericoExcel;
+        _repositorioRacaCor = repositorioRacaCor;
+        _repositorioGeneroSexo = repositorioGeneroSexo;
     }
 
     protected override string AgrupamentoPadrao => "Por raça e gênero";
@@ -31,13 +40,21 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCase
     protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemGenericoDto filtros) =>
         ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(filtros);
 
-    protected override Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
-        throw new NotImplementedException();
+    protected override async Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio)
+    {
+        dadosRelatorio.RacasDisponiveis = await _repositorioRacaCor.ObterTodosAsync();
+        dadosRelatorio.GenerosDisponiveis = await _repositorioGeneroSexo.ObterTodosAsync();
+        return await _pdf.Executar(dadosRelatorio);
+    }
 
     protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
         _excel.GerarRelatorioExcelAsync(dadosRelatorio);
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.Genero))
+            dadosRelatorio.Genero = ValorTodos;
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.Raca))
+            dadosRelatorio.Raca = ValorTodas;
     }
 }
