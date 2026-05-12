@@ -12,7 +12,6 @@ using ChartFormula = DocumentFormat.OpenXml.Drawing.Charts.Formula;
 using Index = DocumentFormat.OpenXml.Drawing.Charts.Index;
 using NumberingFormat = DocumentFormat.OpenXml.Drawing.Charts.NumberingFormat;
 using OrientationValues = DocumentFormat.OpenXml.Drawing.Charts.OrientationValues;
-using Title = DocumentFormat.OpenXml.Drawing.Charts.Title;
 using Values = DocumentFormat.OpenXml.Drawing.Charts.Values;
 using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
 
@@ -49,11 +48,6 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         tituloCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         tituloCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
-        sheet.Row(3).Height = 18;
-        sheet.Row(4).Height = 18;
-        sheet.Row(5).Height = 18;
-        sheet.Row(6).Height = 18;
-
         EscreverCelulaRichText(sheet, 3, 1, 3, 2, "Agrupamento: ", dto.Agrupamento);
         EscreverCelulaRichText(sheet, 3, 3, 3, 4, "Ano letivo: ", dto.AnoLetivo > 0 ? dto.AnoLetivo.ToString() : "-");
         EscreverCelulaRichText(sheet, 3, 5, 3, 6, "Etapa / Modalidade: ", dto.Modalidade);
@@ -69,6 +63,24 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         EscreverCelulaRichText(sheet, 6, 1, 6, 3, "Usuário: ", dto.Usuario);
         EscreverCelulaRichText(sheet, 6, 4, 6, 6, "Data de impressão: ", dto.DataImpressao.ToString("dd/MM/yyyy"));
 
+        static string t(string label, string? value) => label + (string.IsNullOrWhiteSpace(value) ? "-" : value);
+
+        AjustarAlturaLinhaCabecalho(sheet, 3, 30.0,
+            t("Agrupamento: ", dto.Agrupamento),
+            t("Ano letivo: ", dto.AnoLetivo > 0 ? dto.AnoLetivo.ToString() : "-"),
+            t("Etapa / Modalidade: ", dto.Modalidade));
+        AjustarAlturaLinhaCabecalho(sheet, 4, 30.0,
+            t("DRE: ", dto.Dre),
+            t("Unidade Educacional: ", dto.UnidadeEducacional),
+            t("Ano / Turma: ", dto.AnoTurma));
+        AjustarAlturaLinhaCabecalho(sheet, 5, 30.0,
+            t("Componente Curricular: ", dto.ComponenteCurricular),
+            t("Proficiência: ", dto.Proficiencia),
+            t("Bimestre: ", dto.Bimestre));
+        AjustarAlturaLinhaCabecalho(sheet, 6, 45.0,
+            t("Usuário: ", dto.Usuario),
+            t("Data de impressão: ", dto.DataImpressao.ToString("dd/MM/yyyy")));
+
         AplicarBordaCabecalho(sheet, 2, 1, 2, 6);
         AplicarBordaCabecalho(sheet, 3, 1, 3, 2);
         AplicarBordaCabecalho(sheet, 3, 3, 3, 4);
@@ -82,6 +94,25 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         AplicarBordaCabecalho(sheet, 6, 1, 6, 3);
         AplicarBordaCabecalho(sheet, 6, 4, 6, 6);
     }
+
+    private static void AjustarAlturaLinhaCabecalho(IXLWorksheet sheet, int linha, double larguraColuna, params string[] textos)
+    {
+        const double alturaMinima = 18.0;
+        var maxAltura = textos.Max(t => ComputarAltura(t, larguraColuna));
+        sheet.Row(linha).Height = Math.Max(alturaMinima, maxAltura);
+    }
+
+    private static double ComputarAltura(string? texto, double larguraColuna)
+    {
+        const double alturaLinha = 15.0;
+        const double charsPerUnit = 0.9;
+        int charsPerLine = Math.Max(1, (int)(larguraColuna * charsPerUnit));
+        int linhas = string.IsNullOrEmpty(texto) ? 1 : Math.Max(1, (int)Math.Ceiling((double)texto.Length / charsPerLine));
+        return linhas * alturaLinha + 3;
+    }
+
+    protected static void AjustarAlturaLinha(IXLWorksheet sheet, int linha, string? texto, double larguraColuna = 30.0) =>
+        sheet.Row(linha).Height = ComputarAltura(texto, larguraColuna);
 
     private static void EscreverCelulaRichText(IXLWorksheet sheet, int row1, int col1, int row2, int col2, string label, string? value)
     {
@@ -116,7 +147,7 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
 
     protected static void InjetarGraficosOpenXml(
         Stream stream,
-        List<(string Titulo, List<GraficoDto> Dados)> graficos,
+        List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount, int RowGroup)> graficos,
         int linhaInicio,
         string sheetName,
         int dataRowBase,
@@ -142,18 +173,20 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
 
         for (int i = 0; i < graficos.Count; i++)
         {
-            var (titulo, dados) = graficos[i];
+            var (_, dados, colStart, colCount, rowGroup) = graficos[i];
             int dataRow = dataRowBase + i * 12;
             int dataEndCol = dataColStart + dados.Count - 1;
             string catFormula = $"'{sheetName}'!${ColNumToLetter(dataColStart)}${dataRow}:${ColNumToLetter(dataEndCol)}${dataRow}";
             string valFormula = $"'{sheetName}'!${ColNumToLetter(dataColStart)}${dataRow + 1}:${ColNumToLetter(dataEndCol)}${dataRow + 1}";
 
             var chartPart = drawingsPart.AddNewPart<ChartPart>();
-            ConfigurarChartPartGrafico(chartPart, dados, titulo, catFormula, valFormula);
+            ConfigurarChartPartGrafico(chartPart, dados, catFormula, valFormula);
 
             var chartRelId = drawingsPart.GetIdOfPart(chartPart);
-            int linhaGrafico = linhaInicio + i * 12;
-            wsDr.AppendChild(CriarAnchorGrafico(chartRelId, linhaGrafico, (uint)(10 + i)));
+            int linhaGrafico = linhaInicio + rowGroup * 26 + 4;
+            int fromCol = colStart - 1;
+            int toCol = colStart - 1 + colCount; // exclusive right-edge anchor
+            wsDr.AppendChild(CriarAnchorGrafico(chartRelId, linhaGrafico, (uint)(10 + i), fromCol, toCol));
         }
 
         wsDr.Save();
@@ -178,16 +211,16 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         return sb.ToString();
     }
 
-    private static void ConfigurarChartPartGrafico(ChartPart chartPart, List<GraficoDto> dados, string titulo, string catFormula, string valFormula)
+    private static void ConfigurarChartPartGrafico(ChartPart chartPart, List<GraficoDto> dados, string catFormula, string valFormula)
     {
         var chartSpace = new ChartSpace();
         chartSpace.AddNamespaceDeclaration("c", ExcelConstantes.OPENXML_FORMATS_CHART);
         chartSpace.AddNamespaceDeclaration("a", ExcelConstantes.OPENXML_FORMATS_MAIN);
         chartSpace.AddNamespaceDeclaration("r", ExcelConstantes.OPENXML_FORMATS_RELATIONSHIP);
+        chartSpace.AppendChild(new RoundedCorners { Val = false });
 
         var chart = new Chart();
-        chart.AppendChild(new AutoTitleDeleted { Val = false });
-        AdicionarTituloGrafico(chart, titulo);
+        chart.AppendChild(new AutoTitleDeleted { Val = true });
 
         var plotArea = new PlotArea();
         plotArea.AppendChild(CriarBarChart(dados, catFormula, valFormula));
@@ -199,31 +232,6 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         chartSpace.AppendChild(chart);
         chartPart.ChartSpace = chartSpace;
         chartPart.ChartSpace.Save();
-    }
-
-    private static void AdicionarTituloGrafico(Chart chart, string titulo)
-    {
-        var chartTitle = new Title();
-        var chartText = new ChartText();
-        var richText = new RichText();
-        richText.AppendChild(new DocumentFormat.OpenXml.Drawing.BodyProperties());
-        richText.AppendChild(new DocumentFormat.OpenXml.Drawing.ListStyle());
-
-        var paragraph = new DocumentFormat.OpenXml.Drawing.Paragraph();
-        var run = new DocumentFormat.OpenXml.Drawing.Run();
-        var runProps = new DocumentFormat.OpenXml.Drawing.RunProperties { Bold = false, FontSize = 1200 };
-        var grayFill = new DocumentFormat.OpenXml.Drawing.SolidFill();
-        grayFill.AppendChild(new DocumentFormat.OpenXml.Drawing.RgbColorModelHex { Val = "808080" });
-        runProps.AppendChild(grayFill);
-        run.AppendChild(runProps);
-        run.AppendChild(new DocumentFormat.OpenXml.Drawing.Text(titulo));
-        paragraph.AppendChild(run);
-        richText.AppendChild(paragraph);
-
-        chartText.AppendChild(richText);
-        chartTitle.AppendChild(chartText);
-        chartTitle.AppendChild(new Overlay { Val = false });
-        chart.AppendChild(chartTitle);
     }
 
     private static DocumentFormat.OpenXml.Drawing.Charts.TextProperties CriarTextPropertiesGray()
@@ -351,19 +359,19 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         plotArea.Append(new List<OpenXmlElement> { valAxis });
     }
 
-    private static Xdr.TwoCellAnchor CriarAnchorGrafico(string chartRelId, int linhaGrafico, uint graphicId)
+    private static Xdr.TwoCellAnchor CriarAnchorGrafico(string chartRelId, int linhaGrafico, uint graphicId, int fromCol, int toCol)
     {
         var anchor = new Xdr.TwoCellAnchor();
         anchor.AppendChild(new Xdr.FromMarker(
-            new Xdr.ColumnId("0"),
+            new Xdr.ColumnId(fromCol.ToString()),
             new Xdr.ColumnOffset("0"),
             new Xdr.RowId((linhaGrafico - 1).ToString()),
             new Xdr.RowOffset("0")
         ));
         anchor.AppendChild(new Xdr.ToMarker(
-            new Xdr.ColumnId("4"),
+            new Xdr.ColumnId(toCol.ToString()),
             new Xdr.ColumnOffset("0"),
-            new Xdr.RowId((linhaGrafico + 9).ToString()),
+            new Xdr.RowId((linhaGrafico + 19).ToString()),
             new Xdr.RowOffset("0")
         ));
 

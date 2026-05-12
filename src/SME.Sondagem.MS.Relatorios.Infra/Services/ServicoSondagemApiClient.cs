@@ -34,7 +34,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, string.Empty, new(), new(), 0);
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaAsync(FiltroRelatorioSondagemDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
@@ -51,7 +51,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorGeneroAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorGeneroAsync(FiltroRelatorioSondagemDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
@@ -68,11 +68,11 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorAnoAsync(FiltroRelatorioSondagemDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
-        string urlFinal = filtroRelatorio.ObjetoParaQueryStringExtensions(ServicoSondagemConstantes.URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_RACA_GENERO);
+        string urlFinal = filtroRelatorio.ObjetoParaQueryStringExtensions(ServicoSondagemConstantes.URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_ANO);
         var resposta = await httpClient.GetAsync(urlFinal);
 
         if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
@@ -85,7 +85,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorBimestreAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorBimestreAsync(FiltroRelatorioSondagemDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
@@ -102,11 +102,28 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorQuestaoAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorQuestaoAsync(FiltroRelatorioSondagemDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
         string urlFinal = filtroRelatorio.ObjetoParaQueryStringExtensions(ServicoSondagemConstantes.URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_QUESTAO);
+        var resposta = await httpClient.GetAsync(urlFinal);
+
+        if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
+            return new RelatorioConsolidadoSondagemDto();
+
+        var jsonString = await resposta.Content.ReadAsStringAsync();
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
+
+        return JsonSerializer.Deserialize<RelatorioConsolidadoSondagemDto>(jsonString, options)
+                 ?? new RelatorioConsolidadoSondagemDto();
+    }
+
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(FiltroRelatorioSondagemDto filtroRelatorio)
+    {
+        var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
+
+        string urlFinal = filtroRelatorio.ObjetoParaQueryStringExtensions(ServicoSondagemConstantes.URL_SOLICITACAO_RELATORIO_CONSOLIDADO_POR_RACA_GENERO);
         var resposta = await httpClient.GetAsync(urlFinal);
 
         if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)

@@ -26,6 +26,9 @@ public class ServicoSondagemApiClientTeste
     private static FiltroRelatorioSondagemPorTurmaDto CriarFiltro() =>
         new() { TurmaId = 1, AnoLetivo = 2024, Modalidade = 5 };
 
+    private static FiltroRelatorioSondagemDto CriarFiltroGenerico() =>
+        new() { AnoLetivo = 2024, Modalidade = 5 };
+
     [Fact]
     public async Task ObterDadosQuestionarioAsync_DeveRetornarDtoVazio_QuandoJsonForInvalido()
     {
@@ -184,7 +187,7 @@ public class ServicoSondagemApiClientTeste
         var (factory, handler) = CriarFactory(HttpStatusCode.OK, json);
         var service = new ServicoSondagemApiClient(factory.Object);
 
-        var resultado = await service.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(CriarFiltro());
+        var resultado = await service.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(CriarFiltroGenerico());
 
         handler.UltimaRequisicaoUri.Should().NotBeNull();
         handler.UltimaRequisicaoUri!.AbsoluteUri.Should().Contain("raca-genero");
@@ -198,7 +201,7 @@ public class ServicoSondagemApiClientTeste
         var (factory, _) = CriarFactory(HttpStatusCode.NoContent, string.Empty);
         var service = new ServicoSondagemApiClient(factory.Object);
 
-        var resultado = await service.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(CriarFiltro());
+        var resultado = await service.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(CriarFiltroGenerico());
 
         resultado.Titulo.Should().BeEmpty();
         resultado.Questoes.Should().BeEmpty();
@@ -210,7 +213,7 @@ public class ServicoSondagemApiClientTeste
         var (factory, _) = CriarFactory(HttpStatusCode.InternalServerError, string.Empty);
         var service = new ServicoSondagemApiClient(factory.Object);
 
-        var resultado = await service.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(CriarFiltro());
+        var resultado = await service.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(CriarFiltroGenerico());
 
         resultado.Titulo.Should().BeEmpty();
     }

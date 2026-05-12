@@ -10,8 +10,8 @@ public static class RotasRabbit
     public const string RelatorioSondagemConsolidadoPorGenero = "sr.sondagem.relatorios.solicitados.consolidado.por.genero";
     public const string RelatorioSondagemConsolidadoPorRacaGenero = "sr.sondagem.relatorios.solicitados.consolidado.por.raca.genero";
     public const string RelatorioSondagemConsolidadoPorAno = "sr.sondagem.relatorios.solicitados.consolidado.por.ano";
-    public const string RelatorioSondagemConsolidadoPorQuestao = "sr.sondagem.relatorios.solicitados.consolidado.por.questao";
     public const string RelatorioSondagemConsolidadoPorBimestre = "sr.sondagem.relatorios.solicitados.consolidado.por.bimestre";
+    public const string RelatorioSondagemConsolidadoPorQuestao = "sr.sondagem.relatorios.solicitados.consolidado.por.questao";
 
     public const string RotaRelatoriosProntosSgp = "sgp.relatorios.prontos.notificar";
 }
