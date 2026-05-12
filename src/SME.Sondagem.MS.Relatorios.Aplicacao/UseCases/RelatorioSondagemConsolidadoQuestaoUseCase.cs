@@ -8,10 +8,12 @@ namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 public class RelatorioSondagemConsolidadoQuestaoUseCase : RelatorioSondagemConsolidadoUseCaseBase, IRelatorioSondagemConsolidadoQuestaoUseCase
 {
     private readonly IRelatorioSondagemConsolidadoQuestaoPdf _pdf;
+    private readonly IRelatorioSondagemConsolidadoGenericoExcel _excel;
 
     public RelatorioSondagemConsolidadoQuestaoUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IRelatorioSondagemConsolidadoQuestaoPdf relatorioSondagemConsolidadoQuestaoPdf,
+        IRelatorioSondagemConsolidadoGenericoExcel relatorioSondagemConsolidadoGenericoExcel,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
@@ -20,19 +22,21 @@ public class RelatorioSondagemConsolidadoQuestaoUseCase : RelatorioSondagemConso
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
         _pdf = relatorioSondagemConsolidadoQuestaoPdf;
+        _excel = relatorioSondagemConsolidadoGenericoExcel;
     }
 
     protected override string AgrupamentoPadrao => "Por questão";
 
     protected override string ContextoRelatorioParaLog => "por questão";
 
-    protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemPorTurmaDto filtros) =>
+    protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemDto filtros) =>
         ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorQuestaoAsync(filtros);
 
     protected override Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
         _pdf.Executar(dadosRelatorio);
 
-    protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) => throw new NotImplementedException();
+    protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
+        _excel.GerarRelatorioExcelAsync(dadosRelatorio);
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {

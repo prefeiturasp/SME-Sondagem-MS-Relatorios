@@ -5,48 +5,39 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public class RelatorioSondagemConsolidadoRacaUseCase : RelatorioSondagemConsolidadoUseCaseBase, IRelatorioSondagemConsolidadoRacaUseCase
+public class RelatorioSondagemConsolidadoAnoUseCase
+    : RelatorioSondagemConsolidadoUseCaseBase,
+      IRelatorioSondagemConsolidadoAnoUseCase
 {
-    private readonly IRelatorioSondagemConsolidadoRacaPdf _pdf;
     private readonly IRelatorioSondagemConsolidadoGenericoExcel _excel;
-    private readonly IRepositorioRacaCor _repositorioRacaCor;
 
-    public RelatorioSondagemConsolidadoRacaUseCase(
+    public RelatorioSondagemConsolidadoAnoUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
-        IRelatorioSondagemConsolidadoRacaPdf relatorioSondagemConsolidadoRacaPdf,
         IRelatorioSondagemConsolidadoGenericoExcel relatorioSondagemConsolidadoGenericoExcel,
-        IRepositorioRacaCor repositorioRacaCor,
         IServicoSgpApiClient servicoSgpApiClient,
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
-        ILogger<RelatorioSondagemConsolidadoRacaUseCase> logger,
+        ILogger<RelatorioSondagemConsolidadoAnoUseCase> logger,
         IRepositorioComponenteCurricular repositorioComponenteCurricular)
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
-        _pdf = relatorioSondagemConsolidadoRacaPdf;
         _excel = relatorioSondagemConsolidadoGenericoExcel;
-        _repositorioRacaCor = repositorioRacaCor;
     }
 
-    protected override string AgrupamentoPadrao => "Por raça";
+    protected override string AgrupamentoPadrao => "Por ano";
 
-    protected override string ContextoRelatorioParaLog => "por raça";
+    protected override string ContextoRelatorioParaLog => "por ano";
 
     protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemDto filtros) =>
-        ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorRacaAsync(filtros);
+        ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorAnoAsync(filtros);
 
-    protected override async Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio)
-    {
-        dadosRelatorio.RacasDisponiveis = await _repositorioRacaCor.ObterTodosAsync();
-        return await _pdf.Executar(dadosRelatorio);
-    }
+    protected override Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
+        throw new NotImplementedException();
 
     protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
         _excel.GerarRelatorioExcelAsync(dadosRelatorio);
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {
-        if (string.IsNullOrWhiteSpace(dadosRelatorio.Raca))
-            dadosRelatorio.Raca = ValorTodas;
     }
 }

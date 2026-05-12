@@ -5,15 +5,19 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public class RelatorioSondagemConsolidadoRacaGeneroUseCase : RelatorioSondagemConsolidadoUseCaseBase, IRelatorioSondagemConsolidadoRacaGeneroUseCase
+public class RelatorioSondagemConsolidadoRacaGeneroUseCase
+    : RelatorioSondagemConsolidadoUseCaseBase,
+      IRelatorioSondagemConsolidadoRacaGeneroUseCase
 {
     private readonly IRelatorioSondagemConsolidadoRacaGeneroPdf _pdf;
+    private readonly IRelatorioSondagemConsolidadoGenericoExcel _excel;
     private readonly IRepositorioRacaCor _repositorioRacaCor;
     private readonly IRepositorioGeneroSexo _repositorioGeneroSexo;
 
     public RelatorioSondagemConsolidadoRacaGeneroUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
         IRelatorioSondagemConsolidadoRacaGeneroPdf relatorioSondagemConsolidadoRacaGeneroPdf,
+        IRelatorioSondagemConsolidadoGenericoExcel relatorioSondagemConsolidadoGenericoExcel,
         IRepositorioRacaCor repositorioRacaCor,
         IRepositorioGeneroSexo repositorioGeneroSexo,
         IServicoSgpApiClient servicoSgpApiClient,
@@ -24,6 +28,7 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCase : RelatorioSondagemCo
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
         _pdf = relatorioSondagemConsolidadoRacaGeneroPdf;
+        _excel = relatorioSondagemConsolidadoGenericoExcel;
         _repositorioRacaCor = repositorioRacaCor;
         _repositorioGeneroSexo = repositorioGeneroSexo;
     }
@@ -32,7 +37,7 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCase : RelatorioSondagemCo
 
     protected override string ContextoRelatorioParaLog => "por raça e gênero";
 
-    protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemPorTurmaDto filtros) =>
+    protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemDto filtros) =>
         ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(filtros);
 
     protected override async Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio)
@@ -43,7 +48,7 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCase : RelatorioSondagemCo
     }
 
     protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
-        throw new NotImplementedException();
+        _excel.GerarRelatorioExcelAsync(dadosRelatorio);
 
     protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
     {

@@ -41,7 +41,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
     protected abstract string ContextoRelatorioParaLog { get; }
 
-    protected abstract Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemPorTurmaDto filtros);
+    protected abstract Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemDto filtros);
 
     protected abstract Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio);
 
@@ -50,8 +50,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     protected abstract void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio);
 
     public async Task<bool> Executar(MensagemRabbit mensagemRabbit)
-     {
-        var mensagem = mensagemRabbit.ObterObjetoMensagem<MensagemSondagemPorTurmaDto>();
+    {
+        var mensagem = mensagemRabbit.ObterObjetoMensagem<MensagemSondagemDto>();
         if (mensagem == null)
             return false;
 
@@ -85,7 +85,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         return true;
     }
 
-    private async Task<RelatorioConsolidadoSondagemDto> MontarDadosRelatorioAsync(MensagemSondagemPorTurmaDto mensagem, Guid codigoCorrelacao)
+    private async Task<RelatorioConsolidadoSondagemDto> MontarDadosRelatorioAsync(MensagemSondagemDto mensagem, Guid codigoCorrelacao)
     {
         var dadosTask = ObterRelatorioConsolidadoAsync(mensagem.FiltrosUsados);
         var usuarioTask = _servicoEolApiClient.ObterDadosUsuarioAsync(mensagem.UsuarioQueSolicitou);
@@ -102,7 +102,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
     private void PreencherCabecalho(
         RelatorioConsolidadoSondagemDto dadosRelatorio,
-        MensagemSondagemPorTurmaDto mensagem,
+        MensagemSondagemDto mensagem,
         DadosUsuarioDto? usuario,
         ProficienciaDto? proficiencia,
         ComponenteCurricular componenteCurricular,
@@ -119,8 +119,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
     private static void AtribuirIdentificacaoCabecalho(
         RelatorioConsolidadoSondagemDto dadosRelatorio,
-        MensagemSondagemPorTurmaDto mensagem,
-        FiltroRelatorioSondagemPorTurmaDto filtros,
+        MensagemSondagemDto mensagem,
+        FiltroRelatorioSondagemDto filtros,
         Guid codigoCorrelacao)
     {
         dadosRelatorio.CodigoCorrelacao = codigoCorrelacao;
@@ -131,7 +131,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
     private void AplicarFallbacksCabecalhoApartirDosFiltros(
         RelatorioConsolidadoSondagemDto dadosRelatorio,
-        FiltroRelatorioSondagemPorTurmaDto filtros,
+        FiltroRelatorioSondagemDto filtros,
         string proficienciaNome)
     {
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Agrupamento))
@@ -161,7 +161,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
     private static void FinalizarCabecalhoUsuarioTituloComponente(
         RelatorioConsolidadoSondagemDto dadosRelatorio,
-        MensagemSondagemPorTurmaDto mensagem,
+        MensagemSondagemDto mensagem,
         DadosUsuarioDto? usuario,
         string proficienciaNome,
         ComponenteCurricular componenteCurricular)
