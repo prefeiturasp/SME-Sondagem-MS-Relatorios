@@ -147,7 +147,7 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
 
     protected static void InjetarGraficosOpenXml(
         Stream stream,
-        List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount)> graficos,
+        List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount, int RowGroup)> graficos,
         int linhaInicio,
         string sheetName,
         int dataRowBase,
@@ -173,7 +173,7 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
 
         for (int i = 0; i < graficos.Count; i++)
         {
-            var (_, dados, colStart, colCount) = graficos[i];
+            var (_, dados, colStart, colCount, rowGroup) = graficos[i];
             int dataRow = dataRowBase + i * 12;
             int dataEndCol = dataColStart + dados.Count - 1;
             string catFormula = $"'{sheetName}'!${ColNumToLetter(dataColStart)}${dataRow}:${ColNumToLetter(dataEndCol)}${dataRow}";
@@ -183,7 +183,7 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
             ConfigurarChartPartGrafico(chartPart, dados, catFormula, valFormula);
 
             var chartRelId = drawingsPart.GetIdOfPart(chartPart);
-            int linhaGrafico = linhaInicio + i * 26 + 4;
+            int linhaGrafico = linhaInicio + rowGroup * 26 + 4;
             int fromCol = colStart - 1;
             int toCol = colStart - 1 + colCount; // exclusive right-edge anchor
             wsDr.AppendChild(CriarAnchorGrafico(chartRelId, linhaGrafico, (uint)(10 + i), fromCol, toCol));

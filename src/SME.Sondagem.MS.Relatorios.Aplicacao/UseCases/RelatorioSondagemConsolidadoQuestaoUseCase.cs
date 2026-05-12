@@ -29,7 +29,7 @@ public class RelatorioSondagemConsolidadoQuestaoUseCase : RelatorioSondagemConso
 
     protected override string ContextoRelatorioParaLog => "por questão";
 
-    protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemGenericoDto filtros) =>
+    protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemDto filtros) =>
         ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorQuestaoAsync(filtros);
 
     protected override Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>

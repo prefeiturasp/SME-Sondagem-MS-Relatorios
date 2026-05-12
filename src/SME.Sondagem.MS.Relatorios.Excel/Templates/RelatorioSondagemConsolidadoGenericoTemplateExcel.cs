@@ -27,12 +27,16 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
 
         EscreverCabecalhoConsolidado(sheet, relatorioConsolidadoSondagemDto);
 
-        var (ultimaLinha, questaoPositions) = EscreverDadosQuestoes(sheet, 8, relatorioConsolidadoSondagemDto);
+        var (ultimaLinha, questaoPositions, _) = EscreverDadosQuestoes(sheet, 8, relatorioConsolidadoSondagemDto);
 
         const int dataColStart = 100;
         var graficosBase = ObterGraficosDasQuestoes(relatorioConsolidadoSondagemDto);
-        var graficos = graficosBase
-            .Zip(questaoPositions, (g, pos) => (g.Titulo, g.Dados, pos.ColStart, pos.ColCount))
+        var graficosTemp = Enumerable.Range(0, graficosBase.Count)
+            .Select(i => (graficosBase[i].Titulo, graficosBase[i].Dados, questaoPositions[i].ColStart, questaoPositions[i].ColCount, 0))
+            .ToList();
+        var bandas = ComputarBandas(graficosTemp);
+        var graficos = graficosTemp
+            .Select((g, i) => (g.Titulo, g.Dados, g.ColStart, g.ColCount, bandas[i]))
             .ToList();
 
         EscreverCabecalhoGraficos(sheet, graficos, ultimaLinha + 2);
@@ -46,6 +50,39 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         stream.Position = 0;
 
         return await EnviarExcelParaMinio(stream, relatorioConsolidadoSondagemDto.CodigoCorrelacao);
+    }
+
+    private static int[] ComputarBandas(List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount, int Placeholder)> graficos)
+    {
+        var bands = new List<List<(int From, int To)>>();
+        var result = new int[graficos.Count];
+
+        for (int i = 0; i < graficos.Count; i++)
+        {
+            int fromCol = graficos[i].ColStart - 1;
+            int toCol   = fromCol + graficos[i].ColCount;
+
+            int banda = -1;
+            for (int b = 0; b < bands.Count; b++)
+            {
+                if (bands[b].All(r => toCol <= r.From || fromCol >= r.To))
+                {
+                    banda = b;
+                    break;
+                }
+            }
+
+            if (banda == -1)
+            {
+                banda = bands.Count;
+                bands.Add([]);
+            }
+
+            bands[banda].Add((fromCol, toCol));
+            result[i] = banda;
+        }
+
+        return result;
     }
 
     private static List<ColDefinition> ExtrairColunas(RelatorioConsolidadoQuestaoDto questao)
@@ -189,11 +226,13 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         if (negrito) cell.Style.Font.Bold = true;
     }
 
-private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositions) EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, RelatorioConsolidadoSondagemDto dto)
+private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositions, List<int> YearGroups) EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, RelatorioConsolidadoSondagemDto dto)
     {
         var yearState = new Dictionary<string, (int StartRow, int NextCol)>(StringComparer.OrdinalIgnoreCase);
+        var yearGroupIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         int maxRowUsed = startRow;
         var questaoPositions = new List<(int ColStart, int ColCount)>();
+        var yearGroups = new List<int>();
 
         var corAlternada = XLColor.FromHtml("#F2F2F2");
         var corTotal     = XLColor.FromHtml("#D9D9D9");
@@ -206,13 +245,18 @@ private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositi
         foreach (var questao in dto.Questoes)
         {
             var colunas = todasColunas[questaoIdx++];
+            var year = ExtrairAno(questao.QuestaoNome);
+
+            if (!yearGroupIndex.ContainsKey(year))
+                yearGroupIndex[year] = yearGroupIndex.Count;
+
+            yearGroups.Add(yearGroupIndex[year]);
+
             if (colunas.Count == 0)
             {
                 questaoPositions.Add((1, 5));
                 continue;
             }
-
-            var year = ExtrairAno(questao.QuestaoNome);
 
             if (!yearState.ContainsKey(year))
                 yearState[year] = (StartRow: maxRowUsed, NextCol: 1);
@@ -232,7 +276,7 @@ private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositi
             maxRowUsed = Math.Max(maxRowUsed, blocoRow + blockHeight);
         }
 
-        return (maxRowUsed, questaoPositions);
+        return (maxRowUsed, questaoPositions, yearGroups);
     }
 
     private static string ExtrairAno(string questaoNome)
@@ -330,7 +374,7 @@ private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositi
         EscreverColunaValores(sheet, linha, colStart, colunas, colDef => GetValorTotal(questao, colDef.Key), corTotal, negrito: true);
     }
 
-    private static void EscreverDadosGraficos(IXLWorksheet sheet, List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount)> graficos, int dataRowBase, int dataColStart)
+    private static void EscreverDadosGraficos(IXLWorksheet sheet, List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount, int RowGroup)> graficos, int dataRowBase, int dataColStart)
     {
         for (int i = 0; i < graficos.Count; i++)
         {
@@ -361,13 +405,13 @@ private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositi
             .ToList();
     }
 
-    private static void EscreverCabecalhoGraficos(IXLWorksheet sheet, List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount)> graficos, int linhaInicio)
+    private static void EscreverCabecalhoGraficos(IXLWorksheet sheet, List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount, int RowGroup)> graficos, int linhaInicio)
     {
         for (int i = 0; i < graficos.Count; i++)
         {
-            var (titulo, _, colStart, colCount) = graficos[i];
+            var (titulo, _, colStart, colCount, rowGroup) = graficos[i];
             int colEnd = colStart + colCount - 1;
-            int linha = linhaInicio + i * 26;
+            int linha = linhaInicio + rowGroup * 26;
             double totalWidth = 30.0 + (colCount - 1) * 15.0;
 
             if (colCount > 1) sheet.Range(linha, colStart, linha, colEnd).Merge();

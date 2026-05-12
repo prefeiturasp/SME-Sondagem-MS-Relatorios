@@ -1,6 +1,6 @@
 namespace SME.Sondagem.MS.Relatorios.Infra.Dtos;
 
-public class FiltroRelatorioSondagemGenericoDto
+public class FiltroRelatorioSondagemDto
 {
     public int ExtensaoRelatorio { get; set; }
     public int AnoLetivo { get; set; }

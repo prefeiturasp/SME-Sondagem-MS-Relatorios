@@ -133,7 +133,7 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste
         capturado.Raca.Should().Be("Todas");
 
         _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(
-            It.IsAny<FiltroRelatorioSondagemGenericoDto>()), Times.Once);
+            It.IsAny<FiltroRelatorioSondagemDto>()), Times.Once);
         _mensageria.Verify(x => x.Publicar(
             It.Is<MensagemRabbit>(m =>
                 m.Mensagem != null &&
@@ -245,7 +245,7 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste
 
     private void ConfigurarFluxo(RelatorioConsolidadoSondagemDto retorno)
     {
-        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(It.IsAny<FiltroRelatorioSondagemGenericoDto>()))
+        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(It.IsAny<FiltroRelatorioSondagemDto>()))
             .ReturnsAsync(retorno);
         _api.Setup(x => x.ObterProficienciaPorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProficienciaDto { Nome = "Proficiência X" });

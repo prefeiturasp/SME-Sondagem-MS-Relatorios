@@ -26,7 +26,7 @@ public class ServicoSondagemApiClientTeste
     private static FiltroRelatorioSondagemPorTurmaDto CriarFiltro() =>
         new() { TurmaId = 1, AnoLetivo = 2024, Modalidade = 5 };
 
-    private static FiltroRelatorioSondagemGenericoDto CriarFiltroGenerico() =>
+    private static FiltroRelatorioSondagemDto CriarFiltroGenerico() =>
         new() { AnoLetivo = 2024, Modalidade = 5 };
 
     [Fact]
