@@ -49,11 +49,6 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         tituloCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         tituloCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
-        sheet.Row(3).Height = 18;
-        sheet.Row(4).Height = 18;
-        sheet.Row(5).Height = 18;
-        sheet.Row(6).Height = 18;
-
         EscreverCelulaRichText(sheet, 3, 1, 3, 2, "Agrupamento: ", dto.Agrupamento);
         EscreverCelulaRichText(sheet, 3, 3, 3, 4, "Ano letivo: ", dto.AnoLetivo > 0 ? dto.AnoLetivo.ToString() : "-");
         EscreverCelulaRichText(sheet, 3, 5, 3, 6, "Etapa / Modalidade: ", dto.Modalidade);
@@ -69,6 +64,24 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         EscreverCelulaRichText(sheet, 6, 1, 6, 3, "Usuário: ", dto.Usuario);
         EscreverCelulaRichText(sheet, 6, 4, 6, 6, "Data de impressão: ", dto.DataImpressao.ToString("dd/MM/yyyy"));
 
+        static string t(string label, string? value) => label + (string.IsNullOrWhiteSpace(value) ? "-" : value);
+
+        AjustarAlturaLinhaCabecalho(sheet, 3, 30.0,
+            t("Agrupamento: ", dto.Agrupamento),
+            t("Ano letivo: ", dto.AnoLetivo > 0 ? dto.AnoLetivo.ToString() : "-"),
+            t("Etapa / Modalidade: ", dto.Modalidade));
+        AjustarAlturaLinhaCabecalho(sheet, 4, 30.0,
+            t("DRE: ", dto.Dre),
+            t("Unidade Educacional: ", dto.UnidadeEducacional),
+            t("Ano / Turma: ", dto.AnoTurma));
+        AjustarAlturaLinhaCabecalho(sheet, 5, 30.0,
+            t("Componente Curricular: ", dto.ComponenteCurricular),
+            t("Proficiência: ", dto.Proficiencia),
+            t("Bimestre: ", dto.Bimestre));
+        AjustarAlturaLinhaCabecalho(sheet, 6, 45.0,
+            t("Usuário: ", dto.Usuario),
+            t("Data de impressão: ", dto.DataImpressao.ToString("dd/MM/yyyy")));
+
         AplicarBordaCabecalho(sheet, 2, 1, 2, 6);
         AplicarBordaCabecalho(sheet, 3, 1, 3, 2);
         AplicarBordaCabecalho(sheet, 3, 3, 3, 4);
@@ -82,6 +95,25 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         AplicarBordaCabecalho(sheet, 6, 1, 6, 3);
         AplicarBordaCabecalho(sheet, 6, 4, 6, 6);
     }
+
+    private static void AjustarAlturaLinhaCabecalho(IXLWorksheet sheet, int linha, double larguraColuna, params string[] textos)
+    {
+        const double alturaMinima = 18.0;
+        var maxAltura = textos.Max(t => ComputarAltura(t, larguraColuna));
+        sheet.Row(linha).Height = Math.Max(alturaMinima, maxAltura);
+    }
+
+    private static double ComputarAltura(string? texto, double larguraColuna)
+    {
+        const double alturaLinha = 15.0;
+        const double charsPerUnit = 0.9;
+        int charsPerLine = Math.Max(1, (int)(larguraColuna * charsPerUnit));
+        int linhas = string.IsNullOrEmpty(texto) ? 1 : Math.Max(1, (int)Math.Ceiling((double)texto.Length / charsPerLine));
+        return linhas * alturaLinha + 3;
+    }
+
+    protected static void AjustarAlturaLinha(IXLWorksheet sheet, int linha, string? texto, double larguraColuna = 30.0) =>
+        sheet.Row(linha).Height = ComputarAltura(texto, larguraColuna);
 
     private static void EscreverCelulaRichText(IXLWorksheet sheet, int row1, int col1, int row2, int col2, string label, string? value)
     {

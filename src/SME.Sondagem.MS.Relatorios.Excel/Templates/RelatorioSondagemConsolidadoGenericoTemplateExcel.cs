@@ -112,15 +112,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         string key)
     {
         if (generosComRacas != null)
-        {
-            var parts = key.Split('|');
-            if (parts.Length == 2)
-            {
-                var genero = generosComRacas.FirstOrDefault(g => g.Genero == parts[0]);
-                var r = genero?.Racas?.FirstOrDefault(r => r.Raca == parts[1]);
-                return r != null ? (r.Quantidade, r.Percentual) : null;
-            }
-        }
+            return ResolverValorGeneroComRaca(generosComRacas, key);
         if (generos != null)
         {
             var g = generos.FirstOrDefault(g => g.Genero == key);
@@ -142,6 +134,16 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
             return a != null ? (a.Quantidade, a.Percentual) : null;
         }
         return null;
+    }
+
+    private static (int Quantidade, double Percentual)? ResolverValorGeneroComRaca(
+        IEnumerable<RelatorioConsolidadoGeneroRacaDto> generosComRacas, string key)
+    {
+        var parts = key.Split('|');
+        if (parts.Length != 2) return null;
+        var genero = generosComRacas.FirstOrDefault(g => g.Genero == parts[0]);
+        var r = genero?.Racas?.FirstOrDefault(r => r.Raca == parts[1]);
+        return r != null ? (r.Quantidade, r.Percentual) : null;
     }
 
     private static void AplicarEstiloCelulaHeader(IXLCell cell, XLColor corHeader)
@@ -182,18 +184,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         if (negrito) cell.Style.Font.Bold = true;
     }
 
-    private static void AjustarAlturaLinha(IXLWorksheet sheet, int linha, string? texto, double larguraColuna = 30.0)
-    {
-        const double alturaLinha = 15.0;
-        const double charsPerUnit = 0.9;
-        int charsPerLine = Math.Max(1, (int)(larguraColuna * charsPerUnit));
-        int linhas = string.IsNullOrEmpty(texto)
-            ? 1
-            : Math.Max(1, (int)Math.Ceiling((double)texto.Length / charsPerLine));
-        sheet.Row(linha).Height = linhas * alturaLinha + 3;
-    }
-
-    private static int EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, RelatorioConsolidadoSondagemDto dto)
+private static int EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, RelatorioConsolidadoSondagemDto dto)
     {
         var yearState = new Dictionary<string, (int StartRow, int NextCol)>(StringComparer.OrdinalIgnoreCase);
         int maxRowUsed = startRow;
