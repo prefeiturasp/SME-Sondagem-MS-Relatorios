@@ -173,7 +173,7 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
 
         for (int i = 0; i < graficos.Count; i++)
         {
-            var (titulo, dados, colStart, colCount) = graficos[i];
+            var (_, dados, colStart, colCount) = graficos[i];
             int dataRow = dataRowBase + i * 12;
             int dataEndCol = dataColStart + dados.Count - 1;
             string catFormula = $"'{sheetName}'!${ColNumToLetter(dataColStart)}${dataRow}:${ColNumToLetter(dataEndCol)}${dataRow}";
