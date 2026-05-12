@@ -8,6 +8,7 @@ public interface IServicoSondagemApiClient
     Task<RetornoApiSondagemQuestionarioDto> ObterDadosQuestionarioAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
     Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
     Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorGeneroAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
+    Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorAnoAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
     Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorBimestreAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
     Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorQuestaoAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
     Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio);
