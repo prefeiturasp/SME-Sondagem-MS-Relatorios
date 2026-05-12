@@ -50,7 +50,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     protected abstract void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio);
 
     public async Task<bool> Executar(MensagemRabbit mensagemRabbit)
-    {
+     {
         var mensagem = mensagemRabbit.ObterObjetoMensagem<MensagemSondagemPorTurmaDto>();
         if (mensagem == null)
             return false;

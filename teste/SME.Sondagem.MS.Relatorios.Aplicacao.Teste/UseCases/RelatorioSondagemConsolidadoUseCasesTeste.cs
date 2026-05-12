@@ -336,6 +336,159 @@ public class RelatorioSondagemConsolidadoGeneroUseCaseTeste
     }
 }
 
+public class RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste
+{
+    private readonly Mock<IServicoSondagemApiClient> _api = new();
+    private readonly Mock<IRelatorioSondagemConsolidadoRacaGeneroPdf> _pdf = new();
+    private readonly Mock<IRepositorioRacaCor> _racas = new();
+    private readonly Mock<IRepositorioGeneroSexo> _generos = new();
+    private readonly Mock<IServicoSgpApiClient> _sgp = new();
+    private readonly Mock<IServicoEolApiClient> _eol = new();
+    private readonly Mock<IServicoMensageria> _mensageria = new();
+    private readonly Mock<ILogger<RelatorioSondagemConsolidadoRacaGeneroUseCase>> _logger = new();
+    private readonly Mock<IRepositorioComponenteCurricular> _componente = new();
+    private readonly RelatorioSondagemConsolidadoRacaGeneroUseCase _sut;
+
+    public RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste()
+    {
+        _sut = new RelatorioSondagemConsolidadoRacaGeneroUseCase(
+            _api.Object,
+            _pdf.Object,
+            _racas.Object,
+            _generos.Object,
+            _sgp.Object,
+            _eol.Object,
+            _mensageria.Object,
+            _logger.Object,
+            _componente.Object);
+    }
+
+    [Fact]
+    public async Task Executar_DeveRetornarFalso_QuandoCorpoDaMensagemForInvalido()
+    {
+        var resultado = await _sut.Executar(new MensagemRabbit(null, Guid.NewGuid()));
+        resultado.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Executar_DeveCarregarRacasEGenerosDisponiveis_QuandoPdf()
+    {
+        var listaRacas = new List<RacaCor> { new() { Id = 1, Descricao = "Branca", CodigoEolRacaCor = 1 } };
+        var listaGeneros = new List<GeneroSexo> { new() { Id = 1, Descricao = "Feminino", Sigla = "F" } };
+        ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
+        _racas.Setup(x => x.ObterTodosAsync()).ReturnsAsync(listaRacas);
+        _generos.Setup(x => x.ObterTodosAsync()).ReturnsAsync(listaGeneros);
+
+        RelatorioConsolidadoSondagemDto? capturado = null;
+        _pdf.Setup(x => x.Executar(It.IsAny<RelatorioConsolidadoSondagemDto>()))
+            .Callback<RelatorioConsolidadoSondagemDto>(d => capturado = d)
+            .ReturnsAsync("url");
+
+        await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(ConsolidadoRelatorioTesteHelper.MensagemPadrao()));
+
+        capturado.Should().NotBeNull();
+        capturado!.Agrupamento.Should().Be("Por raça e gênero");
+        capturado.Genero.Should().Be("Todos");
+        capturado.Raca.Should().Be("Todas");
+        capturado.RacasDisponiveis.Should().BeEquivalentTo(listaRacas);
+        capturado.GenerosDisponiveis.Should().BeEquivalentTo(listaGeneros);
+        _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()), Times.Once);
+        _racas.Verify(x => x.ObterTodosAsync(), Times.Once);
+        _generos.Verify(x => x.ObterTodosAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task Executar_DevePreservarGeneroERaca_QuandoApiJaPreencheu()
+    {
+        ConfigurarFluxo(new RelatorioConsolidadoSondagemDto { Genero = "Feminino", Raca = "Parda" });
+        _racas.Setup(x => x.ObterTodosAsync()).ReturnsAsync([]);
+        _generos.Setup(x => x.ObterTodosAsync()).ReturnsAsync([]);
+        RelatorioConsolidadoSondagemDto? capturado = null;
+        _pdf.Setup(x => x.Executar(It.IsAny<RelatorioConsolidadoSondagemDto>()))
+            .Callback<RelatorioConsolidadoSondagemDto>(d => capturado = d)
+            .ReturnsAsync("url");
+
+        await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(ConsolidadoRelatorioTesteHelper.MensagemPadrao()));
+
+        capturado.Should().NotBeNull();
+        capturado!.Genero.Should().Be("Feminino");
+        capturado.Raca.Should().Be("Parda");
+    }
+
+    [Fact]
+    public async Task Executar_DeveRetornarFalso_QuandoGeracaoPdfLancarExcecao()
+    {
+        ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
+        _pdf.Setup(x => x.Executar(It.IsAny<RelatorioConsolidadoSondagemDto>()))
+            .ThrowsAsync(new InvalidOperationException("falha pdf"));
+
+        var resultado = await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(ConsolidadoRelatorioTesteHelper.MensagemPadrao()));
+
+        resultado.Should().BeFalse();
+        _sgp.Verify(x => x.FinalizarSolicitacaoRelatorioAsync(It.IsAny<FinalizarSolicitacaoRelatorioDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Executar_DeveRetornarFalso_QuandoExtensaoForXlsx()
+    {
+        ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
+        var msg = ConsolidadoRelatorioTesteHelper.MensagemPadrao((int)ExtensaoRelatorio.Xlsx);
+
+        var resultado = await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(msg));
+
+        resultado.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Executar_DeveConcluirSemPdf_QuandoExtensaoNaoForPdfOuXlsx()
+    {
+        ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
+        var msg = ConsolidadoRelatorioTesteHelper.MensagemPadrao((int)ExtensaoRelatorio.Html);
+
+        var resultado = await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(msg));
+
+        resultado.Should().BeTrue();
+        _pdf.Verify(x => x.Executar(It.IsAny<RelatorioConsolidadoSondagemDto>()), Times.Never);
+        _sgp.Verify(x => x.FinalizarSolicitacaoRelatorioAsync(
+            It.Is<FinalizarSolicitacaoRelatorioDto>(f => f.UrlRelatorio == string.Empty)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Executar_DevePublicarNotificacaoComTextoAgrupamento_QuandoPdf()
+    {
+        ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
+        await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(ConsolidadoRelatorioTesteHelper.MensagemPadrao()));
+
+        _mensageria.Verify(x => x.Publicar(
+            It.Is<MensagemRabbit>(m =>
+                m.Mensagem != null &&
+                m.Mensagem.GetType() == typeof(MensagemRelatorioProntoDto) &&
+                ((MensagemRelatorioProntoDto)m.Mensagem).MensagemUsuario.Contains("Por raça e gênero")),
+            RotasRabbit.RotaRelatoriosProntosSgp,
+            ExchangeRabbit.Sgp,
+            It.IsAny<string>()), Times.Once);
+    }
+
+    private void ConfigurarFluxo(RelatorioConsolidadoSondagemDto retorno)
+    {
+        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()))
+            .ReturnsAsync(retorno);
+        _api.Setup(x => x.ObterProficienciaPorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProficienciaDto { Nome = "P" });
+        _eol.Setup(x => x.ObterDadosUsuarioAsync(It.IsAny<string>()))
+            .ReturnsAsync(new DadosUsuarioDto { Nome = "U" });
+        _componente.Setup(x => x.ObterPorIdAsync(It.IsAny<int>()))
+            .ReturnsAsync(new ComponenteCurricular { Nome = "C" });
+        _sgp.Setup(x => x.FinalizarSolicitacaoRelatorioAsync(It.IsAny<FinalizarSolicitacaoRelatorioDto>()))
+            .Returns(Task.CompletedTask);
+        _mensageria.Setup(x => x.Publicar(It.IsAny<MensagemRabbit>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(true);
+        _pdf.Setup(x => x.Executar(It.IsAny<RelatorioConsolidadoSondagemDto>())).ReturnsAsync("url");
+        _racas.Setup(x => x.ObterTodosAsync()).ReturnsAsync([]);
+        _generos.Setup(x => x.ObterTodosAsync()).ReturnsAsync([]);
+    }
+}
+
 public class RelatorioSondagemConsolidadoQuestaoUseCaseTeste
 {
     private readonly Mock<IServicoSondagemApiClient> _api = new();
