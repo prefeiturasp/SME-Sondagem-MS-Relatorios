@@ -75,6 +75,15 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
                 .ToList();
         }
 
+        if (firstResposta?.AnosTurma?.Any() == true)
+        {
+            var source = questao.TotaisPorAnoTurma ?? firstResposta.AnosTurma;
+            return source
+                .OrderBy(a => a.AnoTurma)
+                .Select(a => new ColDefinition(a.AnoTurma.ToString(), a.AnoTurma.ToString()))
+                .ToList();
+        }
+
         return [];
     }
 
@@ -89,16 +98,17 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
     }
 
     private static (int Quantidade, double Percentual)? GetValorCelula(RelatorioConsolidadoRespostaDto resposta, string key) =>
-        ResolverValor(resposta.GenerosComRacas, resposta.Generos, resposta.Racas, resposta.Bimestres, key);
+        ResolverValor(resposta.GenerosComRacas, resposta.Generos, resposta.Racas, resposta.Bimestres, resposta.AnosTurma, key);
 
     private static (int Quantidade, double Percentual)? GetValorTotal(RelatorioConsolidadoQuestaoDto questao, string key) =>
-        ResolverValor(questao.TotaisPorGeneroComRacas, questao.TotaisPorGenero, questao.TotaisPorRaca, questao.TotaisPorBimestre, key);
+        ResolverValor(questao.TotaisPorGeneroComRacas, questao.TotaisPorGenero, questao.TotaisPorRaca, questao.TotaisPorBimestre, questao.TotaisPorAnoTurma, key);
 
     private static (int Quantidade, double Percentual)? ResolverValor(
         IEnumerable<RelatorioConsolidadoGeneroRacaDto>? generosComRacas,
         IEnumerable<RelatorioConsolidadoGeneroDto>? generos,
         IEnumerable<RelatorioConsolidadoRacaDto>? racas,
         IEnumerable<RelatorioConsolidadoBimestreDto>? bimestres,
+        IEnumerable<RelatorioConsolidadoAnoTurmaDto>? anosturma,
         string key)
     {
         if (generosComRacas != null)
@@ -125,6 +135,11 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         {
             var b = bimestres.FirstOrDefault(b => b.Bimestre == key);
             return b != null ? (b.Quantidade, b.Percentual) : null;
+        }
+        if (anosturma != null)
+        {
+            var a = anosturma.FirstOrDefault(a => a.AnoTurma.ToString() == key);
+            return a != null ? (a.Quantidade, a.Percentual) : null;
         }
         return null;
     }
