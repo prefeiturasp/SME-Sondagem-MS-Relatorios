@@ -27,10 +27,19 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
 
         EscreverCabecalhoConsolidado(sheet, relatorioConsolidadoSondagemDto);
 
-        var ultimaLinha = EscreverDadosQuestoes(sheet, 8, relatorioConsolidadoSondagemDto);
+        var (ultimaLinha, questaoPositions, _) = EscreverDadosQuestoes(sheet, 8, relatorioConsolidadoSondagemDto);
 
         const int dataColStart = 100;
-        var graficos = ObterGraficosDasQuestoes(relatorioConsolidadoSondagemDto);
+        var graficosBase = ObterGraficosDasQuestoes(relatorioConsolidadoSondagemDto);
+        var graficosTemp = Enumerable.Range(0, graficosBase.Count)
+            .Select(i => (graficosBase[i].Titulo, graficosBase[i].Dados, questaoPositions[i].ColStart, questaoPositions[i].ColCount, 0))
+            .ToList();
+        var bandas = ComputarBandas(graficosTemp);
+        var graficos = graficosTemp
+            .Select((g, i) => (g.Titulo, g.Dados, g.ColStart, g.ColCount, bandas[i]))
+            .ToList();
+
+        EscreverCabecalhoGraficos(sheet, graficos, ultimaLinha + 2);
         EscreverDadosGraficos(sheet, graficos, ultimaLinha + 2, dataColStart);
 
         using var stream = new MemoryStream();
@@ -41,6 +50,39 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         stream.Position = 0;
 
         return await EnviarExcelParaMinio(stream, relatorioConsolidadoSondagemDto.CodigoCorrelacao);
+    }
+
+    private static int[] ComputarBandas(List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount, int Placeholder)> graficos)
+    {
+        var bands = new List<List<(int From, int To)>>();
+        var result = new int[graficos.Count];
+
+        for (int i = 0; i < graficos.Count; i++)
+        {
+            int fromCol = graficos[i].ColStart - 1;
+            int toCol   = fromCol + graficos[i].ColCount;
+
+            int banda = -1;
+            for (int b = 0; b < bands.Count; b++)
+            {
+                if (bands[b].All(r => toCol <= r.From || fromCol >= r.To))
+                {
+                    banda = b;
+                    break;
+                }
+            }
+
+            if (banda == -1)
+            {
+                banda = bands.Count;
+                bands.Add([]);
+            }
+
+            bands[banda].Add((fromCol, toCol));
+            result[i] = banda;
+        }
+
+        return result;
     }
 
     private static List<ColDefinition> ExtrairColunas(RelatorioConsolidadoQuestaoDto questao)
@@ -184,10 +226,13 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         if (negrito) cell.Style.Font.Bold = true;
     }
 
-private static int EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, RelatorioConsolidadoSondagemDto dto)
+private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositions, List<int> YearGroups) EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, RelatorioConsolidadoSondagemDto dto)
     {
         var yearState = new Dictionary<string, (int StartRow, int NextCol)>(StringComparer.OrdinalIgnoreCase);
+        var yearGroupIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         int maxRowUsed = startRow;
+        var questaoPositions = new List<(int ColStart, int ColCount)>();
+        var yearGroups = new List<int>();
 
         var corAlternada = XLColor.FromHtml("#F2F2F2");
         var corTotal     = XLColor.FromHtml("#D9D9D9");
@@ -200,9 +245,18 @@ private static int EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, Relat
         foreach (var questao in dto.Questoes)
         {
             var colunas = todasColunas[questaoIdx++];
-            if (colunas.Count == 0) continue;
-
             var year = ExtrairAno(questao.QuestaoNome);
+
+            if (!yearGroupIndex.ContainsKey(year))
+                yearGroupIndex[year] = yearGroupIndex.Count;
+
+            yearGroups.Add(yearGroupIndex[year]);
+
+            if (colunas.Count == 0)
+            {
+                questaoPositions.Add((1, 5));
+                continue;
+            }
 
             if (!yearState.ContainsKey(year))
                 yearState[year] = (StartRow: maxRowUsed, NextCol: 1);
@@ -215,13 +269,14 @@ private static int EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, Relat
             EscreverDadosBloco(sheet, blocoRow + headerRows, blocoCol, questao, colunas, corAlternada);
             EscreverTotalBloco(sheet, blocoRow + headerRows + numRespostas, blocoCol, questao, colunas, corTotal);
 
+            questaoPositions.Add((blocoCol, 1 + colunas.Count));
             yearState[year] = (blocoRow, blocoCol + blockStep);
 
             int blockHeight = headerRows + numRespostas + 1 + 1;
             maxRowUsed = Math.Max(maxRowUsed, blocoRow + blockHeight);
         }
 
-        return maxRowUsed;
+        return (maxRowUsed, questaoPositions, yearGroups);
     }
 
     private static string ExtrairAno(string questaoNome)
@@ -319,7 +374,7 @@ private static int EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, Relat
         EscreverColunaValores(sheet, linha, colStart, colunas, colDef => GetValorTotal(questao, colDef.Key), corTotal, negrito: true);
     }
 
-    private static void EscreverDadosGraficos(IXLWorksheet sheet, List<(string Titulo, List<GraficoDto> Dados)> graficos, int dataRowBase, int dataColStart)
+    private static void EscreverDadosGraficos(IXLWorksheet sheet, List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount, int RowGroup)> graficos, int dataRowBase, int dataColStart)
     {
         for (int i = 0; i < graficos.Count; i++)
         {
@@ -348,5 +403,47 @@ private static int EscreverDadosQuestoes(IXLWorksheet sheet, int startRow, Relat
                     .ToList()
             ))
             .ToList();
+    }
+
+    private static void EscreverCabecalhoGraficos(IXLWorksheet sheet, List<(string Titulo, List<GraficoDto> Dados, int ColStart, int ColCount, int RowGroup)> graficos, int linhaInicio)
+    {
+        for (int i = 0; i < graficos.Count; i++)
+        {
+            var (titulo, _, colStart, colCount, rowGroup) = graficos[i];
+            int colEnd = colStart + colCount - 1;
+            int linha = linhaInicio + rowGroup * 26;
+            double totalWidth = 30.0 + (colCount - 1) * 15.0;
+
+            if (colCount > 1) sheet.Range(linha, colStart, linha, colEnd).Merge();
+            var cell1 = sheet.Cell(linha, colStart);
+            cell1.Value = "Gráfico da Sondagem";
+            cell1.Style.Font.Bold = true;
+            cell1.Style.Font.FontSize = 16;
+            cell1.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            AjustarAlturaLinha(sheet, linha, cell1.Value.ToString(), totalWidth);
+
+            if (colCount > 1) sheet.Range(linha + 1, colStart, linha + 1, colEnd).Merge();
+            var cell2 = sheet.Cell(linha + 1, colStart);
+            var tituloSemAno = RemoverAno(titulo);
+            cell2.Value = tituloSemAno;
+            cell2.Style.Font.Bold = true;
+            cell2.Style.Font.FontSize = 13;
+            cell2.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            AjustarAlturaLinha(sheet, linha + 1, tituloSemAno, totalWidth);
+
+            if (colCount > 1) sheet.Range(linha + 2, colStart, linha + 2, colEnd).Merge();
+            var cell3 = sheet.Cell(linha + 2, colStart);
+            const string descricao = "O gráfico apresenta o total de alunos em cada pergunta, sem aplicar recortes por raça, gênero ou raça e gênero.";
+            cell3.Value = descricao;
+            cell3.Style.Alignment.WrapText = true;
+            cell3.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            AjustarAlturaLinha(sheet, linha + 2, descricao, totalWidth);
+        }
+    }
+
+    private static string RemoverAno(string questaoNome)
+    {
+        var inicio = questaoNome.LastIndexOf('(');
+        return inicio > 0 ? questaoNome[..inicio].Trim() : questaoNome;
     }
 }

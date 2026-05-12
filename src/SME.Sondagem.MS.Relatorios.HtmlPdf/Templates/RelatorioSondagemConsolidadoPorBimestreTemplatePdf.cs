@@ -1,7 +1,6 @@
 using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using System.Web;
-using System.Linq;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
@@ -17,6 +16,8 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplatePdf
     protected override List<string> ObterOrdemColunas(RelatorioConsolidadoSondagemDto dto) =>
         dto.BimestresDisponiveis?
             .Select(b => b.Descricao)
+            .Where(descricao => !string.IsNullOrWhiteSpace(descricao))
+            .Select(descricao => descricao!)
             .ToList() ?? [];
 
     protected override string FormatarCabecalhoColuna(string nomeColuna) => nomeColuna;

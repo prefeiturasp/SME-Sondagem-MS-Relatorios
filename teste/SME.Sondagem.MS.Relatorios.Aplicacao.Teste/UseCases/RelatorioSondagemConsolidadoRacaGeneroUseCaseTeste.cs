@@ -16,7 +16,10 @@ namespace SME.Sondagem.MS.Relatorios.Aplicacao.Teste.UseCases;
 public class RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste
 {
     private readonly Mock<IServicoSondagemApiClient> _api = new();
+    private readonly Mock<IRelatorioSondagemConsolidadoRacaGeneroPdf> _pdf = new();
     private readonly Mock<IRelatorioSondagemConsolidadoGenericoExcel> _excel = new();
+    private readonly Mock<IRepositorioRacaCor> _racas = new();
+    private readonly Mock<IRepositorioGeneroSexo> _generos = new();
     private readonly Mock<IServicoSgpApiClient> _sgp = new();
     private readonly Mock<IServicoEolApiClient> _eol = new();
     private readonly Mock<IServicoMensageria> _mensageria = new();
@@ -28,7 +31,10 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste
     {
         _sut = new RelatorioSondagemConsolidadoRacaGeneroUseCase(
             _api.Object,
+            _pdf.Object,
             _excel.Object,
+            _racas.Object,
+            _generos.Object,
             _sgp.Object,
             _eol.Object,
             _mensageria.Object,
@@ -56,14 +62,15 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste
     }
 
     [Fact]
-    public async Task Executar_DeveRetornarFalso_QuandoExtensaoForPdf()
+    public async Task Executar_DeveRetornarVerdadeiro_QuandoExtensaoForPdf()
     {
         ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
         var msg = ConsolidadoRelatorioTesteHelper.MensagemPadrao((int)ExtensaoRelatorio.Pdf);
 
         var resultado = await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(msg));
 
-        resultado.Should().BeFalse();
+        resultado.Should().BeTrue();
+        _pdf.Verify(x => x.Executar(It.IsAny<RelatorioConsolidadoSondagemDto>()), Times.Once);
         _excel.Verify(x => x.GerarRelatorioExcelAsync(It.IsAny<RelatorioConsolidadoSondagemDto>()), Times.Never);
     }
 
@@ -122,9 +129,11 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste
         capturado.ComponenteCurricular.Should().Be("Língua Portuguesa");
         capturado.Titulo.Should().Be("Proficiência X consolidado");
         capturado.Usuario.Should().Be("Fulano (RF123)");
+        capturado.Genero.Should().Be("Todos");
+        capturado.Raca.Should().Be("Todas");
 
         _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(
-            It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()), Times.Once);
+            It.IsAny<FiltroRelatorioSondagemDto>()), Times.Once);
         _mensageria.Verify(x => x.Publicar(
             It.Is<MensagemRabbit>(m =>
                 m.Mensagem != null &&
@@ -236,7 +245,7 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste
 
     private void ConfigurarFluxo(RelatorioConsolidadoSondagemDto retorno)
     {
-        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()))
+        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(It.IsAny<FiltroRelatorioSondagemDto>()))
             .ReturnsAsync(retorno);
         _api.Setup(x => x.ObterProficienciaPorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProficienciaDto { Nome = "Proficiência X" });
@@ -248,7 +257,10 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCaseTeste
             .Returns(Task.CompletedTask);
         _mensageria.Setup(x => x.Publicar(It.IsAny<MensagemRabbit>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(true);
+        _pdf.Setup(x => x.Executar(It.IsAny<RelatorioConsolidadoSondagemDto>())).ReturnsAsync("https://pdf");
         _excel.Setup(x => x.GerarRelatorioExcelAsync(It.IsAny<RelatorioConsolidadoSondagemDto>()))
             .ReturnsAsync("https://excel");
+        _racas.Setup(x => x.ObterTodosAsync()).ReturnsAsync([]);
+        _generos.Setup(x => x.ObterTodosAsync()).ReturnsAsync([]);
     }
 }

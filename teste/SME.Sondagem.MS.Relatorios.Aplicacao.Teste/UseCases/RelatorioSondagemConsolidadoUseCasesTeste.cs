@@ -20,15 +20,15 @@ internal static class ConsolidadoRelatorioTesteHelper
 {
     internal static readonly JsonSerializerOptions JsonOptions = JsonSerializerExtensions.ObterConfigSerializer();
 
-    internal static MensagemRabbit CriarMensagemRabbit(MensagemSondagemPorTurmaDto dto, Guid? correlacao = null)
+    internal static MensagemRabbit CriarMensagemRabbit(MensagemSondagemDto dto, Guid? correlacao = null)
     {
         var json = JsonSerializer.Serialize(dto, JsonOptions);
         return new MensagemRabbit(json, correlacao ?? Guid.NewGuid());
     }
 
-    internal static MensagemSondagemPorTurmaDto MensagemPadrao(int extensaoRelatorio = (int)ExtensaoRelatorio.Pdf) => new()
+    internal static MensagemSondagemDto MensagemPadrao(int extensaoRelatorio = (int)ExtensaoRelatorio.Pdf) => new()
     {
-        FiltrosUsados = new FiltroRelatorioSondagemPorTurmaDto
+        FiltrosUsados = new FiltroRelatorioSondagemDto
         {
             ExtensaoRelatorio = extensaoRelatorio,
             ProficienciaId = 10,
@@ -153,7 +153,7 @@ public class RelatorioSondagemConsolidadoRacaUseCaseTeste
         capturado.Usuario.Should().Be("Fulano (RF123)");
         capturado.RacasDisponiveis.Should().BeEquivalentTo(listaRacas);
 
-        _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorRacaAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()), Times.Once);
+        _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorRacaAsync(It.IsAny<FiltroRelatorioSondagemDto>()), Times.Once);
         _racas.Verify(x => x.ObterTodosAsync(), Times.Once);
         _mensageria.Verify(x => x.Publicar(
             It.Is<MensagemRabbit>(m =>
@@ -207,7 +207,7 @@ public class RelatorioSondagemConsolidadoRacaUseCaseTeste
 
     private void ConfigurarFluxoSucessoApi(RelatorioConsolidadoSondagemDto retorno)
     {
-        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorRacaAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()))
+        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorRacaAsync(It.IsAny<FiltroRelatorioSondagemDto>()))
             .ReturnsAsync(retorno);
         _api.Setup(x => x.ObterProficienciaPorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProficienciaDto { Nome = "Proficiência X" });
@@ -287,7 +287,7 @@ public class RelatorioSondagemConsolidadoGeneroUseCaseTeste
         capturado!.GenerosDisponiveis.Should().BeEquivalentTo(lista);
         capturado.Agrupamento.Should().Be("Por gênero");
         capturado.Genero.Should().Be("Todos");
-        _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorGeneroAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()), Times.Once);
+        _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorGeneroAsync(It.IsAny<FiltroRelatorioSondagemDto>()), Times.Once);
         _generos.Verify(x => x.ObterTodosAsync(), Times.Once);
     }
 
@@ -323,7 +323,7 @@ public class RelatorioSondagemConsolidadoGeneroUseCaseTeste
 
     private void ConfigurarFluxo(RelatorioConsolidadoSondagemDto retorno)
     {
-        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorGeneroAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()))
+        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorGeneroAsync(It.IsAny<FiltroRelatorioSondagemDto>()))
             .ReturnsAsync(retorno);
         _api.Setup(x => x.ObterProficienciaPorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProficienciaDto { Nome = "P" });
@@ -394,7 +394,7 @@ public class RelatorioSondagemConsolidadoQuestaoUseCaseTeste
 
         capturado.Should().NotBeNull();
         capturado!.Agrupamento.Should().Be("Por questão");
-        _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorQuestaoAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()), Times.Once);
+        _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorQuestaoAsync(It.IsAny<FiltroRelatorioSondagemDto>()), Times.Once);
         _pdf.Verify(x => x.Executar(It.IsAny<RelatorioConsolidadoSondagemDto>()), Times.Once);
     }
 
@@ -432,7 +432,7 @@ public class RelatorioSondagemConsolidadoQuestaoUseCaseTeste
 
     private void ConfigurarFluxo(RelatorioConsolidadoSondagemDto retorno)
     {
-        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorQuestaoAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()))
+        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorQuestaoAsync(It.IsAny<FiltroRelatorioSondagemDto>()))
             .ReturnsAsync(retorno);
         _api.Setup(x => x.ObterProficienciaPorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProficienciaDto { Nome = "P" });
@@ -492,7 +492,7 @@ public class RelatorioSondagemConsolidadoBimestreUseCaseTeste
     [Fact]
     public async Task Executar_DeveCarregarBimestresDisponiveis_QuandoPdf()
     {
-        var lista = new List<BimestreEntidade> { new BimestreEntidade(1, "1º") };
+        var lista = new List<BimestreEntidade> { new BimestreEntidade() };
         ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
         _bimestres.Setup(x => x.ObterTodosAsync()).ReturnsAsync(lista);
 
@@ -506,7 +506,7 @@ public class RelatorioSondagemConsolidadoBimestreUseCaseTeste
         capturado.Should().NotBeNull();
         capturado!.BimestresDisponiveis.Should().BeEquivalentTo(lista);
         capturado.Agrupamento.Should().Be("Por bimestre");
-        _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorBimestreAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()), Times.Once);
+        _api.Verify(x => x.ObterDadosRelatorioConsolidadoPorBimestreAsync(It.IsAny<FiltroRelatorioSondagemDto>()), Times.Once);
         _bimestres.Verify(x => x.ObterTodosAsync(), Times.Once);
     }
 
@@ -569,7 +569,7 @@ public class RelatorioSondagemConsolidadoBimestreUseCaseTeste
 
     private void ConfigurarFluxo(RelatorioConsolidadoSondagemDto retorno)
     {
-        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorBimestreAsync(It.IsAny<FiltroRelatorioSondagemPorTurmaDto>()))
+        _api.Setup(x => x.ObterDadosRelatorioConsolidadoPorBimestreAsync(It.IsAny<FiltroRelatorioSondagemDto>()))
             .ReturnsAsync(retorno);
         _api.Setup(x => x.ObterProficienciaPorIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProficienciaDto { Nome = "P" });
