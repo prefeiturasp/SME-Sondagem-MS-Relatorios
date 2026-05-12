@@ -209,10 +209,11 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         {
             var valor = obterValor(colDef);
             var cell  = sheet.Cell(linha, col);
-            cell.Value = valor != null ? string.Format(FormatoValor, valor.Value.Quantidade, valor.Value.Percentual) : "Vazio";
+            bool vazio = valor == null || valor.Value.Quantidade == 0;
+            cell.Value = vazio ? "Vazio" : string.Format(FormatoValor, valor!.Value.Quantidade, valor.Value.Percentual);
             cell.Style.Fill.BackgroundColor = corFundo;
             EstilarCelulaDadosConsolidado(cell, negrito);
-            if (valor == null) cell.Style.Font.FontColor = XLColor.Gray;
+            if (vazio) cell.Style.Font.FontColor = XLColor.LightGray;
             col++;
         }
     }

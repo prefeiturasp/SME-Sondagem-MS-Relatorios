@@ -57,8 +57,14 @@ public static class ExtensionMethods
 
             if (valor is string strValor && string.IsNullOrWhiteSpace(strValor)) continue;
 
-            if (valor is IEnumerable && valor is not string)
+            if (valor is IEnumerable enumerable && valor is not string)
             {
+                foreach (var item in enumerable)
+                {
+                    var itemStr = item?.ToString();
+                    if (itemStr != null)
+                        baseUrl = QueryHelpers.AddQueryString(baseUrl, prop.Name, itemStr);
+                }
                 continue;
             }
 
