@@ -51,7 +51,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
     protected virtual bool ExibirLinhaFiltroDemografico => true;
 
-    private string GerarBlocosRelatorio(RelatorioConsolidadoSondagemDto dto)
+    protected virtual string GerarBlocosRelatorio(RelatorioConsolidadoSondagemDto dto)
     {
         var sb = new StringBuilder();
 
@@ -90,8 +90,6 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
         var sb = new StringBuilder();
         sb.AppendLine("<div class=\"secao-tabela\">");
-        if (ExibirTituloQuestao)
-            sb.AppendLine($"    <h3>{HttpUtility.HtmlEncode(questao.QuestaoNome)}</h3>");
 
         sb.AppendLine("    <table class=\"main-table\">");
 
@@ -173,7 +171,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
-    protected virtual string ObterRotuloColunaNivel(RelatorioConsolidadoQuestaoDto questao) => "Nível";
+    protected virtual string ObterRotuloColunaNivel(RelatorioConsolidadoQuestaoDto questao) => questao.QuestaoNome;
 
     protected virtual string GerarCorpoTabela(RelatorioConsolidadoQuestaoDto questao, List<string> colunas)
     {
