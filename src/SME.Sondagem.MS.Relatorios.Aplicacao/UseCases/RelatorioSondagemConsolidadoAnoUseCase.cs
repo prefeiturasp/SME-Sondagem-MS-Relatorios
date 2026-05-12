@@ -28,7 +28,7 @@ public class RelatorioSondagemConsolidadoAnoUseCase
 
     protected override string ContextoRelatorioParaLog => "por ano";
 
-    protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemPorTurmaDto filtros) =>
+    protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemGenericoDto filtros) =>
         ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorAnoAsync(filtros);
 
     protected override Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>

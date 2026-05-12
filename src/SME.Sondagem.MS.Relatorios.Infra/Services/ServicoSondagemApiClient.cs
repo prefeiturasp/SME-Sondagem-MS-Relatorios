@@ -34,7 +34,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RetornoApiSondagemQuestionarioDto(string.Empty, string.Empty, string.Empty, new(), new(), 0);
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaAsync(FiltroRelatorioSondagemGenericoDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
@@ -51,7 +51,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorGeneroAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorGeneroAsync(FiltroRelatorioSondagemGenericoDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
@@ -68,7 +68,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorAnoAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorAnoAsync(FiltroRelatorioSondagemGenericoDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
@@ -85,7 +85,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorBimestreAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorBimestreAsync(FiltroRelatorioSondagemGenericoDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
@@ -102,7 +102,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorQuestaoAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorQuestaoAsync(FiltroRelatorioSondagemGenericoDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
@@ -119,7 +119,7 @@ public class ServicoSondagemApiClient : IServicoSondagemApiClient
                  ?? new RelatorioConsolidadoSondagemDto();
     }
 
-    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(FiltroRelatorioSondagemPorTurmaDto filtroRelatorio)
+    public async Task<RelatorioConsolidadoSondagemDto> ObterDadosRelatorioConsolidadoPorRacaGeneroAsync(FiltroRelatorioSondagemGenericoDto filtroRelatorio)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoSondagemConstantes.SERVICO);
 
