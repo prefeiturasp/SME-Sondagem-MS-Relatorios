@@ -291,9 +291,9 @@ private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositi
 
     private static void ConfigurarLarguraColunas(IXLWorksheet sheet, int colStart, int numColunas)
     {
-        sheet.Column(colStart).Width = 30;
+        sheet.Column(colStart).Width = 42;
         for (int i = 1; i <= numColunas; i++)
-            sheet.Column(colStart + i).Width = 15;
+            sheet.Column(colStart + i).Width = 21;
     }
 
     private static int EscreverCabecalhoBloco(IXLWorksheet sheet, int linha, int colStart, string questaoNome, List<ColDefinition> colunas)
