@@ -36,7 +36,7 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         using var logoStream = ObterLogoPrefeitura();
         sheet.AddPicture(logoStream)
             .MoveTo(sheet.Cell(1, 1))
-            .WithSize(220, 85);
+            .WithSize(220, 72);
 
         sheet.Row(2).Height = 25;
         sheet.Range(2, 1, 2, 6).Merge();

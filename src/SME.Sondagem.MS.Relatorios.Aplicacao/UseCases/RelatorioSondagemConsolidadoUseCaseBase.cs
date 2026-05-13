@@ -169,12 +169,17 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
                 dadosRelatorio.UnidadeEducacional = $"{escola.SiglaTipoEscola} - {escola.NomeEscola}";
             else if (!string.IsNullOrWhiteSpace(filtros.Ue))
                 dadosRelatorio.UnidadeEducacional = filtros.Ue;
+            else if (!string.IsNullOrWhiteSpace(filtros.UeCodigo))
+                dadosRelatorio.UnidadeEducacional = filtros.UeCodigo;
             else
                 dadosRelatorio.UnidadeEducacional = ValorTodas;
         }
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.AnoTurma))
-            dadosRelatorio.AnoTurma = FormatarAnoTurma(filtros.AnoTurma);
+        {
+            var anos = filtros.AnoTurma.Count > 0 ? filtros.AnoTurma : (filtros.Ano > 0 ? [filtros.Ano] : []);
+            dadosRelatorio.AnoTurma = FormatarAnoTurma(anos);
+        }
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Proficiencia))
             dadosRelatorio.Proficiencia = proficienciaNome;
@@ -207,7 +212,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         if (anos == null || anos.Count == 0)
             return ValorTodos;
 
-        var partes = anos.Order().Select(a => $"{a}º").ToList();
+        var partes = anos.Order().Select(a => $"{a}°").ToList();
 
         if (partes.Count == 1)
             return $"{partes[0]} ANO";
