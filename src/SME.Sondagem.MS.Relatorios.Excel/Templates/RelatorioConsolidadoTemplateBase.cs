@@ -29,14 +29,14 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         var dtoJson = JsonSerializer.Serialize(dto, _debugJsonOptions);
         _ = dtoJson;
 
-        sheet.Row(1).Height = 65;
+        sheet.Row(1).Height = 70;
         sheet.Range(1, 1, 1, 6).Merge();
         sheet.Cell(1, 1).Style.Fill.BackgroundColor = XLColor.White;
 
         using var logoStream = ObterLogoPrefeitura();
         sheet.AddPicture(logoStream)
             .MoveTo(sheet.Cell(1, 1))
-            .WithSize(220, 60);
+            .WithSize(220, 85);
 
         sheet.Row(2).Height = 25;
         sheet.Range(2, 1, 2, 6).Merge();
