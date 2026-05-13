@@ -87,15 +87,23 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
     private async Task<RelatorioConsolidadoSondagemDto> MontarDadosRelatorioAsync(MensagemSondagemDto mensagem, Guid codigoCorrelacao)
     {
-        var dadosTask = ObterRelatorioConsolidadoAsync(mensagem.FiltrosUsados);
+        var filtros = mensagem.FiltrosUsados;
+        var dadosTask = ObterRelatorioConsolidadoAsync(filtros);
         var usuarioTask = _servicoEolApiClient.ObterDadosUsuarioAsync(mensagem.UsuarioQueSolicitou);
-        var profTask = ServicoSondagemApiClient.ObterProficienciaPorIdAsync(mensagem.FiltrosUsados.ProficienciaId);
-        var componentesCurricularTask = _repositorioComponenteCurricular.ObterPorIdAsync(mensagem.FiltrosUsados.ComponenteCurricularId);
+        var profTask = ServicoSondagemApiClient.ObterProficienciaPorIdAsync(filtros.ProficienciaId);
+        var componentesCurricularTask = _repositorioComponenteCurricular.ObterPorIdAsync(filtros.ComponenteCurricularId);
 
-        await Task.WhenAll(dadosTask, usuarioTask, profTask, componentesCurricularTask);
+        Task<List<EscolaDto>>? escolaTask = !string.IsNullOrWhiteSpace(filtros.Ue)
+            ? _servicoEolApiClient.ObterDadosDreAsync([filtros.Ue])
+            : null;
 
-        var dadosRelatorio = await dadosTask ?? new RelatorioConsolidadoSondagemDto();
-        PreencherCabecalho(dadosRelatorio, mensagem, await usuarioTask, await profTask, await componentesCurricularTask, codigoCorrelacao);
+        var allTasks = new List<Task> { dadosTask, usuarioTask, profTask, componentesCurricularTask };
+        if (escolaTask != null) allTasks.Add(escolaTask);
+        await Task.WhenAll(allTasks);
+
+        var dadosRelatorio = dadosTask.Result ?? new RelatorioConsolidadoSondagemDto();
+        var escola = escolaTask?.Result.FirstOrDefault();
+        PreencherCabecalho(dadosRelatorio, mensagem, usuarioTask.Result, profTask.Result, componentesCurricularTask.Result, escola, codigoCorrelacao);
 
         return dadosRelatorio;
     }
@@ -106,13 +114,14 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         DadosUsuarioDto? usuario,
         ProficienciaDto? proficiencia,
         ComponenteCurricular componenteCurricular,
+        EscolaDto? escola,
         Guid codigoCorrelacao)
     {
         var filtros = mensagem.FiltrosUsados;
         var proficienciaNome = proficiencia?.Nome ?? string.Empty;
 
         AtribuirIdentificacaoCabecalho(dadosRelatorio, mensagem, filtros, codigoCorrelacao);
-        AplicarFallbacksCabecalhoApartirDosFiltros(dadosRelatorio, filtros, proficienciaNome);
+        AplicarFallbacksCabecalhoApartirDosFiltros(dadosRelatorio, filtros, proficienciaNome, escola);
         GarantirMetadadoDemograficoPadrao(dadosRelatorio);
         FinalizarCabecalhoUsuarioTituloComponente(dadosRelatorio, mensagem, usuario, proficienciaNome, componenteCurricular);
     }
@@ -132,7 +141,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     private void AplicarFallbacksCabecalhoApartirDosFiltros(
         RelatorioConsolidadoSondagemDto dadosRelatorio,
         FiltroRelatorioSondagemDto filtros,
-        string proficienciaNome)
+        string proficienciaNome,
+        EscolaDto? escola)
     {
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Agrupamento))
             dadosRelatorio.Agrupamento = AgrupamentoPadrao;
@@ -144,19 +154,48 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
             dadosRelatorio.Modalidade = ((Modalidade)filtros.Modalidade).ShortName() ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Dre))
-            dadosRelatorio.Dre = ValorTodas;
+            dadosRelatorio.Dre = ResolverDre(filtros, escola);
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.UnidadeEducacional))
-            dadosRelatorio.UnidadeEducacional = string.IsNullOrWhiteSpace(filtros.UeCodigo) ? ValorTodas : filtros.UeCodigo;
+            dadosRelatorio.UnidadeEducacional = ResolverUnidadeEducacional(filtros, escola);
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.AnoTurma))
-            dadosRelatorio.AnoTurma = filtros.Ano > 0 ? $"{filtros.Ano}° ANO" : ValorTodos;
+            dadosRelatorio.AnoTurma = FormatarAnoTurma(ResolverAnos(filtros));
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Proficiencia))
             dadosRelatorio.Proficiencia = proficienciaNome;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Bimestre))
             dadosRelatorio.Bimestre = DescricaoBimestre(filtros.BimestreId);
+    }
+
+    private static string ResolverDre(FiltroRelatorioSondagemDto filtros, EscolaDto? escola)
+    {
+        if (escola != null && !string.IsNullOrWhiteSpace(escola.NomeDRE))
+            return escola.NomeDRE;
+        if (!string.IsNullOrWhiteSpace(filtros.Dre))
+            return filtros.Dre;
+        return ValorTodas;
+    }
+
+    private static string ResolverUnidadeEducacional(FiltroRelatorioSondagemDto filtros, EscolaDto? escola)
+    {
+        if (escola != null)
+            return $"{escola.SiglaTipoEscola} - {escola.NomeEscola}";
+        if (!string.IsNullOrWhiteSpace(filtros.Ue))
+            return filtros.Ue;
+        if (!string.IsNullOrWhiteSpace(filtros.UeCodigo))
+            return filtros.UeCodigo;
+        return ValorTodas;
+    }
+
+    private static List<int> ResolverAnos(FiltroRelatorioSondagemDto filtros)
+    {
+        if (filtros.AnoTurma.Count > 0)
+            return filtros.AnoTurma;
+        if (filtros.Ano > 0)
+            return [filtros.Ano];
+        return [];
     }
 
     private static void FinalizarCabecalhoUsuarioTituloComponente(
@@ -176,6 +215,19 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
             dadosRelatorio.ComponenteCurricular = componenteCurricular.Nome ?? string.Empty;
 
         dadosRelatorio.Titulo = $"{proficienciaNome} consolidado";
+    }
+
+    protected static string FormatarAnoTurma(List<int> anos)
+    {
+        if (anos == null || anos.Count == 0)
+            return ValorTodos;
+
+        var partes = anos.Order().Select(a => $"{a}°").ToList();
+
+        if (partes.Count == 1)
+            return $"{partes[0]} ANO";
+
+        return string.Join(", ", partes[..^1]) + $" e {partes[^1]} ANO";
     }
 
     protected static string DescricaoBimestre(int? bimestreId)
