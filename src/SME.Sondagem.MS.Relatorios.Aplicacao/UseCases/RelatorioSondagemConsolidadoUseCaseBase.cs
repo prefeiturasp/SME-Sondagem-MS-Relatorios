@@ -154,38 +154,48 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
             dadosRelatorio.Modalidade = ((Modalidade)filtros.Modalidade).ShortName() ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Dre))
-        {
-            if (escola != null && !string.IsNullOrWhiteSpace(escola.NomeDRE))
-                dadosRelatorio.Dre = escola.NomeDRE;
-            else if (!string.IsNullOrWhiteSpace(filtros.Dre))
-                dadosRelatorio.Dre = filtros.Dre;
-            else
-                dadosRelatorio.Dre = ValorTodas;
-        }
+            dadosRelatorio.Dre = ResolverDre(filtros, escola);
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.UnidadeEducacional))
-        {
-            if (escola != null)
-                dadosRelatorio.UnidadeEducacional = $"{escola.SiglaTipoEscola} - {escola.NomeEscola}";
-            else if (!string.IsNullOrWhiteSpace(filtros.Ue))
-                dadosRelatorio.UnidadeEducacional = filtros.Ue;
-            else if (!string.IsNullOrWhiteSpace(filtros.UeCodigo))
-                dadosRelatorio.UnidadeEducacional = filtros.UeCodigo;
-            else
-                dadosRelatorio.UnidadeEducacional = ValorTodas;
-        }
+            dadosRelatorio.UnidadeEducacional = ResolverUnidadeEducacional(filtros, escola);
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.AnoTurma))
-        {
-            var anos = filtros.AnoTurma.Count > 0 ? filtros.AnoTurma : (filtros.Ano > 0 ? [filtros.Ano] : []);
-            dadosRelatorio.AnoTurma = FormatarAnoTurma(anos);
-        }
+            dadosRelatorio.AnoTurma = FormatarAnoTurma(ResolverAnos(filtros));
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Proficiencia))
             dadosRelatorio.Proficiencia = proficienciaNome;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Bimestre))
             dadosRelatorio.Bimestre = DescricaoBimestre(filtros.BimestreId);
+    }
+
+    private static string ResolverDre(FiltroRelatorioSondagemDto filtros, EscolaDto? escola)
+    {
+        if (escola != null && !string.IsNullOrWhiteSpace(escola.NomeDRE))
+            return escola.NomeDRE;
+        if (!string.IsNullOrWhiteSpace(filtros.Dre))
+            return filtros.Dre;
+        return ValorTodas;
+    }
+
+    private static string ResolverUnidadeEducacional(FiltroRelatorioSondagemDto filtros, EscolaDto? escola)
+    {
+        if (escola != null)
+            return $"{escola.SiglaTipoEscola} - {escola.NomeEscola}";
+        if (!string.IsNullOrWhiteSpace(filtros.Ue))
+            return filtros.Ue;
+        if (!string.IsNullOrWhiteSpace(filtros.UeCodigo))
+            return filtros.UeCodigo;
+        return ValorTodas;
+    }
+
+    private static List<int> ResolverAnos(FiltroRelatorioSondagemDto filtros)
+    {
+        if (filtros.AnoTurma.Count > 0)
+            return filtros.AnoTurma;
+        if (filtros.Ano > 0)
+            return [filtros.Ano];
+        return [];
     }
 
     private static void FinalizarCabecalhoUsuarioTituloComponente(

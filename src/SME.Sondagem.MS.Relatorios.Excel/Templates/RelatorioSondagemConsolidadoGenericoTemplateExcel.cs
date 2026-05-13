@@ -11,6 +11,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
 {
     private const int ColGap = 1;
     private const string FormatoValor = "{0} ({1:F1}%)";
+    private const string ChaveTotal = "__total__";
 
     private static readonly Func<RelatorioConsolidadoRacaDto, int> OrdemRaca =
         r => r.Raca.Trim().Contains(' ') ? 1 : 0;
@@ -125,8 +126,8 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         {
             return
             [
-                new("Estudantes", "__total__", null, TipoValorColuna.Quantidade),
-                new("%",          "__total__", null, TipoValorColuna.Percentual)
+                new("Estudantes", ChaveTotal, null, TipoValorColuna.Quantidade),
+                new("%",          ChaveTotal, null, TipoValorColuna.Percentual)
             ];
         }
 
@@ -144,12 +145,12 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
     }
 
     private static (int Quantidade, double Percentual)? GetValorCelula(RelatorioConsolidadoRespostaDto resposta, string key) =>
-        key == "__total__"
+        key == ChaveTotal
             ? (resposta.Total, resposta.Percentual)
             : ResolverValor(resposta.GenerosComRacas, resposta.Generos, resposta.Racas, resposta.Bimestres, resposta.AnosTurma, key);
 
     private static (int Quantidade, double Percentual)? GetValorTotal(RelatorioConsolidadoQuestaoDto questao, string key) =>
-        key == "__total__"
+        key == ChaveTotal
             ? (questao.TotalEstudantes, questao.PercentualTotal)
             : ResolverValor(questao.TotaisPorGeneroComRacas, questao.TotaisPorGenero, questao.TotaisPorRaca, questao.TotaisPorBimestre, questao.TotaisPorAnoTurma, key);
 
