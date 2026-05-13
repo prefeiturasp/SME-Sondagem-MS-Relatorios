@@ -451,26 +451,28 @@ public class RelatorioSondagemConsolidadoQuestaoUseCaseTeste
 public class RelatorioSondagemConsolidadoBimestreUseCaseTeste
 {
     private readonly Mock<IServicoSondagemApiClient> _api = new();
+    private readonly Mock<IRelatorioSondagemConsolidadoGenericoExcel> _excel = new();
     private readonly Mock<IRelatorioSondagemConsolidadoBimestrePdf> _pdf = new();
     private readonly Mock<IRepositorioBimestre> _bimestres = new();
     private readonly Mock<IServicoSgpApiClient> _sgp = new();
     private readonly Mock<IServicoEolApiClient> _eol = new();
     private readonly Mock<IServicoMensageria> _mensageria = new();
-    private readonly Mock<ILogger<RelatorioSondagemConsolidadoBimestreUseCase>> _logger = new();
+    private readonly Mock<ILogger<RelatorioSondagemConsolidadoPorBimestreUseCase>> _logger = new();
     private readonly Mock<IRepositorioComponenteCurricular> _componente = new();
-    private readonly RelatorioSondagemConsolidadoBimestreUseCase _sut;
+    private readonly RelatorioSondagemConsolidadoPorBimestreUseCase _sut;
 
     public RelatorioSondagemConsolidadoBimestreUseCaseTeste()
     {
-        _sut = new RelatorioSondagemConsolidadoBimestreUseCase(
+        _sut = new RelatorioSondagemConsolidadoPorBimestreUseCase(
             _api.Object,
-            _pdf.Object,
-            _bimestres.Object,
+            _excel.Object,
             _sgp.Object,
             _eol.Object,
             _mensageria.Object,
             _logger.Object,
-            _componente.Object);
+            _componente.Object,
+            _bimestres.Object,
+            _pdf.Object);
     }
 
     [Fact]
@@ -481,12 +483,12 @@ public class RelatorioSondagemConsolidadoBimestreUseCaseTeste
     }
 
     [Fact]
-    public async Task Executar_DeveRetornarFalso_QuandoExtensaoForXlsx()
+    public async Task Executar_DeveRetornarVerdadeiro_QuandoExtensaoForXlsx()
     {
         ConfigurarFluxo(new RelatorioConsolidadoSondagemDto());
         var resultado = await _sut.Executar(ConsolidadoRelatorioTesteHelper.CriarMensagemRabbit(
             ConsolidadoRelatorioTesteHelper.MensagemPadrao((int)ExtensaoRelatorio.Xlsx)));
-        resultado.Should().BeFalse();
+        resultado.Should().BeTrue();
     }
 
     [Fact]
@@ -582,6 +584,7 @@ public class RelatorioSondagemConsolidadoBimestreUseCaseTeste
         _mensageria.Setup(x => x.Publicar(It.IsAny<MensagemRabbit>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(true);
         _pdf.Setup(x => x.Executar(It.IsAny<RelatorioConsolidadoSondagemDto>())).ReturnsAsync("url");
+        _excel.Setup(x => x.GerarRelatorioExcelAsync(It.IsAny<RelatorioConsolidadoSondagemDto>())).ReturnsAsync("https://xlsx");
         _bimestres.Setup(x => x.ObterTodosAsync()).ReturnsAsync([]);
     }
 }
