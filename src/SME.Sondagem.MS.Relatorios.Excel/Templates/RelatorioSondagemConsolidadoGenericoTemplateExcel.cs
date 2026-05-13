@@ -15,7 +15,8 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
     private static readonly Func<RelatorioConsolidadoRacaDto, int> OrdemRaca =
         r => r.Raca.Trim().Contains(' ') ? 1 : 0;
 
-    private sealed record ColDefinition(string Header, string Key, string? Grupo = null);
+    private enum TipoValorColuna { Combinado, Quantidade, Percentual }
+    private sealed record ColDefinition(string Header, string Key, string? Grupo = null, TipoValorColuna Tipo = TipoValorColuna.Combinado);
 
     public RelatorioSondagemConsolidadoGenericoTemplateExcel(IServicoArmazenamentoMinio servicoArmazenamentoMinio)
         : base(servicoArmazenamentoMinio) { }
@@ -24,6 +25,9 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Sondagem");
+
+        for (int i = 1; i <= 6; i++)
+            sheet.Column(i).Width = 21;
 
         EscreverCabecalhoConsolidado(sheet, relatorioConsolidadoSondagemDto);
 
@@ -119,11 +123,11 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
 
         if (firstResposta?.AnosTurma?.Any() == true)
         {
-            var source = questao.TotaisPorAnoTurma ?? firstResposta.AnosTurma;
-            return source
-                .OrderBy(a => a.AnoTurma)
-                .Select(a => new ColDefinition(a.AnoTurma.ToString(), a.AnoTurma.ToString()))
-                .ToList();
+            return
+            [
+                new("Estudantes", "__total__", null, TipoValorColuna.Quantidade),
+                new("%",          "__total__", null, TipoValorColuna.Percentual)
+            ];
         }
 
         return [];
@@ -140,10 +144,14 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
     }
 
     private static (int Quantidade, double Percentual)? GetValorCelula(RelatorioConsolidadoRespostaDto resposta, string key) =>
-        ResolverValor(resposta.GenerosComRacas, resposta.Generos, resposta.Racas, resposta.Bimestres, resposta.AnosTurma, key);
+        key == "__total__"
+            ? (resposta.Total, resposta.Percentual)
+            : ResolverValor(resposta.GenerosComRacas, resposta.Generos, resposta.Racas, resposta.Bimestres, resposta.AnosTurma, key);
 
     private static (int Quantidade, double Percentual)? GetValorTotal(RelatorioConsolidadoQuestaoDto questao, string key) =>
-        ResolverValor(questao.TotaisPorGeneroComRacas, questao.TotaisPorGenero, questao.TotaisPorRaca, questao.TotaisPorBimestre, questao.TotaisPorAnoTurma, key);
+        key == "__total__"
+            ? (questao.TotalEstudantes, questao.PercentualTotal)
+            : ResolverValor(questao.TotaisPorGeneroComRacas, questao.TotaisPorGenero, questao.TotaisPorRaca, questao.TotaisPorBimestre, questao.TotaisPorAnoTurma, key);
 
     private static (int Quantidade, double Percentual)? ResolverValor(
         IEnumerable<RelatorioConsolidadoGeneroRacaDto>? generosComRacas,
@@ -210,7 +218,12 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
             var valor = obterValor(colDef);
             var cell  = sheet.Cell(linha, col);
             bool vazio = valor == null || valor.Value.Quantidade == 0;
-            cell.Value = vazio ? "Vazio" : string.Format(FormatoValor, valor!.Value.Quantidade, valor.Value.Percentual);
+            cell.Value = vazio ? "Vazio" : colDef.Tipo switch
+            {
+                TipoValorColuna.Quantidade => valor!.Value.Quantidade.ToString(),
+                TipoValorColuna.Percentual => $"{valor!.Value.Percentual:F1}%",
+                _ => string.Format(FormatoValor, valor!.Value.Quantidade, valor.Value.Percentual)
+            };
             cell.Style.Fill.BackgroundColor = corFundo;
             EstilarCelulaDadosConsolidado(cell, negrito);
             if (vazio) cell.Style.Font.FontColor = XLColor.LightGray;
@@ -265,7 +278,7 @@ private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositi
             var (blocoRow, blocoCol) = yearState[year];
             int numRespostas = questao.Respostas?.Count() ?? 0;
 
-            ConfigurarLarguraColunas(sheet, blocoCol, colunas.Count);
+            ConfigurarLarguraColunas(sheet, blocoCol, colunas);
             int headerRows = EscreverCabecalhoBloco(sheet, blocoRow, blocoCol, questao.QuestaoNome, colunas);
             EscreverDadosBloco(sheet, blocoRow + headerRows, blocoCol, questao, colunas, corAlternada);
             EscreverTotalBloco(sheet, blocoRow + headerRows + numRespostas, blocoCol, questao, colunas, corTotal);
@@ -289,11 +302,11 @@ private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositi
             : questaoNome;
     }
 
-    private static void ConfigurarLarguraColunas(IXLWorksheet sheet, int colStart, int numColunas)
+    private static void ConfigurarLarguraColunas(IXLWorksheet sheet, int colStart, List<ColDefinition> colunas)
     {
         sheet.Column(colStart).Width = 42;
-        for (int i = 1; i <= numColunas; i++)
-            sheet.Column(colStart + i).Width = 21;
+        for (int i = 0; i < colunas.Count; i++)
+            sheet.Column(colStart + 1 + i).Width = colunas[i].Tipo == TipoValorColuna.Percentual ? 12 : 21;
     }
 
     private static int EscreverCabecalhoBloco(IXLWorksheet sheet, int linha, int colStart, string questaoNome, List<ColDefinition> colunas)
