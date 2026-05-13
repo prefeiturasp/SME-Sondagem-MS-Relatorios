@@ -91,11 +91,9 @@ public static class RegistraDependencias
         services.TryAddScoped<IRelatorioSondagemConsolidadoRacaUseCase, RelatorioSondagemConsolidadoRacaUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoGeneroUseCase, RelatorioSondagemConsolidadoGeneroUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoRacaGeneroUseCase, RelatorioSondagemConsolidadoRacaGeneroUseCase>();
-        services.TryAddScoped<IRelatorioSondagemConsolidadoBimestreUseCase, RelatorioSondagemConsolidadoBimestreUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoPorBimestreUseCase, RelatorioSondagemConsolidadoPorBimestreUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoQuestaoUseCase, RelatorioSondagemConsolidadoQuestaoUseCase>();
         services.TryAddScoped<IRelatorioSondagemConsolidadoRacaGeneroUseCase, RelatorioSondagemConsolidadoRacaGeneroUseCase>();
-        services.TryAddScoped<IRelatorioSondagemConsolidadoAnoUseCase, RelatorioSondagemConsolidadoAnoUseCase>();
     }
 
     private static void ConfigurarRabbitmq(IServiceCollection services, IConfiguration configuration)

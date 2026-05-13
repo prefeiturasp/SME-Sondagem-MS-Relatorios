@@ -51,8 +51,7 @@ public class RabbitMqConsumerService : BackgroundService
         _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorRaca, new ComandoRabbit("Relatorio Sondagem Consolidado Por Raca", typeof(IRelatorioSondagemConsolidadoRacaUseCase)));
         _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorGenero, new ComandoRabbit("Relatorio Sondagem Consolidado Por Genero", typeof(IRelatorioSondagemConsolidadoGeneroUseCase)));
         _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorRacaGenero, new ComandoRabbit("Relatorio Sondagem Consolidado Por Raca e Genero", typeof(IRelatorioSondagemConsolidadoRacaGeneroUseCase), ttl: ExchangeRabbit.SgpDeadLetterTTL_3));
-        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorAno, new ComandoRabbit("Relatorio Sondagem Consolidado Por Ano", typeof(IRelatorioSondagemConsolidadoAnoUseCase), ttl: ExchangeRabbit.SgpDeadLetterTTL_3));
-        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorQuestao, new ComandoRabbit("Relatorio Sondagem Consolidado Por Questao", typeof(IRelatorioSondagemConsolidadoQuestaoUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorAno, new ComandoRabbit("Relatorio Sondagem Consolidado Por Ano", typeof(IRelatorioSondagemConsolidadoQuestaoUseCase), ttl: ExchangeRabbit.SgpDeadLetterTTL_3));
         _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorBimestre, new ComandoRabbit("Relatorio Sondagem Consolidado Por Bimestre", typeof(IRelatorioSondagemConsolidadoPorBimestreUseCase), ttl: ExchangeRabbit.SgpDeadLetterTTL_3));
     }
 

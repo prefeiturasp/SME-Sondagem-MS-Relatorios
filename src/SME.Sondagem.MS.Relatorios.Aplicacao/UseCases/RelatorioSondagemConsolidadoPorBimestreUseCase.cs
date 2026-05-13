@@ -5,11 +5,11 @@ using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 
 namespace SME.Sondagem.MS.Relatorios.Aplicacao.UseCases;
 
-public class RelatorioSondagemConsolidadoPorBimestreUseCase
-    : RelatorioSondagemConsolidadoUseCaseBase,
-      IRelatorioSondagemConsolidadoPorBimestreUseCase
+public class RelatorioSondagemConsolidadoPorBimestreUseCase : RelatorioSondagemConsolidadoUseCaseBase, IRelatorioSondagemConsolidadoPorBimestreUseCase
 {
     private readonly IRelatorioSondagemConsolidadoGenericoExcel _excel;
+    private readonly IRelatorioSondagemConsolidadoBimestrePdf _pdf;
+    private readonly IRepositorioBimestre _repositorioBimestre;
 
     public RelatorioSondagemConsolidadoPorBimestreUseCase(
         IServicoSondagemApiClient servicoSondagemApiClient,
@@ -18,10 +18,14 @@ public class RelatorioSondagemConsolidadoPorBimestreUseCase
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
         ILogger<RelatorioSondagemConsolidadoPorBimestreUseCase> logger,
-        IRepositorioComponenteCurricular repositorioComponenteCurricular)
+        IRepositorioComponenteCurricular repositorioComponenteCurricular,
+        IRepositorioBimestre repositorioBimestre,
+        IRelatorioSondagemConsolidadoBimestrePdf pdf)
         : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
     {
         _excel = relatorioSondagemConsolidadoGenericoExcel;
+        _repositorioBimestre = repositorioBimestre;
+        _pdf = pdf;
     }
 
     protected override string AgrupamentoPadrao => "Por bimestre";
@@ -31,8 +35,11 @@ public class RelatorioSondagemConsolidadoPorBimestreUseCase
     protected override Task<RelatorioConsolidadoSondagemDto> ObterRelatorioConsolidadoAsync(FiltroRelatorioSondagemDto filtros) =>
         ServicoSondagemApiClient.ObterDadosRelatorioConsolidadoPorBimestreAsync(filtros);
 
-    protected override Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
-        Task.FromResult(string.Empty);
+    protected override async Task<string> GerarPdfAsync(RelatorioConsolidadoSondagemDto dadosRelatorio)
+    {
+        dadosRelatorio.BimestresDisponiveis = await _repositorioBimestre.ObterTodosAsync();
+        return await _pdf.Executar(dadosRelatorio);
+    }
 
     protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
         _excel.GerarRelatorioExcelAsync(dadosRelatorio);
