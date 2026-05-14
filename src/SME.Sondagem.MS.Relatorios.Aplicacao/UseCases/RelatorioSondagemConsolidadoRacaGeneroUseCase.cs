@@ -25,7 +25,7 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCase
         IServicoMensageria servicoMensageria,
         ILogger<RelatorioSondagemConsolidadoRacaGeneroUseCase> logger,
         IRepositorioComponenteCurricular repositorioComponenteCurricular)
-        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
+        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular, repositorioGeneroSexo, repositorioRacaCor)
     {
         _pdf = relatorioSondagemConsolidadoRacaGeneroPdf;
         _excel = relatorioSondagemConsolidadoGenericoExcel;
@@ -50,11 +50,5 @@ public class RelatorioSondagemConsolidadoRacaGeneroUseCase
     protected override Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio) =>
         _excel.GerarRelatorioExcelAsync(dadosRelatorio);
 
-    protected override void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio)
-    {
-        if (string.IsNullOrWhiteSpace(dadosRelatorio.Genero))
-            dadosRelatorio.Genero = ValorTodos;
-        if (string.IsNullOrWhiteSpace(dadosRelatorio.Raca))
-            dadosRelatorio.Raca = ValorTodas;
-    }
+
 }

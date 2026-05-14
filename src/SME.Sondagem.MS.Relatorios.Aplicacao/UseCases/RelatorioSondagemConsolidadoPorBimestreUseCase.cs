@@ -20,8 +20,10 @@ public class RelatorioSondagemConsolidadoPorBimestreUseCase : RelatorioSondagemC
         ILogger<RelatorioSondagemConsolidadoPorBimestreUseCase> logger,
         IRepositorioComponenteCurricular repositorioComponenteCurricular,
         IRepositorioBimestre repositorioBimestre,
-        IRelatorioSondagemConsolidadoBimestrePdf pdf)
-        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular)
+        IRelatorioSondagemConsolidadoBimestrePdf pdf,
+        IRepositorioGeneroSexo repositorioGeneroSexo,
+        IRepositorioRacaCor repositorioRacaCor)
+        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular, repositorioGeneroSexo, repositorioRacaCor)
     {
         _excel = relatorioSondagemConsolidadoGenericoExcel;
         _repositorioBimestre = repositorioBimestre;

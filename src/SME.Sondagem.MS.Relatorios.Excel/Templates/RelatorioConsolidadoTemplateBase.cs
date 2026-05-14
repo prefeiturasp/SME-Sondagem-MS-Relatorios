@@ -5,8 +5,10 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Interfaces;
 using ChartFormula = DocumentFormat.OpenXml.Drawing.Charts.Formula;
 using Index = DocumentFormat.OpenXml.Drawing.Charts.Index;
@@ -24,7 +26,7 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
     protected RelatorioConsolidadoTemplateBase(IServicoArmazenamentoMinio servicoArmazenamentoMinio)
         : base(servicoArmazenamentoMinio) { }
 
-    protected static void EscreverCabecalhoConsolidado(IXLWorksheet sheet, RelatorioConsolidadoSondagemDto dto)
+    protected static int EscreverCabecalhoConsolidado(IXLWorksheet sheet, RelatorioConsolidadoSondagemDto dto)
     {
         var dtoJson = JsonSerializer.Serialize(dto, _debugJsonOptions);
         _ = dtoJson;
@@ -48,22 +50,50 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         tituloCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         tituloCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
 
+        static string t(string label, string? value) => label + (string.IsNullOrWhiteSpace(value) ? "-" : value);
+
+        // Row 3: Agrupamento | AnoLetivo | Modalidade
         EscreverCelulaRichText(sheet, 3, 1, 3, 2, "Agrupamento: ", dto.Agrupamento);
         EscreverCelulaRichText(sheet, 3, 3, 3, 4, "Ano letivo: ", dto.AnoLetivo > 0 ? dto.AnoLetivo.ToString() : "-");
         EscreverCelulaRichText(sheet, 3, 5, 3, 6, "Etapa / Modalidade: ", dto.Modalidade);
 
+        // Row 4: DRE | UE | Ano or Semestre (label/value depend on modalidade)
+        var (anoLabel, anoValue) = ObterLabelValorAno(dto);
         EscreverCelulaRichText(sheet, 4, 1, 4, 2, "DRE: ", dto.Dre);
         EscreverCelulaRichText(sheet, 4, 3, 4, 4, "Unidade Educacional: ", dto.UnidadeEducacional);
-        EscreverCelulaRichText(sheet, 4, 5, 4, 6, "Ano / Turma: ", dto.AnoTurma);
+        EscreverCelulaRichText(sheet, 4, 5, 4, 6, anoLabel, anoValue);
 
+        // Row 5: ComponenteCurricular | Proficiência | Bimestre
         EscreverCelulaRichText(sheet, 5, 1, 5, 2, "Componente Curricular: ", dto.ComponenteCurricular);
         EscreverCelulaRichText(sheet, 5, 3, 5, 4, "Proficiência: ", dto.Proficiencia);
         EscreverCelulaRichText(sheet, 5, 5, 5, 6, "Bimestre: ", dto.Bimestre);
 
-        EscreverCelulaRichText(sheet, 6, 1, 6, 3, "Usuário: ", dto.Usuario);
-        EscreverCelulaRichText(sheet, 6, 4, 6, 6, "Data de impressão: ", dto.DataImpressao.ToString("dd/MM/yyyy"));
+        // Row 6: Gênero | Raça | Língua Portuguesa como 2ª Língua
+        EscreverCelulaRichText(sheet, 6, 1, 6, 2, "Gênero: ", dto.Genero);
+        EscreverCelulaRichText(sheet, 6, 3, 6, 4, "Raça: ", dto.Raca);
+        EscreverCelulaRichText(sheet, 6, 5, 6, 6, "L.P. como 2ª Língua: ", FormatarLinguaSegundaLingua(dto.PossuiLinguaPortuguesaSegundaLingua));
 
-        static string t(string label, string? value) => label + (string.IsNullOrWhiteSpace(value) ? "-" : value);
+        int linhaAtual = 6;
+
+        // Row 7 (conditional): Programas e Atendimentos
+        bool temProgramas = dto.Pap == true || dto.Aee == true || dto.Deficiente == true;
+        if (temProgramas)
+        {
+            linhaAtual++;
+            var programas = new List<string>();
+            if (dto.Pap == true) programas.Add("PAP");
+            if (dto.Aee == true) programas.Add("AEE");
+            if (dto.Deficiente == true) programas.Add("Deficiente");
+            var programasValue = string.Join(", ", programas);
+            EscreverCelulaRichText(sheet, linhaAtual, 1, linhaAtual, 6, "Programas e Atendimentos: ", programasValue);
+            AjustarAlturaLinhaCabecalho(sheet, linhaAtual, 90.0, t("Programas e Atendimentos: ", programasValue));
+            AplicarBordaCabecalho(sheet, linhaAtual, 1, linhaAtual, 6);
+        }
+
+        // Last row: Usuário | DataImpressao
+        linhaAtual++;
+        EscreverCelulaRichText(sheet, linhaAtual, 1, linhaAtual, 3, "Usuário: ", dto.Usuario);
+        EscreverCelulaRichText(sheet, linhaAtual, 4, linhaAtual, 6, "Data de impressão: ", dto.DataImpressao.ToString("dd/MM/yyyy"));
 
         AjustarAlturaLinhaCabecalho(sheet, 3, 30.0,
             t("Agrupamento: ", dto.Agrupamento),
@@ -72,12 +102,16 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         AjustarAlturaLinhaCabecalho(sheet, 4, 30.0,
             t("DRE: ", dto.Dre),
             t("Unidade Educacional: ", dto.UnidadeEducacional),
-            t("Ano / Turma: ", dto.AnoTurma));
+            t(anoLabel, anoValue));
         AjustarAlturaLinhaCabecalho(sheet, 5, 30.0,
             t("Componente Curricular: ", dto.ComponenteCurricular),
             t("Proficiência: ", dto.Proficiencia),
             t("Bimestre: ", dto.Bimestre));
-        AjustarAlturaLinhaCabecalho(sheet, 6, 45.0,
+        AjustarAlturaLinhaCabecalho(sheet, 6, 30.0,
+            t("Gênero: ", dto.Genero),
+            t("Raça: ", dto.Raca),
+            t("L.P. como 2ª Língua: ", FormatarLinguaSegundaLingua(dto.PossuiLinguaPortuguesaSegundaLingua)));
+        AjustarAlturaLinhaCabecalho(sheet, linhaAtual, 45.0,
             t("Usuário: ", dto.Usuario),
             t("Data de impressão: ", dto.DataImpressao.ToString("dd/MM/yyyy")));
 
@@ -91,9 +125,31 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         AplicarBordaCabecalho(sheet, 5, 1, 5, 2);
         AplicarBordaCabecalho(sheet, 5, 3, 5, 4);
         AplicarBordaCabecalho(sheet, 5, 5, 5, 6);
-        AplicarBordaCabecalho(sheet, 6, 1, 6, 3);
-        AplicarBordaCabecalho(sheet, 6, 4, 6, 6);
+        AplicarBordaCabecalho(sheet, 6, 1, 6, 2);
+        AplicarBordaCabecalho(sheet, 6, 3, 6, 4);
+        AplicarBordaCabecalho(sheet, 6, 5, 6, 6);
+        AplicarBordaCabecalho(sheet, linhaAtual, 1, linhaAtual, 3);
+        AplicarBordaCabecalho(sheet, linhaAtual, 4, linhaAtual, 6);
+
+        return linhaAtual;
     }
+
+    private static (string Label, string Value) ObterLabelValorAno(RelatorioConsolidadoSondagemDto dto) =>
+        dto.ModalidadeId switch
+        {
+            (int)Modalidade.EJA => ("Semestre: ", FormatarSemestre(dto.SemestreId)),
+            (int)Modalidade.Fundamental => ("Ano: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? "Todos" : dto.AnoTurma),
+            _ => ("Ano / Turma: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? "Todos" : dto.AnoTurma)
+        };
+
+    private static string FormatarSemestre(int semestreId)
+    {
+        if (semestreId == 0) return "Todos";
+        return Enum.TryParse(semestreId.ToString(), out Semestre s) ? s.ShortName() ?? "Todos" : "Todos";
+    }
+
+    private static string FormatarLinguaSegundaLingua(bool? valor) =>
+        valor == true ? "Sim" : "Não";
 
     private static void AjustarAlturaLinhaCabecalho(IXLWorksheet sheet, int linha, double larguraColuna, params string[] textos)
     {
@@ -297,6 +353,14 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
             var solidFill = new DocumentFormat.OpenXml.Drawing.SolidFill();
             solidFill.AppendChild(new DocumentFormat.OpenXml.Drawing.RgbColorModelHex { Val = hex });
             spPr.AppendChild(solidFill);
+            if (hex == "FFFFFF")
+            {
+                var outline = new DocumentFormat.OpenXml.Drawing.Outline();
+                var outlineFill = new DocumentFormat.OpenXml.Drawing.SolidFill();
+                outlineFill.AppendChild(new DocumentFormat.OpenXml.Drawing.RgbColorModelHex { Val = "000000" });
+                outline.AppendChild(outlineFill);
+                spPr.AppendChild(outline);
+            }
             dp.AppendChild(spPr);
             serie.AppendChild(dp);
         }

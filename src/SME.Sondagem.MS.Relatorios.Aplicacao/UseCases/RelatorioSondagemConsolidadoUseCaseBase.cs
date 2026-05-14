@@ -20,6 +20,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     private readonly IServicoMensageria _servicoMensageria;
     private readonly ILogger _logger;
     private readonly IRepositorioComponenteCurricular _repositorioComponenteCurricular;
+    private readonly IRepositorioGeneroSexo _repositorioGeneroSexo;
+    private readonly IRepositorioRacaCor _repositorioRacaCor;
 
     protected RelatorioSondagemConsolidadoUseCaseBase(
         IServicoSondagemApiClient servicoSondagemApiClient,
@@ -27,7 +29,9 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
         ILogger logger,
-        IRepositorioComponenteCurricular repositorioComponenteCurricular)
+        IRepositorioComponenteCurricular repositorioComponenteCurricular,
+        IRepositorioGeneroSexo repositorioGeneroSexo,
+        IRepositorioRacaCor repositorioRacaCor)
     {
         ServicoSondagemApiClient = servicoSondagemApiClient;
         _servicoSgpApiClient = servicoSgpApiClient;
@@ -35,6 +39,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         _servicoMensageria = servicoMensageria;
         _logger = logger;
         _repositorioComponenteCurricular = repositorioComponenteCurricular;
+        _repositorioGeneroSexo = repositorioGeneroSexo;
+        _repositorioRacaCor = repositorioRacaCor;
     }
 
     protected abstract string AgrupamentoPadrao { get; }
@@ -47,7 +53,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
     protected abstract Task<string> GerarExcelAsync(RelatorioConsolidadoSondagemDto dadosRelatorio);
 
-    protected abstract void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio);
+    protected virtual void GarantirMetadadoDemograficoPadrao(RelatorioConsolidadoSondagemDto dadosRelatorio) { }
 
     public async Task<bool> Executar(MensagemRabbit mensagemRabbit)
     {
@@ -103,12 +109,12 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
         var dadosRelatorio = dadosTask.Result ?? new RelatorioConsolidadoSondagemDto();
         var escola = escolaTask?.Result.FirstOrDefault();
-        PreencherCabecalho(dadosRelatorio, mensagem, usuarioTask.Result, profTask.Result, componentesCurricularTask.Result, escola, codigoCorrelacao);
+        await PreencherCabecalho(dadosRelatorio, mensagem, usuarioTask.Result, profTask.Result, componentesCurricularTask.Result, escola, codigoCorrelacao);
 
         return dadosRelatorio;
     }
 
-    private void PreencherCabecalho(
+    private async Task PreencherCabecalho(
         RelatorioConsolidadoSondagemDto dadosRelatorio,
         MensagemSondagemDto mensagem,
         DadosUsuarioDto? usuario,
@@ -123,6 +129,11 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         AtribuirIdentificacaoCabecalho(dadosRelatorio, mensagem, filtros, codigoCorrelacao);
         AplicarFallbacksCabecalhoApartirDosFiltros(dadosRelatorio, filtros, proficienciaNome, escola);
         GarantirMetadadoDemograficoPadrao(dadosRelatorio);
+        await ResolverNomesGeneroRacaAsync(dadosRelatorio);
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.Genero))
+            dadosRelatorio.Genero = ValorTodos;
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.Raca))
+            dadosRelatorio.Raca = ValorTodas;
         FinalizarCabecalhoUsuarioTituloComponente(dadosRelatorio, mensagem, usuario, proficienciaNome, componenteCurricular);
     }
 
@@ -136,6 +147,16 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         dadosRelatorio.SolicitacaoRelatorioId = mensagem.SolicitacaoRelatorioId;
         dadosRelatorio.UsuarioQueSolicitou = mensagem.UsuarioQueSolicitou;
         dadosRelatorio.ProficienciaId = filtros.ProficienciaId;
+        dadosRelatorio.ModalidadeId = filtros.Modalidade;
+        dadosRelatorio.SemestreId = filtros.Modalidade == (int)Modalidade.EJA
+            ? (filtros.BimestreId ?? filtros.SemestreId)
+            : filtros.SemestreId;
+        dadosRelatorio.GeneroId = filtros.GeneroId;
+        dadosRelatorio.RacaId = filtros.RacaId;
+        dadosRelatorio.Pap = filtros.Pap;
+        dadosRelatorio.Aee = filtros.Aee;
+        dadosRelatorio.Deficiente = filtros.Deficiente;
+        dadosRelatorio.PossuiLinguaPortuguesaSegundaLingua = filtros.PossuiLinguaPortuguesaSegundaLingua;
     }
 
     private void AplicarFallbacksCabecalhoApartirDosFiltros(
@@ -196,6 +217,24 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         if (filtros.Ano > 0)
             return [filtros.Ano];
         return [];
+    }
+
+    private async Task ResolverNomesGeneroRacaAsync(RelatorioConsolidadoSondagemDto dadosRelatorio)
+    {
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.Genero) && dadosRelatorio.GeneroId.HasValue)
+        {
+            var generos = await _repositorioGeneroSexo.ObterTodosAsync();
+            dadosRelatorio.Genero = generos.FirstOrDefault(g => g.Id == dadosRelatorio.GeneroId)?.Descricao ?? ValorTodos;
+        }
+
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.Raca) && dadosRelatorio.RacaId.HasValue)
+        {
+            var racas = await _repositorioRacaCor.ObterTodosAsync();
+            var racaDescricao = racas.FirstOrDefault(r => r.Id == dadosRelatorio.RacaId)?.Descricao;
+            dadosRelatorio.Raca = racaDescricao != null
+                ? System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(racaDescricao.ToLower())
+                : ValorTodas;
+        }
     }
 
     private static void FinalizarCabecalhoUsuarioTituloComponente(
