@@ -1,6 +1,5 @@
 using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
-using System.Web;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
@@ -34,7 +33,8 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplatePdf
         if (respostas == null) return;
 
         foreach (var bimestre in respostas
-            .SelectMany(resposta => resposta.Bimestres ?? Enumerable.Empty<RelatorioConsolidadoBimestreDto>())
+                .Where(r => r != null)
+                .SelectMany(resposta => resposta!.Bimestres ?? [])
             .Where(b => !string.IsNullOrWhiteSpace(b.Bimestre)))
         {
             encontradas.Add(bimestre.Bimestre);

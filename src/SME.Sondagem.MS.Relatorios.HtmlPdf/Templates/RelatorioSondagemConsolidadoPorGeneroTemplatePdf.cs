@@ -35,8 +35,8 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : RelatorioSondage
 
         if (questao.Respostas != null)
         {
-            foreach (var resposta in questao.Respostas)
-                AdicionarDeLista(resposta.Generos);
+            foreach (var resposta in questao.Respostas.Where(r => r != null))
+                AdicionarDeLista(resposta!.Generos);
         }
 
         AdicionarDeLista(questao.TotaisPorGenero);

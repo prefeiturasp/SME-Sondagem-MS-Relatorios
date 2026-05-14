@@ -1,10 +1,8 @@
 using SME.Sondagem.MS.Relatorios.Dominio.Enums;
-using SME.Sondagem.MS.Relatorios.HtmlPdf;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Helpers;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using System.Web;
 
@@ -123,7 +121,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             return null;
 
         var barras = questao.Respostas
-            .Where(r => r.Total > 0)
+            .Where(static r => r != null && r.Total > 0)
             .OrderBy(r => r.Ordem)
             .Select(r => new GraficoBarraDto
             {

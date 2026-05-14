@@ -141,9 +141,9 @@ public class RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf : RelatorioSon
 
         if (questao.Respostas != null)
         {
-            foreach (var resposta in questao.Respostas)
+            foreach (var resposta in questao.Respostas.Where(r => r != null))
             {
-                var bloco = resposta.GenerosComRacas?.FirstOrDefault(g =>
+                var bloco = resposta!.GenerosComRacas?.FirstOrDefault(g =>
                     g.Genero.Equals(genero, StringComparison.OrdinalIgnoreCase));
                 AdicionarRacas(bloco?.Racas);
             }

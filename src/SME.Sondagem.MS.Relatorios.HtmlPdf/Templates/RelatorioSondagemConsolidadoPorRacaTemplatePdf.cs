@@ -29,7 +29,8 @@ public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : RelatorioSondagemC
         if (respostas == null) return;
 
         foreach (var raca in respostas
-            .SelectMany(resposta => resposta.Racas ?? Enumerable.Empty<RelatorioConsolidadoRacaDto>())
+                .Where(r => r != null)
+                .SelectMany(resposta => resposta!.Racas ?? [])
             .Where(raca => !string.IsNullOrWhiteSpace(raca.Raca)))
         {
             encontradas.Add(raca.Raca);
