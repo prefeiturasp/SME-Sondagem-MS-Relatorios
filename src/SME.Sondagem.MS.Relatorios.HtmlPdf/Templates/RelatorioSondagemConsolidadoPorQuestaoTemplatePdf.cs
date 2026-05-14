@@ -45,12 +45,7 @@ public class RelatorioSondagemConsolidadoPorQuestaoTemplatePdf : RelatorioSondag
     protected override string GerarLinhaResposta(RelatorioConsolidadoRespostaDto resposta, List<string> colunas)
     {
         var sb = new StringBuilder();
-        bool isSemPreenchimento = resposta.Resposta?.Trim()
-            .Equals("Sem preenchimento", StringComparison.OrdinalIgnoreCase) == true;
-
-        var classeLinha = isSemPreenchimento ? "row-sem-preenchimento" : string.Empty;
-        sb.AppendLine($"            <tr class=\"{classeLinha}\">");
-        sb.AppendLine(GerarBadgeNivel(resposta));
+        sb.Append(GerarPrefixoLinhaRespostaComBadge(resposta));
 
         sb.AppendLine($"                <td>{FormatarValor(resposta.Total)}</td>");
         sb.AppendLine($"                <td>{FormatarPercentual(resposta.Percentual)}</td>");
