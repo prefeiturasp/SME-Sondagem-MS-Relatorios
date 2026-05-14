@@ -21,7 +21,8 @@ public class RelatorioSondagemConsolidadoQuestaoUseCase : RelatorioSondagemConso
         IRepositorioComponenteCurricular repositorioComponenteCurricular,
         IRepositorioGeneroSexo repositorioGeneroSexo,
         IRepositorioRacaCor repositorioRacaCor)
-        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger, repositorioComponenteCurricular, repositorioGeneroSexo, repositorioRacaCor)
+        : base(servicoSondagemApiClient, servicoSgpApiClient, servicoEolApiClient, servicoMensageria, logger,
+            new ConsolidadoRepositorios(repositorioComponenteCurricular, repositorioGeneroSexo, repositorioRacaCor))
     {
         _pdf = relatorioSondagemConsolidadoQuestaoPdf;
         _excel = relatorioSondagemConsolidadoGenericoExcel;

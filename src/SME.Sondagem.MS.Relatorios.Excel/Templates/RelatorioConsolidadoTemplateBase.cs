@@ -22,6 +22,7 @@ namespace SME.Sondagem.MS.Relatorios.Excel.Templates;
 public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
 {
     private static readonly JsonSerializerOptions _debugJsonOptions = new() { WriteIndented = true };
+    private const string Todos = "Todos";
 
     protected RelatorioConsolidadoTemplateBase(IServicoArmazenamentoMinio servicoArmazenamentoMinio)
         : base(servicoArmazenamentoMinio) { }
@@ -138,14 +139,14 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         dto.ModalidadeId switch
         {
             (int)Modalidade.EJA => ("Semestre: ", FormatarSemestre(dto.SemestreId)),
-            (int)Modalidade.Fundamental => ("Ano: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? "Todos" : dto.AnoTurma),
-            _ => ("Ano / Turma: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? "Todos" : dto.AnoTurma)
+            (int)Modalidade.Fundamental => ("Ano: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? Todos : dto.AnoTurma),
+            _ => ("Ano / Turma: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? Todos : dto.AnoTurma)
         };
 
     private static string FormatarSemestre(int semestreId)
     {
-        if (semestreId == 0) return "Todos";
-        return Enum.TryParse(semestreId.ToString(), out Semestre s) ? s.ShortName() ?? "Todos" : "Todos";
+        if (semestreId == 0) return Todos;
+        return Enum.TryParse(semestreId.ToString(), out Semestre s) ? s.ShortName() ?? Todos : Todos;
     }
 
     private static string FormatarLinguaSegundaLingua(bool? valor) =>
