@@ -293,6 +293,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                     <td><strong>Bimestre:</strong> {HttpUtility.HtmlEncode(dto.Bimestre)}</td>
                         {GerarLinhaMetadadoDemografico(dto)}
                 </tr>");
+        AppendLinhasMetaFiltrosOpcionais(sb, dto);
 
         sb.Append($@"
                 <tr>
@@ -302,6 +303,41 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             </table>");
 
         return sb.ToString();
+    }
+
+    internal static void AppendLinhasMetaFiltrosOpcionais(StringBuilder sb, RelatorioConsolidadoSondagemDto dto)
+    {
+        static string CelulaBool(string rotulo, bool valor) =>
+            $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {(valor ? "Sim" : "Não")}</td>";
+
+        var celulas = new List<string>();
+
+        if (dto.Pap.HasValue)
+            celulas.Add(CelulaBool("PAP", dto.Pap.Value));
+
+        if (dto.Aee.HasValue)
+            celulas.Add(CelulaBool("AEE", dto.Aee.Value));
+
+        if (dto.Deficiente.HasValue)
+            celulas.Add(CelulaBool("Deficiente", dto.Deficiente.Value));
+
+        if (dto.PossuiLinguaPortuguesaSegundaLingua.HasValue)
+            celulas.Add(CelulaBool("Português como segunda língua", dto.PossuiLinguaPortuguesaSegundaLingua.Value));
+
+        if (celulas.Count == 0)
+            return;
+
+        for (int i = 0; i < celulas.Count; i += 3)
+        {
+            sb.AppendLine("                <tr>");
+            var fimChunk = Math.Min(i + 3, celulas.Count);
+            for (int j = i; j < fimChunk; j++)
+                sb.AppendLine($"                    {celulas[j]}");
+            var faltantes = 3 - (fimChunk - i);
+            for (int k = 0; k < faltantes; k++)
+                sb.AppendLine("                    <td></td>");
+            sb.AppendLine("                </tr>");
+        }
     }
 
     private const string FechaDivConsolidado = "</div>";
