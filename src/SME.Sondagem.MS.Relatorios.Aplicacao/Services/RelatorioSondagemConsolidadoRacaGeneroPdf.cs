@@ -23,8 +23,9 @@ public class RelatorioSondagemConsolidadoRacaGeneroPdf : IRelatorioSondagemConso
     public async Task<string> Executar(RelatorioConsolidadoSondagemDto consultaSondagemPorTurmaDto)
     {
         var relatorioHtml = _template.GerarHtml(consultaSondagemPorTurmaDto);
+        var cabecalhoWk = _template.GerarHtmlDocumentoCabecalhoWk(consultaSondagemPorTurmaDto);
 
-        byte[] pdfBytes = _reportConverter.GerarPdfEmMemoria(relatorioHtml);
+        byte[] pdfBytes = _reportConverter.GerarPdfEmMemoria(relatorioHtml, cabecalhoWk);
         string nomeArquivo = $"Relatorio/{consultaSondagemPorTurmaDto.CodigoCorrelacao}.pdf";
 
         await _servicoArmazenamentoMinio.UploadRelatorioAsync(pdfBytes, nomeArquivo);
