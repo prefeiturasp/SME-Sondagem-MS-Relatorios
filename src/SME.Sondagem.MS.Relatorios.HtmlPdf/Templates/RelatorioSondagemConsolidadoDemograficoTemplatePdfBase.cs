@@ -1,5 +1,5 @@
 using SME.Sondagem.MS.Relatorios.Dominio.Enums;
-using SME.Sondagem.MS.Relatorios.Infra.Constantes;
+using SME.Sondagem.MS.Relatorios.HtmlPdf;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Helpers;
@@ -40,65 +40,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
     public virtual string GerarHtmlDocumentoCabecalhoWk(RelatorioConsolidadoSondagemDto dto)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("<!DOCTYPE html>");
-        sb.AppendLine("<html>");
-        sb.AppendLine("<head>");
-        sb.AppendLine(@"<meta charset=""utf-8"" />");
-        sb.AppendLine("<style>");
-        sb.AppendLine("* { box-sizing: border-box; margin: 0; padding: 0; }");
-        sb.AppendLine("""
-            body {
-                font-family: 'Roboto', 'DejaVu Sans', Arial, sans-serif;
-                font-size: 10px;
-                color: #42474A;
-                background: #fff;
-                padding: 4px 16px 8px 16px;
-                margin: 0;
-                letter-spacing: 0.02em;
-                word-spacing: 0.05em;
-            }
-            .header-logo { margin-bottom: 6px; }
-            .header-logo img { height: 36px; }
-            .report-title {
-                text-align: center;
-                margin-top: 8px;
-                margin-bottom: 8px;
-            }
-            .report-title h1 {
-                font-size: 14px;
-                font-weight: 700;
-                color: #42474A;
-                margin-bottom: 2px;
-                line-height: 1.2;
-            }
-            .report-title h2 {
-                font-size: 10px;
-                font-weight: 400;
-                color: #42474A;
-                line-height: 12px;
-            }
-            .meta-table {
-                width: 100%;
-                border-collapse: collapse;
-                border: 1px solid #D9D9D9;
-            }
-            .meta-table td {
-                border: 1px solid #D9D9D9;
-                padding: 4px 8px;
-                font-size: 10px;
-                font-weight: 400;
-                line-height: 12px;
-                vertical-align: middle;
-                color: #42474A;
-            }
-            .meta-table td strong {
-                font-weight: 700;
-                margin-right: 2px;
-            }
-            """);
-        sb.AppendLine("</style>");
-        sb.AppendLine("</head>");
-        sb.AppendLine("<body>");
+        sb.Append(RelatorioSondagemPdfCabecalhoCompartilhado.MarkupTopoDocumentoCabecalhoWk);
         sb.Append(GerarCabecalho(dto));
         sb.AppendLine("</body>");
         sb.AppendLine("</html>");
@@ -265,15 +207,21 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
+    protected static string GerarPrefixoLinhaRespostaComBadge(RelatorioConsolidadoRespostaDto resposta)
+    {
+        bool isSemPreenchimento = resposta.Resposta?.Trim()
+            .Equals("Sem preenchimento", StringComparison.OrdinalIgnoreCase) == true;
+        var classeLinha = isSemPreenchimento ? "row-sem-preenchimento" : string.Empty;
+        var sb = new StringBuilder();
+        sb.AppendLine($"            <tr class=\"{classeLinha}\">");
+        sb.AppendLine(GerarBadgeNivel(resposta));
+        return sb.ToString();
+    }
+
     protected virtual string GerarLinhaResposta(RelatorioConsolidadoRespostaDto resposta, List<string> colunas)
     {
         var sb = new StringBuilder();
-        bool isSemPreenchimento = resposta.Resposta?.Trim()
-            .Equals("Sem preenchimento", StringComparison.OrdinalIgnoreCase) == true;
-
-        var classeLinha = isSemPreenchimento ? "row-sem-preenchimento" : string.Empty;
-        sb.AppendLine($"            <tr class=\"{classeLinha}\">");
-        sb.AppendLine(GerarBadgeNivel(resposta));
+        sb.Append(GerarPrefixoLinhaRespostaComBadge(resposta));
 
         var dic = MontarDicionarioResposta(resposta);
         AppendCelulasValor(sb, colunas, dic);
@@ -342,10 +290,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         var sb = new StringBuilder();
         var (anoLabel, anoValue) = ObterLabelValorAno(dto);
 
+        sb.Append(RelatorioSondagemPdfCabecalhoCompartilhado.LogoPrefeituraHtml);
         sb.Append($@"
-            <div class=""header-logo"">
-                <img src=""{SmeConstants.Logo_PrefSP_Horizontal}"" alt=""Prefeitura de São Paulo"" />
-            </div>
             <div class=""report-title"">
                 <h1>Relatório da Sondagem</h1>
                 <h2>{HttpUtility.HtmlEncode(dto.Titulo)}</h2>
@@ -452,8 +398,6 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
     private static string MetaFiltroCelulaTexto(string rotulo, string valor) =>
         $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {HttpUtility.HtmlEncode(valor)}</td>";
-
-    private const string FechaDivConsolidado = "</div>";
 
     private string GerarEstilos()
     {
@@ -640,7 +584,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         sb.AppendLine("            </td>");
         sb.AppendLine("        </tr>");
         sb.AppendLine("    </table>");
-        sb.AppendLine(FechaDivConsolidado);
+        sb.AppendLine(FechaDiv);
 
         return sb.ToString();
     }
@@ -658,7 +602,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             sb.AppendLine("                            </td>");
             sb.AppendLine("                        </tr>");
             sb.AppendLine("                    </table>");
-            sb.AppendLine(FechaDivConsolidado);
+            sb.AppendLine(FechaDiv);
         }
     }
 
@@ -688,7 +632,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                 sb.AppendLine("                            </span>");
                 sb.AppendLine("                        </div>");
             }
-            sb.AppendLine(FechaDivConsolidado);
+            sb.AppendLine(FechaDiv);
         }
     }
 
