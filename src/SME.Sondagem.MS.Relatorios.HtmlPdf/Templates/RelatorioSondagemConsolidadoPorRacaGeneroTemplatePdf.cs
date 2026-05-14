@@ -51,7 +51,10 @@ public class RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf : RelatorioSon
                 sb.Append(GerarSecaoTabelaPorGenero(questao, colunas, genero));
                 sb.AppendLine(FechaDiv);
             }
+        }
 
+        foreach (var questao in dto.Questoes)
+        {
             var grafico = MontarGraficoConsolidado(questao);
             var htmlGrafico = GerarGrafico(grafico, quebrarPaginaAntes: false);
             if (string.IsNullOrEmpty(htmlGrafico))

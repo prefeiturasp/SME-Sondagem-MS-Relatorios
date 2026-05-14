@@ -391,14 +391,18 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         if (!string.IsNullOrWhiteSpace(dto.Raca))
             celulas.Add(CelulaTexto("Raça", dto.Raca.Trim()));
 
-        if (dto.Pap.HasValue)
-            celulas.Add(CelulaBool("PAP", dto.Pap.Value));
+        var partesProgramasEAtendimentos = new List<string>();
+        if (dto.Pap.HasValue && dto.Pap.Value)
+            partesProgramasEAtendimentos.Add("PAP");
 
-        if (dto.Aee.HasValue)
-            celulas.Add(CelulaBool("AEE", dto.Aee.Value));
+        if (dto.Aee.HasValue && dto.Aee.Value)
+            partesProgramasEAtendimentos.Add("AEE");
 
-        if (dto.Deficiente.HasValue)
-            celulas.Add(CelulaBool("Deficiente", dto.Deficiente.Value));
+        if (dto.Deficiente.HasValue && dto.Deficiente.Value)
+            partesProgramasEAtendimentos.Add("Deficiente");
+
+        if (partesProgramasEAtendimentos.Count > 0)
+            celulas.Add(CelulaTexto("Programas e Atendimentos", string.Join(", ", partesProgramasEAtendimentos)));
 
         if (dto.PossuiLinguaPortuguesaSegundaLingua.HasValue)
             celulas.Add(CelulaBool("Português como segunda língua", dto.PossuiLinguaPortuguesaSegundaLingua.Value));

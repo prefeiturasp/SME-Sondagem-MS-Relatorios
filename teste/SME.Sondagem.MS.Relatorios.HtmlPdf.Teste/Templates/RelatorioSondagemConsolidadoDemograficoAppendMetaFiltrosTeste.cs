@@ -12,11 +12,11 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
 {
     private const string TagLinhaTr = "<tr>";
     private const string TagCelulaVazia = "<td></td>";
-    private const string StrongPapFechado = "<strong>PAP:</strong>";
-    private const string StrongAeeAberto = "<strong>AEE:";
-    private const string StrongDeficienteAberto = "<strong>Deficiente:";
     private const string PrefixoAusenciaAee = "AEE:";
     private const string PrefixoAusenciaDeficiente = "Deficiente:";
+
+    private static readonly string StrongProgramasEAtendimentos =
+        $"<strong>{HttpUtility.HtmlEncode("Programas e Atendimentos")}:</strong>";
 
     private static readonly string RotuloPortuguesSegundaNao =
         $"<strong>{HttpUtility.HtmlEncode("Português como segunda língua")}:</strong> Não";
@@ -44,15 +44,18 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
     }
 
     [Theory]
-    [InlineData(true, "Sim")]
-    [InlineData(false, "Não")]
-    public void AppendLinhasMetaFiltrosOpcionais_DeveEmitirSomentePap_ComValorInformado(bool valor, string esperadoNaCelula)
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AppendLinhasMetaFiltrosOpcionais_DeveEmitirSomentePap_ComValorInformado(bool valor)
     {
         var dto = new RelatorioConsolidadoSondagemDto { Pap = valor };
         var html = ExecutarAppendNormalize(dto);
 
-        html.Should().Contain(StrongPapFechado);
-        html.Should().Contain(esperadoNaCelula);
+        var papFragmento = valor
+            ? "PAP: Sim"
+            : $"PAP: {HttpUtility.HtmlEncode("Não")}";
+        html.Should().Contain(StrongProgramasEAtendimentos);
+        html.Should().Contain(papFragmento);
         html.Should().NotContain(PrefixoAusenciaAee);
         html.Should().NotContain(PrefixoAusenciaDeficiente);
         ContarMatches(html, TagLinhaTr).Should().Be(1);
@@ -71,20 +74,17 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
         };
         var html = ExecutarAppendNormalize(dto);
 
-        html.Should().Contain($"{StrongPapFechado} Sim");
-        html.Should().Contain($"{StrongAeeAberto}</strong> Não");
-        html.Should().Contain($"{StrongDeficienteAberto}</strong> Sim");
-        html.Should().Contain(RotuloPortuguesSegundaNao);
+        var idxProgramas = html.IndexOf(StrongProgramasEAtendimentos, StringComparison.Ordinal);
+        var idxPap = html.IndexOf("PAP: Sim", StringComparison.Ordinal);
+        var idxAee = html.IndexOf($"AEE: {HttpUtility.HtmlEncode("Não")}", StringComparison.Ordinal);
+        var idxDef = html.IndexOf("Deficiente: Sim", StringComparison.Ordinal);
+        var idxPt = html.IndexOf(RotuloPortuguesSegundaNao, StringComparison.Ordinal);
 
-        var indices = new[]
-        {
-            html.IndexOf(StrongPapFechado, StringComparison.Ordinal),
-            html.IndexOf(StrongAeeAberto, StringComparison.Ordinal),
-            html.IndexOf(StrongDeficienteAberto, StringComparison.Ordinal),
-            html.IndexOf(RotuloPortuguesSegundaNao, StringComparison.Ordinal)
-        };
-        indices.Should().OnlyContain(i => i >= 0);
-        indices.Should().BeInAscendingOrder();
+        new[] { idxProgramas, idxPap, idxAee, idxDef, idxPt }.Should().OnlyContain(i => i >= 0);
+        idxProgramas.Should().BeLessThan(idxPap);
+        idxPap.Should().BeLessThan(idxAee);
+        idxAee.Should().BeLessThan(idxDef);
+        idxDef.Should().BeLessThan(idxPt);
     }
 
     [Fact]
@@ -92,6 +92,8 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
     {
         var dto = new RelatorioConsolidadoSondagemDto
         {
+            Genero = "Feminino",
+            Raca = "Parda",
             Pap = true,
             Aee = true,
             Deficiente = true,
@@ -104,10 +106,12 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
     }
 
     [Fact]
-    public void AppendLinhasMetaFiltrosOpcionais_DeveEmitirUmaUnicaLinhaSemCelulasVazias_QuandoTresFiltros()
+    public void AppendLinhasMetaFiltrosOpcionais_DeveEmitirUmaUnicaLinhaSemCelulasVazias_QuandoGeneroRacaEProgramasPreenchidos()
     {
         var dto = new RelatorioConsolidadoSondagemDto
         {
+            Genero = "Masculino",
+            Raca = "Parda",
             Pap = false,
             Aee = true,
             Deficiente = false
