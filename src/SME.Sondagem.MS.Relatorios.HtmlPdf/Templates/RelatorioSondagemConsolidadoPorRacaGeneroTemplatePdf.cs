@@ -52,7 +52,6 @@ public class RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf : RelatorioSon
                     continue;
 
                 sb.Append("<div class=\"bloco-relatorio\">");
-                sb.Append(GerarCabecalho(dto));
                 sb.Append(GerarSecaoTabelaPorGenero(questao, colunas, genero));
                 sb.AppendLine(FechaDiv);
             }
@@ -63,7 +62,6 @@ public class RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf : RelatorioSon
                 continue;
 
             sb.Append("<div class=\"bloco-relatorio\">");
-            sb.Append(GerarCabecalho(dto));
             sb.Append(htmlGrafico);
             sb.AppendLine(FechaDiv);
         }

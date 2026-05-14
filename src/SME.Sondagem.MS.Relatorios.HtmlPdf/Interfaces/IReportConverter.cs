@@ -2,5 +2,8 @@
 
 public interface IReportConverter
 {
-    byte[] GerarPdfEmMemoria(string html);
+    /// <param name="html">Documento principal (corpo).</param>
+    /// <param name="htmlDocumentoCabecalhoPorPaginaWk">
+    /// Opcional: HTML completo renderizado pelo wkhtml como header em cada página (arquivo temporário).</param>
+    byte[] GerarPdfEmMemoria(string html, string? htmlDocumentoCabecalhoPorPaginaWk = null);
 }

@@ -1,5 +1,6 @@
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Helpers;
 using System.Globalization;
 using System.Text;
 using System.Web;
@@ -14,7 +15,6 @@ namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 {
     protected static readonly CultureInfo PtBr = new("pt-BR");
-
     private static readonly string FechaDiv = "</div>";
 
     public string GerarHtml(RelatorioConsolidadoSondagemDto dto)
@@ -27,6 +27,78 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         html.Append("</body></html>");
 
         return html.ToString();
+    }
+
+    /// <summary>
+    /// HTML completo (logo + meta de filtros) para o HeaderSettings.HtmlUrl do wkhtmltopdf
+    /// (repetido no topo de cada página do PDF).
+    /// </summary>
+    public virtual string GerarHtmlDocumentoCabecalhoWk(RelatorioConsolidadoSondagemDto dto)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("<!DOCTYPE html>");
+        sb.AppendLine("<html>");
+        sb.AppendLine("<head>");
+        sb.AppendLine(@"<meta charset=""utf-8"" />");
+        sb.AppendLine("<style>");
+        sb.AppendLine("* { box-sizing: border-box; margin: 0; padding: 0; }");
+        sb.AppendLine("""
+            body {
+                font-family: 'Roboto', 'DejaVu Sans', Arial, sans-serif;
+                font-size: 10px;
+                color: #42474A;
+                background: #fff;
+                padding: 4px 16px 8px 16px;
+                margin: 0;
+                letter-spacing: 0.02em;
+                word-spacing: 0.05em;
+            }
+            .header-logo { margin-bottom: 6px; }
+            .header-logo img { height: 36px; }
+            .report-title {
+                text-align: center;
+                margin-top: 8px;
+                margin-bottom: 8px;
+            }
+            .report-title h1 {
+                font-size: 14px;
+                font-weight: 700;
+                color: #42474A;
+                margin-bottom: 2px;
+                line-height: 1.2;
+            }
+            .report-title h2 {
+                font-size: 10px;
+                font-weight: 400;
+                color: #42474A;
+                line-height: 12px;
+            }
+            .meta-table {
+                width: 100%;
+                border-collapse: collapse;
+                border: 1px solid #D9D9D9;
+            }
+            .meta-table td {
+                border: 1px solid #D9D9D9;
+                padding: 4px 8px;
+                font-size: 10px;
+                font-weight: 400;
+                line-height: 12px;
+                vertical-align: middle;
+                color: #42474A;
+            }
+            .meta-table td strong {
+                font-weight: 700;
+                margin-right: 2px;
+            }
+            """);
+        sb.AppendLine("</style>");
+        sb.AppendLine("</head>");
+        sb.AppendLine("<body>");
+        sb.Append(GerarCabecalho(dto));
+        sb.AppendLine("</body>");
+        sb.AppendLine("</html>");
+        return sb.ToString();
     }
 
     protected abstract string CssClasseColuna { get; }
@@ -63,7 +135,6 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         foreach (var questao in dto.Questoes)
         {
             sb.Append("<div class=\"bloco-relatorio\">");
-            sb.Append(GerarCabecalho(dto));
             sb.Append(GerarTabelaPorQuestao(questao, ordemColunas));
             sb.AppendLine(FechaDiv);
         }
@@ -76,7 +147,6 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                 continue;
 
             sb.Append("<div class=\"bloco-relatorio\">");
-            sb.Append(GerarCabecalho(dto));
             sb.Append(htmlGrafico);
             sb.AppendLine(FechaDiv);
         }
@@ -289,26 +359,55 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                 </tr>
                 <tr>
                     <td><strong>Componente Curricular:</strong> {HttpUtility.HtmlEncode(dto.ComponenteCurricular)}</td>
-                    <td colspan=""2""><strong>Proficiência:</strong> {HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
-                </tr>");
-
-        if (ExibirLinhaFiltroDemografico)
-        {
-            sb.Append($@"
-                <tr>
+                    <td><strong>Proficiência:</strong> {HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
                     <td><strong>Bimestre:</strong> {HttpUtility.HtmlEncode(dto.Bimestre)}</td>
-                    {GerarLinhaMetadadoDemografico(dto)}
+                        {GerarLinhaMetadadoDemografico(dto)}
                 </tr>");
-        }
+        AppendLinhasMetaFiltrosOpcionais(sb, dto);
 
         sb.Append($@"
                 <tr>
                     <td colspan=""2""><strong>Usuário:</strong> {HttpUtility.HtmlEncode(dto.Usuario)}</td>
-                    <td><strong>Data de impressão:</strong> {dto.DataImpressao:dd/MM/yyyy}</td>
+                    <td><strong>Data de impressão:</strong> {DataImpressaoBrasiliaFormatador.FormatarDataImpressaoFusoBrasilia(dto.DataImpressao)}</td>
                 </tr>
             </table>");
 
         return sb.ToString();
+    }
+
+    internal static void AppendLinhasMetaFiltrosOpcionais(StringBuilder sb, RelatorioConsolidadoSondagemDto dto)
+    {
+        static string CelulaBool(string rotulo, bool valor) =>
+            $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {(valor ? "Sim" : "Não")}</td>";
+
+        var celulas = new List<string>();
+
+        if (dto.Pap.HasValue)
+            celulas.Add(CelulaBool("PAP", dto.Pap.Value));
+
+        if (dto.Aee.HasValue)
+            celulas.Add(CelulaBool("AEE", dto.Aee.Value));
+
+        if (dto.Deficiente.HasValue)
+            celulas.Add(CelulaBool("Deficiente", dto.Deficiente.Value));
+
+        if (dto.PossuiLinguaPortuguesaSegundaLingua.HasValue)
+            celulas.Add(CelulaBool("Português como segunda língua", dto.PossuiLinguaPortuguesaSegundaLingua.Value));
+
+        if (celulas.Count == 0)
+            return;
+
+        for (int i = 0; i < celulas.Count; i += 3)
+        {
+            sb.AppendLine("                <tr>");
+            var fimChunk = Math.Min(i + 3, celulas.Count);
+            for (int j = i; j < fimChunk; j++)
+                sb.AppendLine($"                    {celulas[j]}");
+            var faltantes = 3 - (fimChunk - i);
+            for (int k = 0; k < faltantes; k++)
+                sb.AppendLine("                    <td></td>");
+            sb.AppendLine("                </tr>");
+        }
     }
 
     private const string FechaDivConsolidado = "</div>";
@@ -329,73 +428,14 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                             font-size: 10px;
                             color: #42474A;
                             background: #fff;
-                            padding: 0 16px;
-                            margin-top: 16px;
+                            padding: 12px 16px 0 16px;
                             letter-spacing: 0.02em;
                             word-spacing: 0.05em;
                         }
 
-                        .header-logo { margin-bottom: 6px; }
-                        .header-logo img { height: 36px; }
-
-                        .report-title {
-                            text-align: center;
-                            margin-top: 8px;
-                            margin-bottom: 8px;
-                        }
-                        .report-title h1 {
-                            font-size: 14px;
-                            font-weight: 700;
-                            color: #42474A;
-                            margin-bottom: 2px;
-                            line-height: 1.2;
-                        }
-                        .report-title h2 {
-                            font-size: 10px;
-                            font-weight: 400;
-                            color: #42474A;
-                            line-height: 12px;
-                        }
-
-                        .meta-table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            border: 1px solid #D9D9D9;
-                        }
-                        .meta-table td {
-                            border: 1px solid #D9D9D9;
-                            padding: 4px 8px;
-                            font-size: 10px;
-                            font-weight: 400;
-                            line-height: 12px;
-                            vertical-align: middle;
-                            color: #42474A;
-                        }
-                        .meta-table td strong {
-                            font-weight: 700;
-                            margin-right: 2px;
-                        }
-
-                        .badge-consolidacao {
-                            display: inline-block;
-                            background-color: #6933FF;
-                            color: #fff;
-                            font-size: 9px;
-                            font-weight: 700;
-                            padding: 4px 10px;
-                            border-radius: 4px;
-                            margin-top: 8px;
-                            float: right;
-                        }
-
-                        .clearfix::after {
-                            content: "";
-                            display: table;
-                            clear: both;
-                        }
-
-                        .bloco-relatorio + .bloco-relatorio {
-                            page-break-before: always;
+                        /* Fluxo contínuo: sem page-break-before entre blocos (empilha se couber). */
+                        .bloco-relatorio {
+                            page-break-inside: avoid;
                         }
                         .secao-tabela {
                             margin-top: 16px;
@@ -521,10 +561,10 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             + "Quantidade%20de%20estudantes%3C/text%3E%3C/svg%3E";
 
         var aberturaBlocoTopo = quebrarPaginaAntes
-            ? "<div style=\"page-break-before: always; padding-top: 16px;\">"
-            : "<div style=\"padding-top: 16px;\">";
+            ? "<div style=\"page-break-before: always; padding-top: 20px; padding-bottom: 8px; margin-bottom: 32px;\">"
+            : "<div style=\"padding-top: 24px; padding-bottom: 8px; margin-bottom: 32px;\">";
         sb.AppendLine(aberturaBlocoTopo);
-        sb.AppendLine("    <div style=\"text-align:center; margin-bottom:20px;\">");
+        sb.AppendLine("    <div style=\"text-align:center; margin-bottom:24px;\">");
         sb.AppendLine($"        <h1 style=\"font-size:14px; font-weight:700; color:#42474A; margin-bottom:4px;\">{model.Titulo}</h1>");
         sb.AppendLine($"        <h2 style=\"font-size:10px; font-weight:400; color:#42474A;\">{model.Subtitulo}</h2>");
         sb.AppendLine("    </div>");

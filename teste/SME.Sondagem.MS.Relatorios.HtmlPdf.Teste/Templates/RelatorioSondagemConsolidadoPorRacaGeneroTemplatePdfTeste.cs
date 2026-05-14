@@ -16,11 +16,13 @@ public class RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdfTeste
         var dto = CriarDtoConsolidadoRacaGenero();
 
         var html = _template.GerarHtml(dto);
+        var hdr = _template.GerarHtmlDocumentoCabecalhoWk(dto);
 
         html.Should().Contain("<!DOCTYPE html>");
-        html.Should().Contain("Por ra&#231;a e g&#234;nero"); // HtmlEncode no cabeçalho
-        html.Should().Contain("Gênero:</strong> Todos");
-        html.Should().Contain("Raça:</strong> Todas");
+        html.Should().NotContain("class=\"meta-table\"");
+        hdr.Should().Contain("Por ra&#231;a e g&#234;nero"); // HtmlEncode no cabeçalho Wk
+        hdr.Should().Contain("Gênero:</strong> Todos");
+        hdr.Should().Contain("Raça:</strong> Todas");
         html.Should().Contain("Gênero: Feminino");
         html.Should().Contain("Gênero: Masculino");
         html.Should().Contain(">Branca<");
