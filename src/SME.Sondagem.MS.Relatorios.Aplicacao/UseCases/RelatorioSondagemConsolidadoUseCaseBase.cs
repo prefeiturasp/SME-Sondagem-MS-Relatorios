@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using SME.Sondagem.MS.Relatorios.Dominio.Entidades;
 using SME.Sondagem.MS.Relatorios.Dominio.Enums;
-using SME.Sondagem.MS.Relatorios.Dominio.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Fila;
@@ -19,9 +18,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     private readonly IServicoEolApiClient _servicoEolApiClient;
     private readonly IServicoMensageria _servicoMensageria;
     private readonly ILogger _logger;
-    private readonly IRepositorioComponenteCurricular _repositorioComponenteCurricular;
-    private readonly IRepositorioGeneroSexo _repositorioGeneroSexo;
-    private readonly IRepositorioRacaCor _repositorioRacaCor;
+    private readonly ConsolidadoRepositorios _repositorios;
 
     protected RelatorioSondagemConsolidadoUseCaseBase(
         IServicoSondagemApiClient servicoSondagemApiClient,
@@ -29,18 +26,14 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         IServicoEolApiClient servicoEolApiClient,
         IServicoMensageria servicoMensageria,
         ILogger logger,
-        IRepositorioComponenteCurricular repositorioComponenteCurricular,
-        IRepositorioGeneroSexo repositorioGeneroSexo,
-        IRepositorioRacaCor repositorioRacaCor)
+        ConsolidadoRepositorios repositorios)
     {
         ServicoSondagemApiClient = servicoSondagemApiClient;
         _servicoSgpApiClient = servicoSgpApiClient;
         _servicoEolApiClient = servicoEolApiClient;
         _servicoMensageria = servicoMensageria;
         _logger = logger;
-        _repositorioComponenteCurricular = repositorioComponenteCurricular;
-        _repositorioGeneroSexo = repositorioGeneroSexo;
-        _repositorioRacaCor = repositorioRacaCor;
+        _repositorios = repositorios;
     }
 
     protected abstract string AgrupamentoPadrao { get; }
@@ -97,7 +90,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         var dadosTask = ObterRelatorioConsolidadoAsync(filtros);
         var usuarioTask = _servicoEolApiClient.ObterDadosUsuarioAsync(mensagem.UsuarioQueSolicitou);
         var profTask = ServicoSondagemApiClient.ObterProficienciaPorIdAsync(filtros.ProficienciaId);
-        var componentesCurricularTask = _repositorioComponenteCurricular.ObterPorIdAsync(filtros.ComponenteCurricularId);
+        var componentesCurricularTask = _repositorios.ComponenteCurricular.ObterPorIdAsync(filtros.ComponenteCurricularId);
 
         Task<List<EscolaDto>>? escolaTask = !string.IsNullOrWhiteSpace(filtros.Ue)
             ? _servicoEolApiClient.ObterDadosDreAsync([filtros.Ue])
@@ -223,13 +216,13 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     {
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Genero) && dadosRelatorio.GeneroId.HasValue)
         {
-            var generos = await _repositorioGeneroSexo.ObterTodosAsync();
+            var generos = await _repositorios.GeneroSexo.ObterTodosAsync();
             dadosRelatorio.Genero = generos.FirstOrDefault(g => g.Id == dadosRelatorio.GeneroId)?.Descricao ?? ValorTodos;
         }
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Raca) && dadosRelatorio.RacaId.HasValue)
         {
-            var racas = await _repositorioRacaCor.ObterTodosAsync();
+            var racas = await _repositorios.RacaCor.ObterTodosAsync();
             var racaDescricao = racas.FirstOrDefault(r => r.Id == dadosRelatorio.RacaId)?.Descricao;
             dadosRelatorio.Raca = racaDescricao != null
                 ? System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(racaDescricao.ToLower())
