@@ -1,5 +1,6 @@
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Helpers;
 using System.Globalization;
 using System.Text;
 using System.Web;
@@ -14,7 +15,6 @@ namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 {
     protected static readonly CultureInfo PtBr = new("pt-BR");
-
     private static readonly string FechaDiv = "</div>";
 
     public string GerarHtml(RelatorioConsolidadoSondagemDto dto)
@@ -289,22 +289,15 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                 </tr>
                 <tr>
                     <td><strong>Componente Curricular:</strong> {HttpUtility.HtmlEncode(dto.ComponenteCurricular)}</td>
-                    <td colspan=""2""><strong>Proficiência:</strong> {HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
-                </tr>");
-
-        if (ExibirLinhaFiltroDemografico)
-        {
-            sb.Append($@"
-                <tr>
+                    <td><strong>Proficiência:</strong> {HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
                     <td><strong>Bimestre:</strong> {HttpUtility.HtmlEncode(dto.Bimestre)}</td>
-                    {GerarLinhaMetadadoDemografico(dto)}
+                        {GerarLinhaMetadadoDemografico(dto)}
                 </tr>");
-        }
 
         sb.Append($@"
                 <tr>
                     <td colspan=""2""><strong>Usuário:</strong> {HttpUtility.HtmlEncode(dto.Usuario)}</td>
-                    <td><strong>Data de impressão:</strong> {dto.DataImpressao:dd/MM/yyyy}</td>
+                    <td><strong>Data de impressão:</strong> {DataImpressaoBrasiliaFormatador.FormatarDataImpressaoFusoBrasilia(dto.DataImpressao)}</td>
                 </tr>
             </table>");
 
