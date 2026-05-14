@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="SME.Sondagem.MS.Relatorios.HtmlPdf.Teste" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Haukcode.WkHtmlToPdfDotNet" Version="1.5.95" />
   </ItemGroup>
 
