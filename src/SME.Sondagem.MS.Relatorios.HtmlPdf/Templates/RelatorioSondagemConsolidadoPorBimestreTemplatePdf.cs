@@ -10,9 +10,6 @@ public class RelatorioSondagemConsolidadoPorBimestreTemplatePdf
 {
     protected override string CssClasseColuna => "col-bimestre";
 
-    protected override string GerarLinhaMetadadoDemografico(RelatorioConsolidadoSondagemDto dto) =>
-        $"<td colspan=\"2\"><strong>Bimestre:</strong> {HttpUtility.HtmlEncode(dto.Bimestre)}</td>";
-
     protected override List<string> ObterOrdemColunas(RelatorioConsolidadoSondagemDto dto) =>
         dto.BimestresDisponiveis?
             .Select(b => b.Descricao)

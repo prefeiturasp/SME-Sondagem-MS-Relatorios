@@ -24,11 +24,23 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
     private static readonly TimeSpan LimiteRegex = TimeSpan.FromSeconds(1);
 
     [Fact]
-    public void AppendLinhasMetaFiltrosOpcionais_NaoDeveEmitirLinhas_QuandoTodosOsFiltrosSaoNulos()
+    public void AppendLinhasMetaFiltrosOpcionais_NaoDeveEmitirLinhas_QuandoTodosOsFiltrosSaoNulosOuVazios()
     {
         var html = ExecutarAppendNormalize(new RelatorioConsolidadoSondagemDto());
 
         html.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AppendLinhasMetaFiltrosOpcionais_DeveEmitirGeneroERaca_QuandoPreenchidos()
+    {
+        var dto = new RelatorioConsolidadoSondagemDto { Genero = "Feminino", Raca = "Parda" };
+        var html = ExecutarAppendNormalize(dto);
+
+        html.Should().Contain("<strong>G&#234;nero:</strong> Feminino");
+        html.Should().Contain("<strong>Ra&#231;a:</strong> Parda");
+        ContarMatches(html, TagLinhaTr).Should().Be(1);
+        ContarMatches(html, TagCelulaVazia).Should().Be(1);
     }
 
     [Theory]

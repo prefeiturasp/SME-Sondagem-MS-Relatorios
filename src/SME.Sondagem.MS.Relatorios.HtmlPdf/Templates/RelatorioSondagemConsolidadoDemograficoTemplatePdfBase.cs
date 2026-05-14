@@ -105,8 +105,6 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
     protected virtual string CssExtraSecaoTabelaH3 => string.Empty;
 
-    protected virtual string GerarLinhaMetadadoDemografico(RelatorioConsolidadoSondagemDto dto) => string.Empty;
-
     protected abstract List<string> ObterOrdemColunas(RelatorioConsolidadoSondagemDto dto);
 
     protected abstract HashSet<string> ColetarColunasEncontradas(RelatorioConsolidadoQuestaoDto questao);
@@ -361,8 +359,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                     <td><strong>Componente Curricular:</strong> {HttpUtility.HtmlEncode(dto.ComponenteCurricular)}</td>
                     <td><strong>Proficiência:</strong> {HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
                     <td><strong>Bimestre:</strong> {HttpUtility.HtmlEncode(dto.Bimestre)}</td>
-                        {GerarLinhaMetadadoDemografico(dto)}
                 </tr>");
+
         AppendLinhasMetaFiltrosOpcionais(sb, dto);
 
         sb.Append($@"
@@ -377,10 +375,21 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
     internal static void AppendLinhasMetaFiltrosOpcionais(StringBuilder sb, RelatorioConsolidadoSondagemDto dto)
     {
+        const int maxCelulasPorLinha = 3;
+
         static string CelulaBool(string rotulo, bool valor) =>
             $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {(valor ? "Sim" : "Não")}</td>";
 
+        static string CelulaTexto(string rotulo, string valor) =>
+            $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {HttpUtility.HtmlEncode(valor)}</td>";
+
         var celulas = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(dto.Genero))
+            celulas.Add(CelulaTexto("Gênero", dto.Genero.Trim()));
+
+        if (!string.IsNullOrWhiteSpace(dto.Raca))
+            celulas.Add(CelulaTexto("Raça", dto.Raca.Trim()));
 
         if (dto.Pap.HasValue)
             celulas.Add(CelulaBool("PAP", dto.Pap.Value));
@@ -397,14 +406,12 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         if (celulas.Count == 0)
             return;
 
-        for (int i = 0; i < celulas.Count; i += 3)
+        foreach (var bloco in celulas.Chunk(maxCelulasPorLinha))
         {
             sb.AppendLine("                <tr>");
-            var fimChunk = Math.Min(i + 3, celulas.Count);
-            for (int j = i; j < fimChunk; j++)
-                sb.AppendLine($"                    {celulas[j]}");
-            var faltantes = 3 - (fimChunk - i);
-            for (int k = 0; k < faltantes; k++)
+            foreach (var cel in bloco)
+                sb.AppendLine($"                    {cel}");
+            for (var k = bloco.Length; k < maxCelulasPorLinha; k++)
                 sb.AppendLine("                    <td></td>");
             sb.AppendLine("                </tr>");
         }

@@ -1,16 +1,11 @@
 using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
-using System.Web;
-using System.Linq;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
 public class RelatorioSondagemConsolidadoPorRacaTemplatePdf : RelatorioSondagemConsolidadoDemograficoTemplatePdfBase, IRelatorioSondagemConsolidadoPorRacaTemplatePdf
 {
     protected override string CssClasseColuna => "col-raca";
-
-    protected override string GerarLinhaMetadadoDemografico(RelatorioConsolidadoSondagemDto dto) =>
-        $"<td colspan=\"2\"><strong>Raça:</strong> {HttpUtility.HtmlEncode(dto.Raca)}</td>";
 
     protected override List<string> ObterOrdemColunas(RelatorioConsolidadoSondagemDto dto) =>
         dto.RacasDisponiveis?

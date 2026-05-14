@@ -1,6 +1,5 @@
 using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
-using System.Web;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
@@ -10,9 +9,6 @@ public class RelatorioSondagemConsolidadoPorGeneroTemplatePdf : RelatorioSondage
 
     protected override string CssExtraSecaoTabelaH3 =>
         "background-color: #FAFAFA;\n                            padding: 8px;\n                            border: 1px solid #F0F0F0;\n                            border-bottom: none;";
-
-    protected override string GerarLinhaMetadadoDemografico(RelatorioConsolidadoSondagemDto dto) =>
-        $"<td colspan=\"2\"><strong>Gênero:</strong> {HttpUtility.HtmlEncode(dto.Genero)}</td>";
 
     protected override List<string> ObterOrdemColunas(RelatorioConsolidadoSondagemDto dto) =>
         dto.GenerosDisponiveis?
