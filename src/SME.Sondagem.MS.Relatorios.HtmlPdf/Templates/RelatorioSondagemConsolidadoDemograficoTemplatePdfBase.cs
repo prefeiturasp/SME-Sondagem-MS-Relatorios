@@ -4,6 +4,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Helpers;
 using System.Globalization;
 using System.Text;
 using System.Web;
+using System.Linq;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
@@ -375,41 +376,47 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
     internal static void AppendLinhasMetaFiltrosOpcionais(StringBuilder sb, RelatorioConsolidadoSondagemDto dto)
     {
-        const int maxCelulasPorLinha = 3;
-
-        static string CelulaBool(string rotulo, bool valor) =>
-            $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {(valor ? "Sim" : "Não")}</td>";
-
-        static string CelulaTexto(string rotulo, string valor) =>
-            $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {HttpUtility.HtmlEncode(valor)}</td>";
-
-        var celulas = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(dto.Genero))
-            celulas.Add(CelulaTexto("Gênero", dto.Genero.Trim()));
-
-        if (!string.IsNullOrWhiteSpace(dto.Raca))
-            celulas.Add(CelulaTexto("Raça", dto.Raca.Trim()));
-
-        var partesProgramasEAtendimentos = new List<string>();
-        if (dto.Pap.HasValue && dto.Pap.Value)
-            partesProgramasEAtendimentos.Add("PAP");
-
-        if (dto.Aee.HasValue && dto.Aee.Value)
-            partesProgramasEAtendimentos.Add("AEE");
-
-        if (dto.Deficiente.HasValue && dto.Deficiente.Value)
-            partesProgramasEAtendimentos.Add("Deficiente");
-
-        if (partesProgramasEAtendimentos.Count > 0)
-            celulas.Add(CelulaTexto("Programas e Atendimentos", string.Join(", ", partesProgramasEAtendimentos)));
-
-        if (dto.PossuiLinguaPortuguesaSegundaLingua.HasValue)
-            celulas.Add(CelulaBool("Português como segunda língua", dto.PossuiLinguaPortuguesaSegundaLingua.Value));
-
+        var celulas = MontarCelulasMetaFiltrosOpcionais(dto);
         if (celulas.Count == 0)
             return;
 
+        AppendLinhasMetaTabelaEmBlocos(sb, celulas, maxCelulasPorLinha: 3);
+    }
+
+    private static List<string> MontarCelulasMetaFiltrosOpcionais(RelatorioConsolidadoSondagemDto dto)
+    {
+        var celulas = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(dto.Genero))
+            celulas.Add(MetaFiltroCelulaTexto("Gênero", dto.Genero.Trim()));
+
+        if (!string.IsNullOrWhiteSpace(dto.Raca))
+            celulas.Add(MetaFiltroCelulaTexto("Raça", dto.Raca.Trim()));
+
+        var programas = ColetarRotulosProgramasEAtendimentosAtivos(dto);
+        if (programas.Count > 0)
+            celulas.Add(MetaFiltroCelulaTexto("Programas e Atendimentos", string.Join(", ", programas)));
+
+        if (dto.PossuiLinguaPortuguesaSegundaLingua.HasValue)
+            celulas.Add(MetaFiltroCelulaBool("Português como segunda língua", dto.PossuiLinguaPortuguesaSegundaLingua.Value));
+
+        return celulas;
+    }
+
+    private static List<string> ColetarRotulosProgramasEAtendimentosAtivos(RelatorioConsolidadoSondagemDto dto)
+    {
+        return [.. (from par in new (bool? Ativo, string Rotulo)[]
+                 {
+                     (dto.Pap, "PAP"),
+                     (dto.Aee, "AEE"),
+                     (dto.Deficiente, "Deficiente")
+                 }
+                where par.Ativo is true
+                select par.Rotulo)];
+    }
+
+    private static void AppendLinhasMetaTabelaEmBlocos(StringBuilder sb, List<string> celulas, int maxCelulasPorLinha)
+    {
         foreach (var bloco in celulas.Chunk(maxCelulasPorLinha))
         {
             sb.AppendLine("                <tr>");
@@ -420,6 +427,12 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             sb.AppendLine("                </tr>");
         }
     }
+
+    private static string MetaFiltroCelulaBool(string rotulo, bool valor) =>
+        $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {(valor ? "Sim" : "Não")}</td>";
+
+    private static string MetaFiltroCelulaTexto(string rotulo, string valor) =>
+        $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {HttpUtility.HtmlEncode(valor)}</td>";
 
     private const string FechaDivConsolidado = "</div>";
 
@@ -550,8 +563,9 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         double magnitude = Math.Pow(10, Math.Floor(Math.Log10(rawStepParaLog)));
         double niceStep = Math.Ceiling(rawStep / magnitude) * magnitude;
 
-        int yMax = (int)(niceStep * (stepCount - 1));
-        int yStep = (int)niceStep;
+        // niceStep pode ser fracionário (ex.: máx. 3 → 0,5); (int) truncaria para 0 e todos os rótulos do eixo Y virariam "0".
+        int yStep = Math.Max(1, (int)Math.Ceiling(niceStep));
+        int yMax = yStep * (stepCount - 1);
 
         int chartHeight = 260;
         int rowHeight = chartHeight / (stepCount - 1);

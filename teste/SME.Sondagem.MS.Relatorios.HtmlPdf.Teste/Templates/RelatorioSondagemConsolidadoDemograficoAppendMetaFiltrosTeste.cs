@@ -43,19 +43,14 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
         ContarMatches(html, TagCelulaVazia).Should().Be(1);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void AppendLinhasMetaFiltrosOpcionais_DeveEmitirSomentePap_ComValorInformado(bool valor)
+    [Fact]
+    public void AppendLinhasMetaFiltrosOpcionais_DeveEmitirProgramasComPap_QuandoPapVerdadeiro()
     {
-        var dto = new RelatorioConsolidadoSondagemDto { Pap = valor };
+        var dto = new RelatorioConsolidadoSondagemDto { Pap = true };
         var html = ExecutarAppendNormalize(dto);
 
-        var papFragmento = valor
-            ? "PAP: Sim"
-            : $"PAP: {HttpUtility.HtmlEncode("Não")}";
         html.Should().Contain(StrongProgramasEAtendimentos);
-        html.Should().Contain(papFragmento);
+        html.Should().Contain("PAP");
         html.Should().NotContain(PrefixoAusenciaAee);
         html.Should().NotContain(PrefixoAusenciaDeficiente);
         ContarMatches(html, TagLinhaTr).Should().Be(1);
@@ -63,7 +58,16 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
     }
 
     [Fact]
-    public void AppendLinhasMetaFiltrosOpcionais_DeveRespeitarOrdemPapAeeDeficientePortuguesSegundaLingua_QuandoTodosPreenchidos()
+    public void AppendLinhasMetaFiltrosOpcionais_NaoDeveEmitirLinhas_QuandoSomentePapFalsoInformado()
+    {
+        var dto = new RelatorioConsolidadoSondagemDto { Pap = false };
+        var html = ExecutarAppendNormalize(dto);
+
+        html.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AppendLinhasMetaFiltrosOpcionais_DeveRespeitarOrdemPapDeficientePortuguesSegundaLingua_QuandoTodosPreenchidos()
     {
         var dto = new RelatorioConsolidadoSondagemDto
         {
@@ -74,16 +78,18 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
         };
         var html = ExecutarAppendNormalize(dto);
 
+        html.Should().NotContain("AEE");
+        html.Should().Contain("PAP");
+        html.Should().Contain("Deficiente");
+
         var idxProgramas = html.IndexOf(StrongProgramasEAtendimentos, StringComparison.Ordinal);
-        var idxPap = html.IndexOf("PAP: Sim", StringComparison.Ordinal);
-        var idxAee = html.IndexOf($"AEE: {HttpUtility.HtmlEncode("Não")}", StringComparison.Ordinal);
-        var idxDef = html.IndexOf("Deficiente: Sim", StringComparison.Ordinal);
+        var idxPap = html.IndexOf("PAP", StringComparison.Ordinal);
+        var idxDef = html.IndexOf("Deficiente", StringComparison.Ordinal);
         var idxPt = html.IndexOf(RotuloPortuguesSegundaNao, StringComparison.Ordinal);
 
-        new[] { idxProgramas, idxPap, idxAee, idxDef, idxPt }.Should().OnlyContain(i => i >= 0);
+        new[] { idxProgramas, idxPap, idxDef, idxPt }.Should().OnlyContain(i => i >= 0);
         idxProgramas.Should().BeLessThan(idxPap);
-        idxPap.Should().BeLessThan(idxAee);
-        idxAee.Should().BeLessThan(idxDef);
+        idxPap.Should().BeLessThan(idxDef);
         idxDef.Should().BeLessThan(idxPt);
     }
 
