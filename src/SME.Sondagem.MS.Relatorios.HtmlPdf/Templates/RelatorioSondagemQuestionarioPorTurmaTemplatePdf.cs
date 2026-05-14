@@ -3,7 +3,6 @@ using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
 using SME.Sondagem.MS.Relatorios.Infra.Extensions;
-using SME.Sondagem.MS.Relatorios.Infra.Records;
 using System.Globalization;
 using System.Text;
 
@@ -23,58 +22,23 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
                                     <head>
                                         <meta charset="utf-8"/>
                                         <style>
-                                        * { box-sizing: border-box; margin: 0; padding: 0; }
+                        """);
+        html.Append(RelatorioSondagemPdfCabecalhoCompartilhado.CssUniversalReset);
+        html.AppendLine();
+        html.Append("""
                                         body {
                                             font-family: 'Roboto', 'DejaVu Sans', Arial, sans-serif;
                                             font-size: 10px;
                                             color: #42474A;
-                                            padding: 10px 10px 4px 10px;
                                             background: #fff;
-                                            /* FIX: espaçamento correto entre letras e palavras */
+                                            padding: 0 16px;
+                                            margin-top: 16px;
                                             letter-spacing: 0.02em;
                                             word-spacing: 0.05em;
                                         }
-                                        .header-logo {
-                                            margin-bottom: 6px;
-                                        }
-                                        .header-logo img {
-                                            height: 36px;
-                                        }
-                                        .meta-table {
-                                            width: 100%;
-                                            border-collapse: collapse;
-                                            border: 1px solid #D9D9D9;
-                                        }
-                                        .meta-table td {
-                                            border: 1px solid #D9D9D9;
-                                            padding: 4px 8px;
-                                            font-size: 10px;
-                                            font-weight: 400;
-                                            line-height: 12px;
-                                            vertical-align: middle;
-                                            color: #42474A;
-                                        }
-                                        .meta-table td strong {
-                                            font-weight: 700;
-                                            margin-right: 2px;
-                                        }
-                                         * {
-                                                box-sizing: border-box;
-                                                margin: 0;
-                                                padding: 0;
-                                            }
-
-                                            body {
-                                                font-family: 'Roboto', 'DejaVu Sans', Arial, sans-serif;
-                                                font-size: 10px;
-                                                color: #42474A;
-                                                background: #fff;
-                                                padding: 0 16px;
-                                                margin-top: 16px;
-                                                letter-spacing: 0.02em;
-                                                word-spacing: 0.05em;
-                                            }
-
+                        """);
+        html.Append(RelatorioSondagemPdfCabecalhoCompartilhado.CssCabecalhoLogoEMetaRules);
+        html.Append("""
                                             /* Título */
                                             .report-title {
                                                 text-align: center;

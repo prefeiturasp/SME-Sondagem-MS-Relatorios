@@ -1,5 +1,6 @@
-using SME.Sondagem.MS.Relatorios.Infra.Constantes;
+using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Helpers;
 using System.Globalization;
 using System.Text;
@@ -16,6 +17,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 {
     protected static readonly CultureInfo PtBr = new("pt-BR");
     private static readonly string FechaDiv = "</div>";
+    private const string Todos = "Todos";
 
     public string GerarHtml(RelatorioConsolidadoSondagemDto dto)
     {
@@ -36,65 +38,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
     public virtual string GerarHtmlDocumentoCabecalhoWk(RelatorioConsolidadoSondagemDto dto)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("<!DOCTYPE html>");
-        sb.AppendLine("<html>");
-        sb.AppendLine("<head>");
-        sb.AppendLine(@"<meta charset=""utf-8"" />");
-        sb.AppendLine("<style>");
-        sb.AppendLine("* { box-sizing: border-box; margin: 0; padding: 0; }");
-        sb.AppendLine("""
-            body {
-                font-family: 'Roboto', 'DejaVu Sans', Arial, sans-serif;
-                font-size: 10px;
-                color: #42474A;
-                background: #fff;
-                padding: 4px 16px 8px 16px;
-                margin: 0;
-                letter-spacing: 0.02em;
-                word-spacing: 0.05em;
-            }
-            .header-logo { margin-bottom: 6px; }
-            .header-logo img { height: 36px; }
-            .report-title {
-                text-align: center;
-                margin-top: 8px;
-                margin-bottom: 8px;
-            }
-            .report-title h1 {
-                font-size: 14px;
-                font-weight: 700;
-                color: #42474A;
-                margin-bottom: 2px;
-                line-height: 1.2;
-            }
-            .report-title h2 {
-                font-size: 10px;
-                font-weight: 400;
-                color: #42474A;
-                line-height: 12px;
-            }
-            .meta-table {
-                width: 100%;
-                border-collapse: collapse;
-                border: 1px solid #D9D9D9;
-            }
-            .meta-table td {
-                border: 1px solid #D9D9D9;
-                padding: 4px 8px;
-                font-size: 10px;
-                font-weight: 400;
-                line-height: 12px;
-                vertical-align: middle;
-                color: #42474A;
-            }
-            .meta-table td strong {
-                font-weight: 700;
-                margin-right: 2px;
-            }
-            """);
-        sb.AppendLine("</style>");
-        sb.AppendLine("</head>");
-        sb.AppendLine("<body>");
+        sb.Append(RelatorioSondagemPdfCabecalhoCompartilhado.MarkupTopoDocumentoCabecalhoWk);
         sb.Append(GerarCabecalho(dto));
         sb.AppendLine("</body>");
         sb.AppendLine("</html>");
@@ -104,8 +48,6 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
     protected abstract string CssClasseColuna { get; }
 
     protected virtual string CssExtraSecaoTabelaH3 => string.Empty;
-
-    protected virtual string GerarLinhaMetadadoDemografico(RelatorioConsolidadoSondagemDto dto) => string.Empty;
 
     protected abstract List<string> ObterOrdemColunas(RelatorioConsolidadoSondagemDto dto);
 
@@ -179,7 +121,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             return null;
 
         var barras = questao.Respostas
-            .Where(r => r.Total > 0)
+            .Where(static r => r != null && r.Total > 0)
             .OrderBy(r => r.Ordem)
             .Select(r => new GraficoBarraDto
             {
@@ -263,15 +205,21 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
+    protected static string GerarPrefixoLinhaRespostaComBadge(RelatorioConsolidadoRespostaDto resposta)
+    {
+        bool isSemPreenchimento = resposta.Resposta?.Trim()
+            .Equals("Sem preenchimento", StringComparison.OrdinalIgnoreCase) == true;
+        var classeLinha = isSemPreenchimento ? "row-sem-preenchimento" : string.Empty;
+        var sb = new StringBuilder();
+        sb.AppendLine($"            <tr class=\"{classeLinha}\">");
+        sb.AppendLine(GerarBadgeNivel(resposta));
+        return sb.ToString();
+    }
+
     protected virtual string GerarLinhaResposta(RelatorioConsolidadoRespostaDto resposta, List<string> colunas)
     {
         var sb = new StringBuilder();
-        bool isSemPreenchimento = resposta.Resposta?.Trim()
-            .Equals("Sem preenchimento", StringComparison.OrdinalIgnoreCase) == true;
-
-        var classeLinha = isSemPreenchimento ? "row-sem-preenchimento" : string.Empty;
-        sb.AppendLine($"            <tr class=\"{classeLinha}\">");
-        sb.AppendLine(GerarBadgeNivel(resposta));
+        sb.Append(GerarPrefixoLinhaRespostaComBadge(resposta));
 
         var dic = MontarDicionarioResposta(resposta);
         AppendCelulasValor(sb, colunas, dic);
@@ -338,10 +286,10 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
     protected virtual string GerarCabecalho(RelatorioConsolidadoSondagemDto dto)
     {
         var sb = new StringBuilder();
+        var (anoLabel, anoValue) = ObterLabelValorAno(dto);
+
+        sb.Append(RelatorioSondagemPdfCabecalhoCompartilhado.LogoPrefeituraHtml);
         sb.Append($@"
-            <div class=""header-logo"">
-                <img src=""{SmeConstants.Logo_PrefSP_Horizontal}"" alt=""Prefeitura de São Paulo"" />
-            </div>
             <div class=""report-title"">
                 <h1>Relatório da Sondagem</h1>
                 <h2>{HttpUtility.HtmlEncode(dto.Titulo)}</h2>
@@ -355,14 +303,14 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                 <tr>
                     <td><strong>DRE:</strong> {HttpUtility.HtmlEncode(dto.Dre)}</td>
                     <td><strong>Unidade Educacional:</strong> {HttpUtility.HtmlEncode(dto.UnidadeEducacional)}</td>
-                    <td><strong>Ano:</strong> {HttpUtility.HtmlEncode(dto.AnoTurma)}</td>
+                    <td><strong>{anoLabel}:</strong> {HttpUtility.HtmlEncode(anoValue)}</td>
                 </tr>
                 <tr>
                     <td><strong>Componente Curricular:</strong> {HttpUtility.HtmlEncode(dto.ComponenteCurricular)}</td>
                     <td><strong>Proficiência:</strong> {HttpUtility.HtmlEncode(dto.Proficiencia)}</td>
                     <td><strong>Bimestre:</strong> {HttpUtility.HtmlEncode(dto.Bimestre)}</td>
-                        {GerarLinhaMetadadoDemografico(dto)}
                 </tr>");
+
         AppendLinhasMetaFiltrosOpcionais(sb, dto);
 
         sb.Append($@"
@@ -375,42 +323,79 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         return sb.ToString();
     }
 
+    private static (string Label, string Value) ObterLabelValorAno(RelatorioConsolidadoSondagemDto dto) =>
+        dto.ModalidadeId switch
+        {
+            (int)Modalidade.EJA => ("Semestre: ", FormatarSemestre(dto.SemestreId)),
+            (int)Modalidade.Fundamental => ("Ano: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? Todos : dto.AnoTurma),
+            _ => ("Ano / Turma: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? Todos : dto.AnoTurma)
+        };
+
+    private static string FormatarSemestre(int semestreId)
+    {
+        if (semestreId == 0) return Todos;
+        return Enum.TryParse(semestreId.ToString(), out Semestre s) ? s.ShortName() ?? Todos : Todos;
+    }
+
     internal static void AppendLinhasMetaFiltrosOpcionais(StringBuilder sb, RelatorioConsolidadoSondagemDto dto)
     {
-        static string CelulaBool(string rotulo, bool valor) =>
-            $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {(valor ? "Sim" : "Não")}</td>";
-
-        var celulas = new List<string>();
-
-        if (dto.Pap.HasValue)
-            celulas.Add(CelulaBool("PAP", dto.Pap.Value));
-
-        if (dto.Aee.HasValue)
-            celulas.Add(CelulaBool("AEE", dto.Aee.Value));
-
-        if (dto.Deficiente.HasValue)
-            celulas.Add(CelulaBool("Deficiente", dto.Deficiente.Value));
-
-        if (dto.PossuiLinguaPortuguesaSegundaLingua.HasValue)
-            celulas.Add(CelulaBool("Português como segunda língua", dto.PossuiLinguaPortuguesaSegundaLingua.Value));
-
+        var celulas = MontarCelulasMetaFiltrosOpcionais(dto);
         if (celulas.Count == 0)
             return;
 
-        for (int i = 0; i < celulas.Count; i += 3)
+        AppendLinhasMetaTabelaEmBlocos(sb, celulas, maxCelulasPorLinha: 3);
+    }
+
+    private static List<string> MontarCelulasMetaFiltrosOpcionais(RelatorioConsolidadoSondagemDto dto)
+    {
+        var celulas = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(dto.Genero))
+            celulas.Add(MetaFiltroCelulaTexto("Gênero", dto.Genero.Trim()));
+
+        if (!string.IsNullOrWhiteSpace(dto.Raca))
+            celulas.Add(MetaFiltroCelulaTexto("Raça", dto.Raca.Trim()));
+
+        var programas = ColetarRotulosProgramasEAtendimentosAtivos(dto);
+        if (programas.Count > 0)
+            celulas.Add(MetaFiltroCelulaTexto("Programas e Atendimentos", string.Join(", ", programas)));
+
+        if (dto.PossuiLinguaPortuguesaSegundaLingua.HasValue)
+            celulas.Add(MetaFiltroCelulaBool("Português como segunda língua", dto.PossuiLinguaPortuguesaSegundaLingua.Value));
+
+        return celulas;
+    }
+
+    private static List<string> ColetarRotulosProgramasEAtendimentosAtivos(RelatorioConsolidadoSondagemDto dto)
+    {
+        return [.. (from par in new (bool? Ativo, string Rotulo)[]
+                 {
+                     (dto.Pap, "PAP"),
+                     (dto.Aee, "AEE"),
+                     (dto.Deficiente, "Deficiente")
+                 }
+                where par.Ativo is true
+                select par.Rotulo)];
+    }
+
+    private static void AppendLinhasMetaTabelaEmBlocos(StringBuilder sb, List<string> celulas, int maxCelulasPorLinha)
+    {
+        foreach (var bloco in celulas.Chunk(maxCelulasPorLinha))
         {
             sb.AppendLine("                <tr>");
-            var fimChunk = Math.Min(i + 3, celulas.Count);
-            for (int j = i; j < fimChunk; j++)
-                sb.AppendLine($"                    {celulas[j]}");
-            var faltantes = 3 - (fimChunk - i);
-            for (int k = 0; k < faltantes; k++)
+            foreach (var cel in bloco)
+                sb.AppendLine($"                    {cel}");
+            for (var k = bloco.Length; k < maxCelulasPorLinha; k++)
                 sb.AppendLine("                    <td></td>");
             sb.AppendLine("                </tr>");
         }
     }
 
-    private const string FechaDivConsolidado = "</div>";
+    private static string MetaFiltroCelulaBool(string rotulo, bool valor) =>
+        $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {(valor ? "Sim" : "Não")}</td>";
+
+    private static string MetaFiltroCelulaTexto(string rotulo, string valor) =>
+        $"<td><strong>{HttpUtility.HtmlEncode(rotulo)}:</strong> {HttpUtility.HtmlEncode(valor)}</td>";
 
     private string GerarEstilos()
     {
@@ -539,8 +524,9 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         double magnitude = Math.Pow(10, Math.Floor(Math.Log10(rawStepParaLog)));
         double niceStep = Math.Ceiling(rawStep / magnitude) * magnitude;
 
-        int yMax = (int)(niceStep * (stepCount - 1));
-        int yStep = (int)niceStep;
+        // niceStep pode ser fracionário (ex.: máx. 3 → 0,5); (int) truncaria para 0 e todos os rótulos do eixo Y virariam "0".
+        int yStep = Math.Max(1, (int)Math.Ceiling(niceStep));
+        int yMax = yStep * (stepCount - 1);
 
         int chartHeight = 260;
         int rowHeight = chartHeight / (stepCount - 1);
@@ -596,7 +582,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         sb.AppendLine("            </td>");
         sb.AppendLine("        </tr>");
         sb.AppendLine("    </table>");
-        sb.AppendLine(FechaDivConsolidado);
+        sb.AppendLine(FechaDiv);
 
         return sb.ToString();
     }
@@ -614,7 +600,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             sb.AppendLine("                            </td>");
             sb.AppendLine("                        </tr>");
             sb.AppendLine("                    </table>");
-            sb.AppendLine(FechaDivConsolidado);
+            sb.AppendLine(FechaDiv);
         }
     }
 
@@ -644,7 +630,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                 sb.AppendLine("                            </span>");
                 sb.AppendLine("                        </div>");
             }
-            sb.AppendLine(FechaDivConsolidado);
+            sb.AppendLine(FechaDiv);
         }
     }
 
