@@ -30,9 +30,9 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
         for (int i = 1; i <= 6; i++)
             sheet.Column(i).Width = 21;
 
-        EscreverCabecalhoConsolidado(sheet, relatorioConsolidadoSondagemDto);
+        int ultimaLinhaCabecalho = EscreverCabecalhoConsolidado(sheet, relatorioConsolidadoSondagemDto);
 
-        var (ultimaLinha, questaoPositions, _) = EscreverDadosQuestoes(sheet, 8, relatorioConsolidadoSondagemDto);
+        var (ultimaLinha, questaoPositions, _) = EscreverDadosQuestoes(sheet, ultimaLinhaCabecalho + 2, relatorioConsolidadoSondagemDto);
 
         const int dataColStart = 100;
         var graficosBase = ObterGraficosDasQuestoes(relatorioConsolidadoSondagemDto);
@@ -439,12 +439,11 @@ private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositi
 
             if (colCount > 1) sheet.Range(linha + 1, colStart, linha + 1, colEnd).Merge();
             var cell2 = sheet.Cell(linha + 1, colStart);
-            var tituloSemAno = RemoverAno(titulo);
-            cell2.Value = tituloSemAno;
+            cell2.Value = titulo;
             cell2.Style.Font.Bold = true;
             cell2.Style.Font.FontSize = 13;
             cell2.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            AjustarAlturaLinha(sheet, linha + 1, tituloSemAno, totalWidth);
+            AjustarAlturaLinha(sheet, linha + 1, titulo, totalWidth);
 
             if (colCount > 1) sheet.Range(linha + 2, colStart, linha + 2, colEnd).Merge();
             var cell3 = sheet.Cell(linha + 2, colStart);
@@ -456,9 +455,4 @@ private static (int MaxRowUsed, List<(int ColStart, int ColCount)> QuestaoPositi
         }
     }
 
-    private static string RemoverAno(string questaoNome)
-    {
-        var inicio = questaoNome.LastIndexOf('(');
-        return inicio > 0 ? questaoNome[..inicio].Trim() : questaoNome;
-    }
 }

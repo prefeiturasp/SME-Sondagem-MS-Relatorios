@@ -50,6 +50,7 @@ public class RelatorioSondagemConsolidadoRacaUseCaseTeste
     private readonly Mock<IRelatorioSondagemConsolidadoRacaPdf> _pdf = new();
     private readonly Mock<IRelatorioSondagemConsolidadoGenericoExcel> _excel = new();
     private readonly Mock<IRepositorioRacaCor> _racas = new();
+    private readonly Mock<IRepositorioGeneroSexo> _generosSexo = new();
     private readonly Mock<IServicoSgpApiClient> _sgp = new();
     private readonly Mock<IServicoEolApiClient> _eol = new();
     private readonly Mock<IServicoMensageria> _mensageria = new();
@@ -64,6 +65,7 @@ public class RelatorioSondagemConsolidadoRacaUseCaseTeste
             _pdf.Object,
             _excel.Object,
             _racas.Object,
+            _generosSexo.Object,
             _sgp.Object,
             _eol.Object,
             _mensageria.Object,
@@ -229,6 +231,7 @@ public class RelatorioSondagemConsolidadoGeneroUseCaseTeste
     private readonly Mock<IRelatorioSondagemConsolidadoGeneroPdf> _pdf = new();
     private readonly Mock<IRelatorioSondagemConsolidadoGenericoExcel> _excel = new();
     private readonly Mock<IRepositorioGeneroSexo> _generos = new();
+    private readonly Mock<IRepositorioRacaCor> _racasCor = new();
     private readonly Mock<IServicoSgpApiClient> _sgp = new();
     private readonly Mock<IServicoEolApiClient> _eol = new();
     private readonly Mock<IServicoMensageria> _mensageria = new();
@@ -243,6 +246,7 @@ public class RelatorioSondagemConsolidadoGeneroUseCaseTeste
             _pdf.Object,
             _excel.Object,
             _generos.Object,
+            _racasCor.Object,
             _sgp.Object,
             _eol.Object,
             _mensageria.Object,
@@ -350,6 +354,8 @@ public class RelatorioSondagemConsolidadoQuestaoUseCaseTeste
     private readonly Mock<IServicoMensageria> _mensageria = new();
     private readonly Mock<ILogger<RelatorioSondagemConsolidadoQuestaoUseCase>> _logger = new();
     private readonly Mock<IRepositorioComponenteCurricular> _componente = new();
+    private readonly Mock<IRepositorioGeneroSexo> _generos = new();
+    private readonly Mock<IRepositorioRacaCor> _racas = new();
     private readonly RelatorioSondagemConsolidadoQuestaoUseCase _sut;
 
     public RelatorioSondagemConsolidadoQuestaoUseCaseTeste()
@@ -362,7 +368,9 @@ public class RelatorioSondagemConsolidadoQuestaoUseCaseTeste
             _eol.Object,
             _mensageria.Object,
             _logger.Object,
-            _componente.Object);
+            _componente.Object,
+            _generos.Object,
+            _racas.Object);
     }
 
     [Fact]
@@ -459,6 +467,8 @@ public class RelatorioSondagemConsolidadoBimestreUseCaseTeste
     private readonly Mock<IServicoMensageria> _mensageria = new();
     private readonly Mock<ILogger<RelatorioSondagemConsolidadoPorBimestreUseCase>> _logger = new();
     private readonly Mock<IRepositorioComponenteCurricular> _componente = new();
+    private readonly Mock<IRepositorioGeneroSexo> _generos = new();
+    private readonly Mock<IRepositorioRacaCor> _racas = new();
     private readonly RelatorioSondagemConsolidadoPorBimestreUseCase _sut;
 
     public RelatorioSondagemConsolidadoBimestreUseCaseTeste()
@@ -472,7 +482,9 @@ public class RelatorioSondagemConsolidadoBimestreUseCaseTeste
             _logger.Object,
             _componente.Object,
             _bimestres.Object,
-            _pdf.Object);
+            _pdf.Object,
+            _generos.Object,
+            _racas.Object);
     }
 
     [Fact]

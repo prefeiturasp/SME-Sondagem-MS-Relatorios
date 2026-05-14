@@ -22,6 +22,10 @@ public class RelatorioConsolidadoSondagemDto
     public string Bimestre { get; set; } = string.Empty;
     public string Genero { get; set; } = string.Empty;
     public string Raca { get; set; } = string.Empty;
+    public int ModalidadeId { get; set; }
+    public int SemestreId { get; set; }
+    public int? GeneroId { get; set; }
+    public int? RacaId { get; set; }
     public bool? Pap { get; set; }
     public bool? Aee { get; set; }
     public bool? Deficiente { get; set; }
