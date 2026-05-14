@@ -106,9 +106,10 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         await Task.WhenAll(allTasks);
 
         var dadosRelatorio = dadosTask.Result ?? new RelatorioConsolidadoSondagemDto();
+        dadosRelatorio.CodigoCorrelacao = codigoCorrelacao;
         var escola = escolaTask?.Result.FirstOrDefault();
         var dre = dreTask?.Result.FirstOrDefault(d => d.Codigo == filtros.Dre);
-        await PreencherCabecalho(dadosRelatorio, mensagem, usuarioTask.Result, profTask.Result, componentesCurricularTask.Result, escola, dre, codigoCorrelacao);
+        await PreencherCabecalho(dadosRelatorio, mensagem, usuarioTask.Result, profTask.Result, componentesCurricularTask.Result, escola, dre);
 
         return dadosRelatorio;
     }
@@ -120,13 +121,12 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         ProficienciaDto? proficiencia,
         ComponenteCurricular componenteCurricular,
         EscolaDto? escola,
-        DreDto? dre,
-        Guid codigoCorrelacao)
+        DreDto? dre)
     {
         var filtros = mensagem.FiltrosUsados;
         var proficienciaNome = proficiencia?.Nome ?? string.Empty;
 
-        AtribuirIdentificacaoCabecalho(dadosRelatorio, mensagem, filtros, codigoCorrelacao);
+        AtribuirIdentificacaoCabecalho(dadosRelatorio, mensagem, filtros);
         AplicarFallbacksCabecalhoApartirDosFiltros(dadosRelatorio, filtros, proficienciaNome, escola, dre);
         GarantirMetadadoDemograficoPadrao(dadosRelatorio);
         await ResolverNomesGeneroRacaAsync(dadosRelatorio);
@@ -140,10 +140,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     private static void AtribuirIdentificacaoCabecalho(
         RelatorioConsolidadoSondagemDto dadosRelatorio,
         MensagemSondagemDto mensagem,
-        FiltroRelatorioSondagemDto filtros,
-        Guid codigoCorrelacao)
+        FiltroRelatorioSondagemDto filtros)
     {
-        dadosRelatorio.CodigoCorrelacao = codigoCorrelacao;
         dadosRelatorio.SolicitacaoRelatorioId = mensagem.SolicitacaoRelatorioId;
         dadosRelatorio.UsuarioQueSolicitou = mensagem.UsuarioQueSolicitou;
         dadosRelatorio.ProficienciaId = filtros.ProficienciaId;
