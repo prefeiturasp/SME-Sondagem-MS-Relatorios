@@ -22,16 +22,16 @@ public class DataImpressaoBrasiliaFormatadorTeste
         resultado.Should().Be(dataEsperadaDdMmYyyy);
     }
 
-    public static IEnumerable<object?[]> CasosUtcComDataEsperada()
+    public static TheoryData<int, int, int, int, int, int, string> CasosUtcComDataEsperada { get; } = new()
     {
         // 03:00 UTC = 00:00 em Brasília (mesmo dia civil)
-        yield return [2024, 6, 15, 3, 0, 0, "15/06/2024"];
+        { 2024, 6, 15, 3, 0, 0, "15/06/2024" },
         // 02:59:59 UTC = 23:59:59 do dia anterior em Brasília
-        yield return [2024, 6, 15, 2, 59, 59, "14/06/2024"];
+        { 2024, 6, 15, 2, 59, 59, "14/06/2024" },
         // Virada de ano vista do Brasil
-        yield return [2024, 1, 1, 3, 0, 0, "01/01/2024"];
-        yield return [2024, 1, 1, 2, 59, 59, "31/12/2023"];
-    }
+        { 2024, 1, 1, 3, 0, 0, "01/01/2024" },
+        { 2024, 1, 1, 2, 59, 59, "31/12/2023" },
+    };
 
     [Fact]
     public void FormatarDataImpressaoFusoBrasilia_QuandoLocal_DeveCoincidirComConversaoExplicitaParaBrasilia()

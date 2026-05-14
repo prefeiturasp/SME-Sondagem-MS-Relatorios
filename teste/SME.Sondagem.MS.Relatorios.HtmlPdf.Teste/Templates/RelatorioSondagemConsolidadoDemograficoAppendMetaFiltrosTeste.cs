@@ -10,16 +10,25 @@ namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Teste.Templates;
 
 public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
 {
+    private const string TagLinhaTr = "<tr>";
+    private const string TagCelulaVazia = "<td></td>";
+    private const string StrongPapFechado = "<strong>PAP:</strong>";
+    private const string StrongAeeAberto = "<strong>AEE:";
+    private const string StrongDeficienteAberto = "<strong>Deficiente:";
+    private const string PrefixoAusenciaAee = "AEE:";
+    private const string PrefixoAusenciaDeficiente = "Deficiente:";
+
+    private static readonly string RotuloPortuguesSegundaNao =
+        $"<strong>{HttpUtility.HtmlEncode("Português como segunda língua")}:</strong> Não";
+
+    private static readonly TimeSpan LimiteRegex = TimeSpan.FromSeconds(1);
+
     [Fact]
     public void AppendLinhasMetaFiltrosOpcionais_NaoDeveEmitirLinhas_QuandoTodosOsFiltrosSaoNulos()
     {
-        var sb = new StringBuilder();
+        var html = ExecutarAppendNormalize(new RelatorioConsolidadoSondagemDto());
 
-        RelatorioSondagemConsolidadoDemograficoTemplatePdfBase.AppendLinhasMetaFiltrosOpcionais(
-            sb,
-            new RelatorioConsolidadoSondagemDto());
-
-        sb.ToString().Should().BeEmpty();
+        html.Should().BeEmpty();
     }
 
     [Theory]
@@ -27,24 +36,20 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
     [InlineData(false, "Não")]
     public void AppendLinhasMetaFiltrosOpcionais_DeveEmitirSomentePap_ComValorInformado(bool valor, string esperadoNaCelula)
     {
-        var sb = new StringBuilder();
         var dto = new RelatorioConsolidadoSondagemDto { Pap = valor };
+        var html = ExecutarAppendNormalize(dto);
 
-        RelatorioSondagemConsolidadoDemograficoTemplatePdfBase.AppendLinhasMetaFiltrosOpcionais(sb, dto);
-
-        var html = NormalizarLf(sb.ToString());
-        html.Should().Contain("<strong>PAP:</strong>");
+        html.Should().Contain(StrongPapFechado);
         html.Should().Contain(esperadoNaCelula);
-        html.Should().NotContain("AEE:");
-        html.Should().NotContain("Deficiente:");
-        Regex.Matches(html, "<tr>").Count.Should().Be(1);
-        Regex.Matches(html, "<td></td>").Count.Should().Be(2);
+        html.Should().NotContain(PrefixoAusenciaAee);
+        html.Should().NotContain(PrefixoAusenciaDeficiente);
+        ContarMatches(html, TagLinhaTr).Should().Be(1);
+        ContarMatches(html, TagCelulaVazia).Should().Be(2);
     }
 
     [Fact]
     public void AppendLinhasMetaFiltrosOpcionais_DeveRespeitarOrdemPapAeeDeficientePortuguesSegundaLingua_QuandoTodosPreenchidos()
     {
-        var sb = new StringBuilder();
         var dto = new RelatorioConsolidadoSondagemDto
         {
             Pap = true,
@@ -52,33 +57,27 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
             Deficiente = true,
             PossuiLinguaPortuguesaSegundaLingua = false
         };
+        var html = ExecutarAppendNormalize(dto);
 
-        RelatorioSondagemConsolidadoDemograficoTemplatePdfBase.AppendLinhasMetaFiltrosOpcionais(sb, dto);
+        html.Should().Contain($"{StrongPapFechado} Sim");
+        html.Should().Contain($"{StrongAeeAberto}</strong> Não");
+        html.Should().Contain($"{StrongDeficienteAberto}</strong> Sim");
+        html.Should().Contain(RotuloPortuguesSegundaNao);
 
-        var html = NormalizarLf(sb.ToString());
-        html.Should().Contain("<strong>PAP:</strong> Sim");
-        html.Should().Contain("<strong>AEE:</strong> Não");
-        html.Should().Contain("<strong>Deficiente:</strong> Sim");
-        var rotuloPortuguesSegunda =
-            $"<strong>{HttpUtility.HtmlEncode("Português como segunda língua")}:</strong> Não";
-        html.Should().Contain(rotuloPortuguesSegunda);
         var indices = new[]
         {
-            html.IndexOf("<strong>PAP:", StringComparison.Ordinal),
-            html.IndexOf("<strong>AEE:", StringComparison.Ordinal),
-            html.IndexOf("<strong>Deficiente:", StringComparison.Ordinal),
-            html.IndexOf(rotuloPortuguesSegunda, StringComparison.Ordinal)
+            html.IndexOf(StrongPapFechado, StringComparison.Ordinal),
+            html.IndexOf(StrongAeeAberto, StringComparison.Ordinal),
+            html.IndexOf(StrongDeficienteAberto, StringComparison.Ordinal),
+            html.IndexOf(RotuloPortuguesSegundaNao, StringComparison.Ordinal)
         };
         indices.Should().OnlyContain(i => i >= 0);
-        indices[0].Should().BeLessThan(indices[1]);
-        indices[1].Should().BeLessThan(indices[2]);
-        indices[2].Should().BeLessThan(indices[3]);
+        indices.Should().BeInAscendingOrder();
     }
 
     [Fact]
     public void AppendLinhasMetaFiltrosOpcionais_DeveQuebrarEmDuasLinhasDeTresColunasEPreencherCelulasVazias_QuandoQuatroFiltros()
     {
-        var sb = new StringBuilder();
         var dto = new RelatorioConsolidadoSondagemDto
         {
             Pap = true,
@@ -86,31 +85,36 @@ public class RelatorioSondagemConsolidadoDemograficoAppendMetaFiltrosTeste
             Deficiente = true,
             PossuiLinguaPortuguesaSegundaLingua = true
         };
+        var html = ExecutarAppendNormalize(dto);
 
-        RelatorioSondagemConsolidadoDemograficoTemplatePdfBase.AppendLinhasMetaFiltrosOpcionais(sb, dto);
-
-        var html = NormalizarLf(sb.ToString());
-        Regex.Matches(html, "<tr>").Count.Should().Be(2);
-        Regex.Matches(html, "<td></td>").Count.Should().Be(2);
+        ContarMatches(html, TagLinhaTr).Should().Be(2);
+        ContarMatches(html, TagCelulaVazia).Should().Be(2);
     }
 
     [Fact]
     public void AppendLinhasMetaFiltrosOpcionais_DeveEmitirUmaUnicaLinhaSemCelulasVazias_QuandoTresFiltros()
     {
-        var sb = new StringBuilder();
         var dto = new RelatorioConsolidadoSondagemDto
         {
             Pap = false,
             Aee = true,
             Deficiente = false
         };
+        var html = ExecutarAppendNormalize(dto);
 
+        ContarMatches(html, TagLinhaTr).Should().Be(1);
+        html.Should().NotContain(TagCelulaVazia);
+    }
+
+    private static string ExecutarAppendNormalize(RelatorioConsolidadoSondagemDto dto)
+    {
+        var sb = new StringBuilder();
         RelatorioSondagemConsolidadoDemograficoTemplatePdfBase.AppendLinhasMetaFiltrosOpcionais(sb, dto);
-
-        var html = NormalizarLf(sb.ToString());
-        Regex.Matches(html, "<tr>").Count.Should().Be(1);
-        html.Should().NotContain("<td></td>");
+        return NormalizarLf(sb.ToString());
     }
 
     private static string NormalizarLf(string s) => s.ReplaceLineEndings("\n");
+
+    private static int ContarMatches(string texto, string padraoLiteral) =>
+        Regex.Count(texto, Regex.Escape(padraoLiteral), RegexOptions.None, LimiteRegex);
 }
