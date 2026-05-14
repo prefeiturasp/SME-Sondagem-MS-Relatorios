@@ -5,6 +5,7 @@ using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos.Questionario;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Teste.Templates;
@@ -140,4 +141,34 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdfTeste
         // Assert
         grafico.Should().BeEmpty();
     }
+
+    [Fact]
+    public void GerarGrafico_DeveExibirEscalaEixoYComPassoNaoZero_QuandoQuantidadeMaximaPequena()
+    {
+        var dto = new GraficoSondagemDto
+        {
+            Titulo = "Gráfico da Sondagem",
+            Subtitulo = "Questão",
+            Barras =
+            [
+                new GraficoBarraDto
+                {
+                    Legenda = "Adequada",
+                    Quantidade = 3,
+                    CorFundo = "#4CAF50",
+                    CorTexto = "#ffffff"
+                }
+            ]
+        };
+
+        var html = RelatorioSondagemQuestionarioPorTurmaTemplatePdf.GerarGrafico(dto);
+
+        // Rótulos do eixo Y (coluna da esquerda) — antes do bug, yStep virava 0 e só aparecia "0".
+        YAxisTick(html, "6").Should().BeGreaterThan(0);
+        YAxisTick(html, "5").Should().BeGreaterThan(0);
+        YAxisTick(html, "1").Should().BeGreaterThan(0);
+    }
+
+    private static int YAxisTick(string html, string valor) =>
+        Regex.Count(html, $@"white-space:nowrap; border:none;"">\s*{Regex.Escape(valor)}\s*</td>", RegexOptions.None);
 }

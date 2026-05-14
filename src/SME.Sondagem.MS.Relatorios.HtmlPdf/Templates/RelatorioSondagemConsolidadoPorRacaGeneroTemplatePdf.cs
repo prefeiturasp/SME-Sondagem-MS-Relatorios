@@ -2,7 +2,6 @@ using SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
 using System.Text;
 using System.Web;
-using System.Linq;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
@@ -14,9 +13,6 @@ public class RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf : RelatorioSon
 
     protected override string CssExtraSecaoTabelaH3 =>
         "background-color: #FAFAFA;\n                            padding: 8px;\n                            border: 1px solid #F0F0F0;\n                            border-bottom: none;";
-
-    protected override string GerarLinhaMetadadoDemografico(RelatorioConsolidadoSondagemDto dto) =>
-        $"<td><strong>Gênero:</strong> {HttpUtility.HtmlEncode(dto.Genero)}</td><td><strong>Raça:</strong> {HttpUtility.HtmlEncode(dto.Raca)}</td>";
 
     protected override List<string> ObterOrdemColunas(RelatorioConsolidadoSondagemDto dto) =>
         dto.RacasDisponiveis?.Select(r => r.Descricao).ToList() ?? [];
@@ -55,7 +51,10 @@ public class RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf : RelatorioSon
                 sb.Append(GerarSecaoTabelaPorGenero(questao, colunas, genero));
                 sb.AppendLine(FechaDiv);
             }
+        }
 
+        foreach (var questao in dto.Questoes)
+        {
             var grafico = MontarGraficoConsolidado(questao);
             var htmlGrafico = GerarGrafico(grafico, quebrarPaginaAntes: false);
             if (string.IsNullOrEmpty(htmlGrafico))
@@ -142,9 +141,9 @@ public class RelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf : RelatorioSon
 
         if (questao.Respostas != null)
         {
-            foreach (var resposta in questao.Respostas)
+            foreach (var resposta in questao.Respostas.Where(r => r != null))
             {
-                var bloco = resposta.GenerosComRacas?.FirstOrDefault(g =>
+                var bloco = resposta!.GenerosComRacas?.FirstOrDefault(g =>
                     g.Genero.Equals(genero, StringComparison.OrdinalIgnoreCase));
                 AdicionarRacas(bloco?.Racas);
             }
