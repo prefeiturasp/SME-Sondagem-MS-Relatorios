@@ -1,10 +1,12 @@
+using SME.Sondagem.MS.Relatorios.Dominio.Enums;
 using SME.Sondagem.MS.Relatorios.Infra.Constantes;
 using SME.Sondagem.MS.Relatorios.Infra.Dtos;
+using SME.Sondagem.MS.Relatorios.Infra.Extensions;
 using SME.Sondagem.MS.Relatorios.Infra.Helpers;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Web;
-using System.Linq;
 
 namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Templates;
 
@@ -17,6 +19,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 {
     protected static readonly CultureInfo PtBr = new("pt-BR");
     private static readonly string FechaDiv = "</div>";
+    private const string Todos = "Todos";
 
     public string GerarHtml(RelatorioConsolidadoSondagemDto dto)
     {
@@ -337,6 +340,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
     protected virtual string GerarCabecalho(RelatorioConsolidadoSondagemDto dto)
     {
         var sb = new StringBuilder();
+        var (anoLabel, anoValue) = ObterLabelValorAno(dto);
+
         sb.Append($@"
             <div class=""header-logo"">
                 <img src=""{SmeConstants.Logo_PrefSP_Horizontal}"" alt=""Prefeitura de São Paulo"" />
@@ -354,7 +359,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
                 <tr>
                     <td><strong>DRE:</strong> {HttpUtility.HtmlEncode(dto.Dre)}</td>
                     <td><strong>Unidade Educacional:</strong> {HttpUtility.HtmlEncode(dto.UnidadeEducacional)}</td>
-                    <td><strong>Ano:</strong> {HttpUtility.HtmlEncode(dto.AnoTurma)}</td>
+                    <td><strong>{anoLabel}:</strong> {HttpUtility.HtmlEncode(anoValue)}</td>
                 </tr>
                 <tr>
                     <td><strong>Componente Curricular:</strong> {HttpUtility.HtmlEncode(dto.ComponenteCurricular)}</td>
@@ -372,6 +377,20 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             </table>");
 
         return sb.ToString();
+    }
+
+    private static (string Label, string Value) ObterLabelValorAno(RelatorioConsolidadoSondagemDto dto) =>
+        dto.ModalidadeId switch
+        {
+            (int)Modalidade.EJA => ("Semestre: ", FormatarSemestre(dto.SemestreId)),
+            (int)Modalidade.Fundamental => ("Ano: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? Todos : dto.AnoTurma),
+            _ => ("Ano / Turma: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? Todos : dto.AnoTurma)
+        };
+
+    private static string FormatarSemestre(int semestreId)
+    {
+        if (semestreId == 0) return Todos;
+        return Enum.TryParse(semestreId.ToString(), out Semestre s) ? s.ShortName() ?? Todos : Todos;
     }
 
     internal static void AppendLinhasMetaFiltrosOpcionais(StringBuilder sb, RelatorioConsolidadoSondagemDto dto)
