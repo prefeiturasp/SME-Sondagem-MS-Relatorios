@@ -9,4 +9,5 @@ public static class ServicoEolConstantes
     public const string URL_BUSCAR_ESCOLAS = "escolas";
     public const string URL_BUSCAR_TURMA = "turmas/{0}/dados";
     public const string URL_BUSCAR_DADOS_USUARIO = "AutenticacaoSgp/{0}/dados";
+    public const string URL_BUSCAR_NOME_ABREVIACAO_DRES = "abrangencia/nome-abreviacao-dres";
 }

@@ -42,6 +42,24 @@ public class ServicoEolApiClient : IServicoEolApiClient
         return JsonSerializer.Deserialize<List<EscolaDto>>(json, options) ?? [];
     }
 
+    public async Task<List<DreDto>> ObterNomeAbreviacaoDresAsync()
+    {
+        var httpClient = _httpClientFactory.CreateClient(ServicoEolConstantes.SERVICO);
+
+        var resposta = await httpClient.GetAsync(ServicoEolConstantes.URL_BUSCAR_NOME_ABREVIACAO_DRES);
+
+        if (!resposta.IsSuccessStatusCode || resposta.StatusCode == HttpStatusCode.NoContent)
+            return [];
+
+        var json = await resposta.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(json))
+            return [];
+
+        var options = JsonSerializerExtensions.ObterConfigSerializer();
+
+        return JsonSerializer.Deserialize<List<DreDto>>(json, options) ?? [];
+    }
+
     public async Task<TurmaDto> ObterDadosTurmaAsync(int codigoTurma)
     {
         var httpClient = _httpClientFactory.CreateClient(ServicoEolConstantes.SERVICO);
