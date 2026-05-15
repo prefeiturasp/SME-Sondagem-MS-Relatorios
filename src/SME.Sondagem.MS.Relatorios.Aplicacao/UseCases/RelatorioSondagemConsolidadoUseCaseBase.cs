@@ -146,9 +146,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         dadosRelatorio.UsuarioQueSolicitou = mensagem.UsuarioQueSolicitou;
         dadosRelatorio.ProficienciaId = filtros.ProficienciaId;
         dadosRelatorio.ModalidadeId = filtros.Modalidade;
-        dadosRelatorio.SemestreId = filtros.Modalidade == (int)Modalidade.EJA
-            ? (filtros.BimestreId ?? filtros.SemestreId)
-            : filtros.SemestreId;
+        dadosRelatorio.SemestreId = filtros.SemestreId;
         dadosRelatorio.GeneroId = filtros.GeneroId;
         dadosRelatorio.RacaId = filtros.RacaId;
         dadosRelatorio.Pap = filtros.Pap;
@@ -187,6 +185,9 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Bimestre))
             dadosRelatorio.Bimestre = DescricaoBimestre(filtros.BimestreId);
+
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.Semestre))
+            dadosRelatorio.Semestre = DescricaoSemestre(dadosRelatorio.SemestreId);
     }
 
     private static string ResolverDre(FiltroRelatorioSondagemDto filtros, EscolaDto? escola, DreDto? dre = null)
@@ -277,6 +278,16 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
         return Enum.TryParse(bimestreId.ToString(), out Dominio.Enums.Bimestre bimestre)
             ? bimestre.ShortName() ?? ValorTodos
+            : ValorTodos;
+    }
+
+    protected static string DescricaoSemestre(int semestreId)
+    {
+        if (semestreId == 0)
+            return ValorTodos;
+
+        return Enum.TryParse(semestreId.ToString(), out Semestre semestre)
+            ? semestre.ShortName() ?? ValorTodos
             : ValorTodos;
     }
 
