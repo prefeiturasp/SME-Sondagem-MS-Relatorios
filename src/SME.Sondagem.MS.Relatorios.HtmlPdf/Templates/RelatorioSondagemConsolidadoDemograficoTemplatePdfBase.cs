@@ -536,6 +536,7 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         int barPadRight = 8;
         int barWidth = (areaWidth - barPadLeft - barPadRight - (barras.Count * barMargin)) / barras.Count;
         if (barWidth < 1) barWidth = 70;
+        if (barWidth > 150) barWidth = 150;
 
         string svgYLabel = "data:image/svg+xml;charset=utf-8,"
             + "%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'16'%20height%3D'"
@@ -568,11 +569,11 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
 
         GraficoAppendChartRows(sb, stepCount, rowHeight, areaWidth);
 
-        sb.AppendLine($"                <div style=\"margin-top:-{chartHeight}px; white-space:nowrap; padding-left:{barPadLeft}px;\">");
+        sb.AppendLine($"                <div style=\"margin-top:-{chartHeight}px; white-space:nowrap; text-align:center;\">");
         GraficoAppendBarDivs(sb, barras, yMax, chartHeight, barWidth, barMargin);
         sb.AppendLine("                </div>");
 
-        sb.AppendLine($"                <div style=\"white-space:nowrap; padding-left:{barPadLeft}px; margin-top:4px;\">");
+        sb.AppendLine($"                <div style=\"white-space:nowrap; text-align:center; margin-top:4px;\">");
         GraficoAppendBarLegendas(sb, barras, barWidth, barMargin);
         sb.AppendLine("                </div>");
 
@@ -613,6 +614,13 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
         }
     }
 
+    private static bool IsCorBranca(string? cor)
+    {
+        if (string.IsNullOrWhiteSpace(cor)) return false;
+        var c = cor.Trim().ToLowerInvariant().Replace(" ", "");
+        return c is "#fff" or "#ffffff" or "white";
+    }
+
     private static void GraficoAppendBarDivs(StringBuilder sb, List<GraficoBarraDto> barras, int yMax, int chartHeight, int barWidth, int barMargin)
     {
         foreach (var barra in barras)
@@ -624,7 +632,8 @@ public abstract class RelatorioSondagemConsolidadoDemograficoTemplatePdfBase
             sb.AppendLine($"                    <div style=\"display:inline-block; width:{barWidth}px; margin-right:{barMargin}px; vertical-align:top; padding-top:{paddingTop}px;\">");
             if (barra.Quantidade > 0)
             {
-                sb.AppendLine($"                        <div style=\"height:{altPx}px; background-color:{barra.CorFundo}; border-radius:4px 4px 0 0; text-align:center; overflow:hidden;\">");
+                var bordaBarra = IsCorBranca(barra.CorFundo) ? " box-shadow:inset 0 0 0 1px #404040;" : string.Empty;
+                sb.AppendLine($"                        <div style=\"height:{altPx}px; background-color:{barra.CorFundo};{bordaBarra} border-radius:4px 4px 0 0; text-align:center; overflow:hidden;\">");
                 sb.AppendLine($"                            <span style=\"display:block; font-size:8px; font-weight:700; color:{barra.CorTexto}; padding-top:3px; line-height:12px;\">");
                 sb.AppendLine($"                                {barra.Quantidade}");
                 sb.AppendLine("                            </span>");
