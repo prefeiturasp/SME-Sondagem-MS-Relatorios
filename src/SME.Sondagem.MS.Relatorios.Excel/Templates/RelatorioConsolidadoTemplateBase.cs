@@ -138,16 +138,10 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
     private static (string Label, string Value) ObterLabelValorAno(RelatorioConsolidadoSondagemDto dto) =>
         dto.ModalidadeId switch
         {
-            (int)Modalidade.EJA => ("Semestre: ", FormatarSemestre(dto.SemestreId)),
+            (int)Modalidade.EJA => ("Semestre: ", string.IsNullOrWhiteSpace(dto.Semestre) ? Todos : dto.Semestre),
             (int)Modalidade.Fundamental => ("Ano: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? Todos : dto.AnoTurma),
             _ => ("Ano / Turma: ", string.IsNullOrWhiteSpace(dto.AnoTurma) ? Todos : dto.AnoTurma)
         };
-
-    private static string FormatarSemestre(int semestreId)
-    {
-        if (semestreId == 0) return Todos;
-        return Enum.TryParse(semestreId.ToString(), out Semestre s) ? s.ShortName() ?? Todos : Todos;
-    }
 
     private static string FormatarLinguaSegundaLingua(bool? valor) =>
         valor == true ? "Sim" : "Não";

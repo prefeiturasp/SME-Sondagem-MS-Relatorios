@@ -96,13 +96,20 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
             ? _servicoEolApiClient.ObterDadosDreAsync([filtros.Ue])
             : null;
 
+        Task<List<DreDto>>? dreTask = !string.IsNullOrWhiteSpace(filtros.Dre) && string.IsNullOrWhiteSpace(filtros.Ue)
+            ? _servicoEolApiClient.ObterNomeAbreviacaoDresAsync()
+            : null;
+
         var allTasks = new List<Task> { dadosTask, usuarioTask, profTask, componentesCurricularTask };
         if (escolaTask != null) allTasks.Add(escolaTask);
+        if (dreTask != null) allTasks.Add(dreTask);
         await Task.WhenAll(allTasks);
 
         var dadosRelatorio = dadosTask.Result ?? new RelatorioConsolidadoSondagemDto();
+        dadosRelatorio.CodigoCorrelacao = codigoCorrelacao;
         var escola = escolaTask?.Result.FirstOrDefault();
-        await PreencherCabecalho(dadosRelatorio, mensagem, usuarioTask.Result, profTask.Result, componentesCurricularTask.Result, escola, codigoCorrelacao);
+        var dre = dreTask?.Result.FirstOrDefault(d => d.Codigo == filtros.Dre);
+        await PreencherCabecalho(dadosRelatorio, mensagem, usuarioTask.Result, profTask.Result, componentesCurricularTask.Result, escola, dre);
 
         return dadosRelatorio;
     }
@@ -114,13 +121,13 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         ProficienciaDto? proficiencia,
         ComponenteCurricular componenteCurricular,
         EscolaDto? escola,
-        Guid codigoCorrelacao)
+        DreDto? dre)
     {
         var filtros = mensagem.FiltrosUsados;
         var proficienciaNome = proficiencia?.Nome ?? string.Empty;
 
-        AtribuirIdentificacaoCabecalho(dadosRelatorio, mensagem, filtros, codigoCorrelacao);
-        AplicarFallbacksCabecalhoApartirDosFiltros(dadosRelatorio, filtros, proficienciaNome, escola);
+        AtribuirIdentificacaoCabecalho(dadosRelatorio, mensagem, filtros);
+        AplicarFallbacksCabecalhoApartirDosFiltros(dadosRelatorio, filtros, proficienciaNome, escola, dre);
         GarantirMetadadoDemograficoPadrao(dadosRelatorio);
         await ResolverNomesGeneroRacaAsync(dadosRelatorio);
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Genero))
@@ -133,17 +140,13 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
     private static void AtribuirIdentificacaoCabecalho(
         RelatorioConsolidadoSondagemDto dadosRelatorio,
         MensagemSondagemDto mensagem,
-        FiltroRelatorioSondagemDto filtros,
-        Guid codigoCorrelacao)
+        FiltroRelatorioSondagemDto filtros)
     {
-        dadosRelatorio.CodigoCorrelacao = codigoCorrelacao;
         dadosRelatorio.SolicitacaoRelatorioId = mensagem.SolicitacaoRelatorioId;
         dadosRelatorio.UsuarioQueSolicitou = mensagem.UsuarioQueSolicitou;
         dadosRelatorio.ProficienciaId = filtros.ProficienciaId;
         dadosRelatorio.ModalidadeId = filtros.Modalidade;
-        dadosRelatorio.SemestreId = filtros.Modalidade == (int)Modalidade.EJA
-            ? (filtros.BimestreId ?? filtros.SemestreId)
-            : filtros.SemestreId;
+        dadosRelatorio.SemestreId = filtros.SemestreId;
         dadosRelatorio.GeneroId = filtros.GeneroId;
         dadosRelatorio.RacaId = filtros.RacaId;
         dadosRelatorio.Pap = filtros.Pap;
@@ -156,7 +159,8 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         RelatorioConsolidadoSondagemDto dadosRelatorio,
         FiltroRelatorioSondagemDto filtros,
         string proficienciaNome,
-        EscolaDto? escola)
+        EscolaDto? escola,
+        DreDto? dre = null)
     {
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Agrupamento))
             dadosRelatorio.Agrupamento = AgrupamentoPadrao;
@@ -168,7 +172,7 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
             dadosRelatorio.Modalidade = ((Modalidade)filtros.Modalidade).ShortName() ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Dre))
-            dadosRelatorio.Dre = ResolverDre(filtros, escola);
+            dadosRelatorio.Dre = ResolverDre(filtros, escola, dre);
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.UnidadeEducacional))
             dadosRelatorio.UnidadeEducacional = ResolverUnidadeEducacional(filtros, escola);
@@ -181,12 +185,17 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
         if (string.IsNullOrWhiteSpace(dadosRelatorio.Bimestre))
             dadosRelatorio.Bimestre = DescricaoBimestre(filtros.BimestreId);
+
+        if (string.IsNullOrWhiteSpace(dadosRelatorio.Semestre))
+            dadosRelatorio.Semestre = DescricaoSemestre(dadosRelatorio.SemestreId);
     }
 
-    private static string ResolverDre(FiltroRelatorioSondagemDto filtros, EscolaDto? escola)
+    private static string ResolverDre(FiltroRelatorioSondagemDto filtros, EscolaDto? escola, DreDto? dre = null)
     {
         if (escola != null && !string.IsNullOrWhiteSpace(escola.NomeDRE))
             return escola.NomeDRE;
+        if (dre != null && !string.IsNullOrWhiteSpace(dre.Nome))
+            return dre.Nome;
         if (!string.IsNullOrWhiteSpace(filtros.Dre))
             return filtros.Dre;
         return ValorTodas;
@@ -269,6 +278,16 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
 
         return Enum.TryParse(bimestreId.ToString(), out Dominio.Enums.Bimestre bimestre)
             ? bimestre.ShortName() ?? ValorTodos
+            : ValorTodos;
+    }
+
+    protected static string DescricaoSemestre(int semestreId)
+    {
+        if (semestreId == 0)
+            return ValorTodos;
+
+        return Enum.TryParse(semestreId.ToString(), out Semestre semestre)
+            ? semestre.ShortName() ?? ValorTodos
             : ValorTodos;
     }
 
