@@ -72,6 +72,14 @@ public class RabbitMqConsumerService : BackgroundService
 
     private async Task InicializaConsumerAsync(IChannel channel, CancellationToken stoppingToken)
     {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+
+        channel.ChannelShutdownAsync += (sender, args) =>
+        {
+            cts.Cancel();
+            return Task.CompletedTask;
+        };
+
         var consumer = new AsyncEventingBasicConsumer(channel);
 
         consumer.ReceivedAsync += async (sender, ea) =>
@@ -94,13 +102,19 @@ public class RabbitMqConsumerService : BackgroundService
 
         await RegistrarConsumerAsync(consumer, channel);
 
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            if (_logger.IsEnabled(LogLevel.Information))
+            while (!cts.Token.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker ativo em: {Now}", DateTime.Now);
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("Worker ativo em: {Now}", DateTime.Now);
+
+                await Task.Delay(10000, cts.Token);
             }
-            await Task.Delay(10000, stoppingToken);
+        }
+        catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+        {
+            throw new InvalidOperationException("Canal RabbitMQ fechado inesperadamente.");
         }
     }
 
