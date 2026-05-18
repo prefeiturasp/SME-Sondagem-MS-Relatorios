@@ -26,6 +26,8 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.AddWorksheet("Sondagem");
+        var dataSheet = workbook.AddWorksheet("ChartData");
+        dataSheet.Visibility = XLWorksheetVisibility.Hidden;
 
         for (int i = 1; i <= 6; i++)
             sheet.Column(i).Width = 21;
@@ -34,7 +36,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
 
         var (ultimaLinha, questaoPositions, _) = EscreverDadosQuestoes(sheet, ultimaLinhaCabecalho + 2, relatorioConsolidadoSondagemDto);
 
-        const int dataColStart = 100;
+        const int dataColStart = 1;
         var graficosBase = ObterGraficosDasQuestoes(relatorioConsolidadoSondagemDto);
         var graficosTemp = Enumerable.Range(0, graficosBase.Count)
             .Select(i => (graficosBase[i].Titulo, graficosBase[i].Dados, questaoPositions[i].ColStart, questaoPositions[i].ColCount, 0))
@@ -45,13 +47,13 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
             .ToList();
 
         EscreverCabecalhoGraficos(sheet, graficos, ultimaLinha + 2);
-        EscreverDadosGraficos(sheet, graficos, ultimaLinha + 2, dataColStart);
+        EscreverDadosGraficos(dataSheet, graficos, 1, dataColStart);
 
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         stream.Position = 0;
 
-        InjetarGraficosOpenXml(stream, graficos, ultimaLinha + 2, "Sondagem", ultimaLinha + 2, dataColStart);
+        InjetarGraficosOpenXml(stream, graficos, ultimaLinha + 2, "Sondagem", 1, dataColStart, "ChartData");
         stream.Position = 0;
 
         return await EnviarExcelParaMinio(stream, relatorioConsolidadoSondagemDto.CodigoCorrelacao);

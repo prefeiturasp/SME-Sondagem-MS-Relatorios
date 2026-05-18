@@ -37,12 +37,27 @@ public class RabbitMqConsumerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await using var conexaoRabbit = await _rabbitMqSetupService.CreateConnectionAsync(stoppingToken);
-        await using var channel = await conexaoRabbit.CreateChannelAsync(null, stoppingToken);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await using var conexaoRabbit = await _rabbitMqSetupService.CreateConnectionAsync(stoppingToken);
+                await using var channel = await conexaoRabbit.CreateChannelAsync(null, stoppingToken);
 
-        await _rabbitMqSetupService.SetupExchangesAndQueuesAsync(channel, _comandos);
+                await _rabbitMqSetupService.SetupExchangesAndQueuesAsync(channel, _comandos);
 
-        await InicializaConsumerAsync(channel, stoppingToken);
+                await InicializaConsumerAsync(channel, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Conexão RabbitMQ perdida. Reconectando em 5s...");
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
+        }
     }
 
     private void RegistrarUseCases()
@@ -68,7 +83,8 @@ public class RabbitMqConsumerService : BackgroundService
             catch (Exception ex)
             {
                 _servicoLog.Registrar($"Erro ao tratar mensagem {ea.DeliveryTag}", ex);
-                await channel.BasicRejectAsync(ea.DeliveryTag, false);
+                try { await channel.BasicRejectAsync(ea.DeliveryTag, false); }
+                catch (Exception rejectEx) { _logger.LogError(rejectEx, "Falha ao rejeitar mensagem {DeliveryTag}", ea.DeliveryTag); }
             }
         };
 
