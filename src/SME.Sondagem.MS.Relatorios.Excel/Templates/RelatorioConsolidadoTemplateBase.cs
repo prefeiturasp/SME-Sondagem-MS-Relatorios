@@ -202,7 +202,8 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
         int linhaInicio,
         string sheetName,
         int dataRowBase,
-        int dataColStart)
+        int dataColStart,
+        string? dataSheetName = null)
     {
         using var document = SpreadsheetDocument.Open(stream, true);
         var workbookPart = document.WorkbookPart ?? throw new InvalidOperationException("WorkbookPart nulo.");
@@ -227,8 +228,9 @@ public abstract class RelatorioConsolidadoTemplateBase : RelatorioTemplateBase
             var (_, dados, colStart, colCount, rowGroup) = graficos[i];
             int dataRow = dataRowBase + i * 12;
             int dataEndCol = dataColStart + dados.Count - 1;
-            string catFormula = $"'{sheetName}'!${ColNumToLetter(dataColStart)}${dataRow}:${ColNumToLetter(dataEndCol)}${dataRow}";
-            string valFormula = $"'{sheetName}'!${ColNumToLetter(dataColStart)}${dataRow + 1}:${ColNumToLetter(dataEndCol)}${dataRow + 1}";
+            string formulaSheet = dataSheetName ?? sheetName;
+            string catFormula = $"'{formulaSheet}'!${ColNumToLetter(dataColStart)}${dataRow}:${ColNumToLetter(dataEndCol)}${dataRow}";
+            string valFormula = $"'{formulaSheet}'!${ColNumToLetter(dataColStart)}${dataRow + 1}:${ColNumToLetter(dataEndCol)}${dataRow + 1}";
 
             var chartPart = drawingsPart.AddNewPart<ChartPart>();
             ConfigurarChartPartGrafico(chartPart, dados, catFormula, valFormula);
