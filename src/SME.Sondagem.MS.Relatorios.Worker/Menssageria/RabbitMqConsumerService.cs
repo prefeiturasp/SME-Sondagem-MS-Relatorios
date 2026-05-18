@@ -84,7 +84,11 @@ public class RabbitMqConsumerService : BackgroundService
             {
                 _servicoLog.Registrar($"Erro ao tratar mensagem {ea.DeliveryTag}", ex);
                 try { await channel.BasicRejectAsync(ea.DeliveryTag, false); }
-                catch (Exception rejectEx) { _logger.LogError(rejectEx, "Falha ao rejeitar mensagem {DeliveryTag}", ea.DeliveryTag); }
+                catch (Exception rejectEx)
+                {
+                    if (_logger.IsEnabled(LogLevel.Error))
+                        _logger.LogError(rejectEx, "Falha ao rejeitar mensagem {DeliveryTag}", ea.DeliveryTag);
+                }
             }
         };
 
