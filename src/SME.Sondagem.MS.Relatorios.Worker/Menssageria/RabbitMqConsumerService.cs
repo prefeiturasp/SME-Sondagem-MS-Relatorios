@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -37,21 +37,49 @@ public class RabbitMqConsumerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await using var conexaoRabbit = await _rabbitMqSetupService.CreateConnectionAsync(stoppingToken);
-        await using var channel = await conexaoRabbit.CreateChannelAsync(null, stoppingToken);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await using var conexaoRabbit = await _rabbitMqSetupService.CreateConnectionAsync(stoppingToken);
+                await using var channel = await conexaoRabbit.CreateChannelAsync(null, stoppingToken);
 
-        await _rabbitMqSetupService.SetupExchangesAndQueuesAsync(channel, _comandos);
+                await _rabbitMqSetupService.SetupExchangesAndQueuesAsync(channel, _comandos);
 
-        await InicializaConsumerAsync(channel, stoppingToken);
+                await InicializaConsumerAsync(channel, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Conexão RabbitMQ perdida. Reconectando em 5s...");
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
+        }
     }
 
     private void RegistrarUseCases()
     {
         _comandos.Add(RotasRabbit.RelatorioSondagemPorTurma, new ComandoRabbit("Relatorio Sondagem Por Turma", typeof(IRelatorioSondagemQuestionarioPorTurmaUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorRaca, new ComandoRabbit("Relatorio Sondagem Consolidado Por Raca", typeof(IRelatorioSondagemConsolidadoRacaUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorGenero, new ComandoRabbit("Relatorio Sondagem Consolidado Por Genero", typeof(IRelatorioSondagemConsolidadoGeneroUseCase)));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorRacaGenero, new ComandoRabbit("Relatorio Sondagem Consolidado Por Raca e Genero", typeof(IRelatorioSondagemConsolidadoRacaGeneroUseCase), ttl: ExchangeRabbit.SgpDeadLetterTTL_3));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorAno, new ComandoRabbit("Relatorio Sondagem Consolidado Por Ano", typeof(IRelatorioSondagemConsolidadoQuestaoUseCase), ttl: ExchangeRabbit.SgpDeadLetterTTL_3));
+        _comandos.Add(RotasRabbit.RelatorioSondagemConsolidadoPorBimestre, new ComandoRabbit("Relatorio Sondagem Consolidado Por Bimestre", typeof(IRelatorioSondagemConsolidadoPorBimestreUseCase), ttl: ExchangeRabbit.SgpDeadLetterTTL_3));
     }
 
     private async Task InicializaConsumerAsync(IChannel channel, CancellationToken stoppingToken)
     {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+
+        channel.ChannelShutdownAsync += (sender, args) =>
+        {
+            cts.Cancel();
+            return Task.CompletedTask;
+        };
+
         var consumer = new AsyncEventingBasicConsumer(channel);
 
         consumer.ReceivedAsync += async (sender, ea) =>
@@ -63,19 +91,30 @@ public class RabbitMqConsumerService : BackgroundService
             catch (Exception ex)
             {
                 _servicoLog.Registrar($"Erro ao tratar mensagem {ea.DeliveryTag}", ex);
-                await channel.BasicRejectAsync(ea.DeliveryTag, false);
+                try { await channel.BasicRejectAsync(ea.DeliveryTag, false); }
+                catch (Exception rejectEx)
+                {
+                    if (_logger.IsEnabled(LogLevel.Error))
+                        _logger.LogError(rejectEx, "Falha ao rejeitar mensagem {DeliveryTag}", ea.DeliveryTag);
+                }
             }
         };
 
         await RegistrarConsumerAsync(consumer, channel);
 
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            if (_logger.IsEnabled(LogLevel.Information))
+            while (!cts.Token.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker ativo em: {Now}", DateTime.Now);
+                if (_logger.IsEnabled(LogLevel.Information))
+                    _logger.LogInformation("Worker ativo em: {Now}", DateTime.Now);
+
+                await Task.Delay(10000, cts.Token);
             }
-            await Task.Delay(10000, stoppingToken);
+        }
+        catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
+        {
+            throw new InvalidOperationException("Canal RabbitMQ fechado inesperadamente.");
         }
     }
 

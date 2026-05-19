@@ -44,7 +44,7 @@ public class RelatorioSondagemQuestionarioPorTurmaPdfTeste
             .Returns(htmlEsperado);
 
         _reportConverterMock
-            .Setup(x => x.GerarPdfEmMemoria(It.IsAny<string>()))
+            .Setup(x => x.GerarPdfEmMemoria(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(bytesEsperados);
 
         _servicoArmazenamentoMinioMock
@@ -62,7 +62,7 @@ public class RelatorioSondagemQuestionarioPorTurmaPdfTeste
         result.Should().Be(linkEsperado);
         
         _relatorioTemplatePdfMock.Verify(x => x.GerarHtml(dto), Times.Once);
-        _reportConverterMock.Verify(x => x.GerarPdfEmMemoria(htmlEsperado), Times.Once);
+        _reportConverterMock.Verify(x => x.GerarPdfEmMemoria(htmlEsperado, null), Times.Once);
         _servicoArmazenamentoMinioMock.Verify(x => x.UploadRelatorioAsync(bytesEsperados, $"Relatorio/{codigoCorrelacao}.pdf", "application/pdf"), Times.Once);
         _servicoArmazenamentoMinioMock.Verify(x => x.GerarLinkDownloadAsync($"Relatorio/{codigoCorrelacao}.pdf", 1440), Times.Once);
     }

@@ -1,0 +1,3 @@
+namespace SME.Sondagem.MS.Relatorios.HtmlPdf.Interfaces;
+
+public interface IRelatorioSondagemConsolidadoPorRacaGeneroTemplatePdf : IRelatorioSondagemConsolidadoDemograficoTemplatePdf;
