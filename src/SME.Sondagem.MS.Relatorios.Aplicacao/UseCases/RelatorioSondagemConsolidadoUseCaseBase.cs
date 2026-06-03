@@ -54,6 +54,9 @@ public abstract class RelatorioSondagemConsolidadoUseCaseBase
         if (mensagem == null)
             return false;
 
+        mensagem.FiltrosUsados.Rf = mensagemRabbit.UsuarioLogadoRF;
+        mensagem.FiltrosUsados.Perfil = mensagemRabbit.PerfilUsuario;
+
         try
         {
             var linkRelatorio = string.Empty;
