@@ -10,6 +10,8 @@ public class MensagemRabbit
         CodigoCorrelacao = codigoCorrelacao;
     }
 
+    public string? UsuarioLogadoRF { get; set; }
+    public string? PerfilUsuario { get; set; }
     public object? Mensagem { get; set; }
     public Guid CodigoCorrelacao { get; set; }
     public T? ObterObjetoMensagem<T>() where T : class
