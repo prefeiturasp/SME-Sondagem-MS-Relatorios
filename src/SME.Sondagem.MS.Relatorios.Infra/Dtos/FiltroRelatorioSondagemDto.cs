@@ -32,4 +32,6 @@ public class FiltroRelatorioSondagemDto
     public int TipoRelatorio { get; set; }
     public int StatusSolicitacao { get; set; }
     public string UsuarioQueSolicitou { get; set; } = string.Empty;
+    public string? Rf { get; set; }
+    public string? Perfil { get; set; }
 }
