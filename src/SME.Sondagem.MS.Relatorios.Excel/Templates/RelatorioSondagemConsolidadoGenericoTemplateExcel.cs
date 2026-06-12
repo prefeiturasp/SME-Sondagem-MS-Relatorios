@@ -124,10 +124,7 @@ public class RelatorioSondagemConsolidadoGenericoTemplateExcel
                 .ToList();
         }
 
-        bool temAnosTurma = questao.TotaisPorAnoTurma?.Any() == true
-            || questao.Respostas?.Any(r => r.AnosTurma?.Any() == true) == true;
-
-        if (temAnosTurma)
+        if (questao.Respostas?.Any() == true)
         {
             return
             [
