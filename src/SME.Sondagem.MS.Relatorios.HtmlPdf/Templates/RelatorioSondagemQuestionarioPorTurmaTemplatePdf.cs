@@ -249,12 +249,12 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
         }
     }
 
-    private static OpcaoRespostaDto ObterOpcaoSelecionada(ColunaQuestionarioDto coluna)
+    private static OpcaoRespostaDto? ObterOpcaoSelecionada(ColunaQuestionarioDto coluna)
     {
         if (coluna?.Resposta?.OpcaoRespostaId == null || coluna.OpcaoResposta == null)
-            return new OpcaoRespostaDto();
+            return null;
 
-        return coluna?.OpcaoResposta?.FirstOrDefault(o => o.Id == coluna?.Resposta?.OpcaoRespostaId) ?? new OpcaoRespostaDto();
+        return coluna?.OpcaoResposta?.FirstOrDefault(o => o.Id == coluna?.Resposta?.OpcaoRespostaId);
     }
 
     private static void AcumularTotalPorOpcao(Dictionary<int, GraficoBarraDto> totais, OpcaoRespostaDto opcao)
@@ -285,7 +285,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
         {
             barras.Add(new GraficoBarraDto
             {
-                Legenda = "Vazio",
+                Legenda = "Sem preenchimento",
                 CorFundo = "#E0E0E0",
                 CorTexto = "#42474A",
                 Quantidade = totalVazio
