@@ -285,7 +285,7 @@ public class RelatorioSondagemQuestionarioPorTurmaTemplatePdf : IRelatorioSondag
         {
             barras.Add(new GraficoBarraDto
             {
-                Legenda = "Sem preenchimento",
+                Legenda = "Vazio",
                 CorFundo = "#E0E0E0",
                 CorTexto = "#42474A",
                 Quantidade = totalVazio
